@@ -24,3 +24,7 @@ data_quyche/
 #Evaluate cache
 cache/
 .raw_cache/
+
+#skills, memory
+/skills
+/data
