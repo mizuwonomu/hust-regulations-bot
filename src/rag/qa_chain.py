@@ -16,8 +16,8 @@ from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
 from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
-from .database.history_manager import get_postgres_history
-from .database.connection import get_db_connection
+from src.database.history_manager import get_postgres_history
+from src.database.connection import get_db_connection
 
 from langsmith import traceable
 

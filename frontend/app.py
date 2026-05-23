@@ -10,10 +10,10 @@ import os
 sys.path.append(os.path.abspath('.'))
 import streamlit as st
 
-from src.qa_chain import get_chain
-from src.utils import get_embedding_model
-from src.reranker_utils import load_reranker
-from src.config import RETRIEVER_TOP_K, LLM_TEMPERATURE
+from src.rag.qa_chain import get_chain
+from src.rag.embedding_utils import get_embedding_model
+from src.rag.reranker_utils import load_reranker
+from src.rag.config import RETRIEVER_TOP_K, LLM_TEMPERATURE
 
 from src.database.connection import get_db_connection
 from src.services.background_tasks import fire_and_forget
