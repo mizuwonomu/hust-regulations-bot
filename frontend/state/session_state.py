@@ -1,3 +1,7 @@
+"""
+Streamlit init state
+"""
+
 import uuid
 import streamlit as st
 
@@ -26,3 +30,4 @@ def reset_conversation_state() -> None:
     st.session_state.selected_conversation_id = None
     st.session_state.conversation_selectbox_id = None
     st.session_state.load_selected_conversation = False
+    st.session_state.pending_sidebar_title_sync = False

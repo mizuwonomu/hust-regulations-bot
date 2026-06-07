@@ -1,3 +1,5 @@
+"""Main frontend entry"""
+
 import asyncio
 try:
     asyncio.get_event_loop() #Check if event loop already exists
@@ -16,14 +18,14 @@ from src.rag.reranker_utils import load_reranker
 from src.rag.config import RETRIEVER_TOP_K, LLM_TEMPERATURE
 
 from src.database.connection import get_db_connection
-from src.services.background_tasks import fire_and_forget
-from src.services.title_generator import generate_title
 
 from frontend.components.new_chat import render_new_chat_button
 from frontend.components.sidebar import render_sidebar
+from frontend.components.sidebar_title_polling import poll_sidebar_title
 from frontend.components.feedback import render_feedback
 from frontend.components.source_panel import render_sources
 from frontend.deps import AppDeps
+from frontend.services.title_generation_client import schedule_title_generation
 from frontend.state.session_state import bootstrap_session_state, reset_conversation_state
 from frontend.workflows.chat_flow import handle_query
 
@@ -44,13 +46,13 @@ rag_chain = get_chain(k=RETRIEVER_TOP_K, temperature=LLM_TEMPERATURE, embedding_
 deps = AppDeps(
     rag_chain=rag_chain,
     db_connection_factory=get_db_connection,
-    title_generator=generate_title,
-    background_scheduler=fire_and_forget,
+    title_generation_scheduler=schedule_title_generation,
 )
 
 render_new_chat_button(reset_conversation_state)
 
 render_sidebar(deps.db_connection_factory)
+poll_sidebar_title()
     
 #CHI ve 1 an duy nhat - tranh loi double display
 for msg in st.session_state.messages:

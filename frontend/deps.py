@@ -7,5 +7,4 @@ class AppDeps:
     """Gom các dependencies như chain, các services"""
     rag_chain: Any
     db_connection_factory: Callable[[], Any]
-    title_generator: Callable[[str, str], str]
-    background_scheduler: Callable[..., None]
+    title_generation_scheduler: Callable[[str, str], str | None]
