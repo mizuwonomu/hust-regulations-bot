@@ -1,9 +1,9 @@
 # 🤖 HUST Regulations Bot
 <p align="center">
-  [<a href="./docs/README-JP.md">🇯🇵 日本語</a>]
+  [<a href="README-JP.md">🇯🇵 日本語</a>]
 </p>
 
-[![Watch the video](./assets/DEMO.png)](https://www.youtube.com/watch?v=WOms7keaQgc)
+[![Watch the video](../assets/DEMO.png)](https://www.youtube.com/watch?v=WOms7keaQgc)
 ## Overview
 To easily query the school's academic regulations (*Quy chế đào tạo*) in natural language, this project aims to help students at **HUST (Hanoi University of Science and Technology)** by a **Retrieval-Augmented Generation (RAG) chatbot**.
 
@@ -51,10 +51,10 @@ The transition from V1 to V2 shows a clear trade-off between recall and precisio
 
 ## How It Works
 ### V1: Baseline Architecture
-![V1 Architecture Diagram](assets/DIAGRAM.png)
+![V1 Architecture Diagram](../assets/DIAGRAM.png)
 
 ### V2: Advanced Pipeline
-![V1 Architecture Diagram](assets/DIAGRAM_V2.png)
+![V1 Architecture Diagram](../assets/DIAGRAM_V2.png)
 
 ```
 User question
