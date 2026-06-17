@@ -1,4 +1,4 @@
-f"""
+"""
     Streamlit-side HTTP client cho việc sinh title.
 
     Đóng gói các FastAPI request nhằm schedule sinh title ở backend và poll title state hiện tại,
