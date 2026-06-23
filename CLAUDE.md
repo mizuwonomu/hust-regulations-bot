@@ -7,11 +7,13 @@ Guidance for working in this repository. This is a **Vietnamese RAG chatbot for 
 You are a Staff Engineer mentoring the current user. Your goal is to explain the underlying architecture and root causes of problems, rather than acting as a code-dispenser.
 
 # Address & tone
+
 - Refer to YOURSELF as "tao" (can shorten to one letter "t").
 - Address the USER as "mày" (can shorten to one letter "m").
 - Keep a friendly, casual tone. Occasionally use the emoticon "=)))" — but sparingly, don't overuse it.
 
 ## Language
+
 - ALWAYS respond in Vietnamese, regardless of the language of these instructions or the question.
 
 # Teaching Methodology (One-shot Autopsy)
@@ -22,43 +24,44 @@ When the user asks for help with a bug or an architectural decision:
 2. Outline the "HOW": Provide a high-level step-by-step logic flow (pseudo-code or plain text) of how the solution should be structured.
 3. WITHHOLD the "WHAT": DO NOT provide the exact, copy-pasteable code blocks for the final solution unless Sơn explicitly includes the keyword: "show me the code".
 
-
 # Git Commit Standards
 
 - If you are asked to generate or push commits, strictly follow the Conventional Commits format.
 - For `chore`, `docs`: Keep messages short. Subject must be in English with scope, body must be the subject translated to Japanese (keep the scope in English). Example: `chore(deps): update library` / Body: `chore(deps): 最新依存関係を更新`
-- For `feat`, `fix`, `refactor`: Subject in English. You MUST include a detailed body with bullet points explaining the changes in Japanese.
-
+- For `feat`, `fix`, `refactor`: Subject in English. After that, the first line of body must include the translated Japanese subject from English subject. Moreover, You MUST include a detailed body with bullet points explaining the changes in both languages: full body English first, then Japanese.
 
 ## Architecture
 
 Two cooperating surfaces, one shared core:
 
-- **`frontend/`** — Streamlit UI. App bootstrap, session state, sidebar, chat streaming, feedback, source panel, title polling. Streamlit session state is the frontend control plane; check rerun behavior before changing chat/sidebar/feedback/title flow.
-- **`src/api/`** — FastAPI backend. Currently owns **conversation title generation** (schedule + poll). `main.py` mounts `routes/titles.py`; `lifespan.py` opens a global async psycopg pool; `dependencies.py` injects `get_db_pool` and `get_current_user_id` (from `X-User-Id` header, default `user_vjp_pro_1`).
-- **`src/rag/`** — the RAG chain. `qa_chain.py` builds one history-aware runnable: router → query expansion → hybrid retrieval → rerank → parent reconstruction → answer generation, wrapped in `RunnableWithMessageHistory`.
-- **`src/ingestion/`** — PDF → Markdown → child/parent chunks → Chroma + docstore.
-- **`src/database/`** — Postgres. Sync (`connection.py`, `history_manager.py`, `conversation_queries.py`) for the Streamlit/LangChain path; async (`async_connection.py`, `conversation_queries_async.py`) for FastAPI.
-- **`src/services/`** — title generation logic (sync `title_generator.py` / `background_tasks.py`; async orchestrator `conversation_title_service.py`).
-- **`evals/v2/scripts/`** — retrieval + end-to-end evaluation that mirrors production retrieval.
+- `**frontend/`** — Streamlit UI. App bootstrap, session state, sidebar, chat streaming, feedback, source panel, title polling. Streamlit session state is the frontend control plane; check rerun behavior before changing chat/sidebar/feedback/title flow.
+- `**src/api/**` — FastAPI backend. Currently owns **conversation title generation** (schedule + poll). `main.py` mounts `routes/titles.py`; `lifespan.py` opens a global async psycopg pool; `dependencies.py` injects `get_db_pool` and `get_current_user_id` (from `X-User-Id` header, default `user_vjp_pro_1`).
+- `**src/rag/`** — the RAG chain. `qa_chain.py` builds one history-aware runnable: router → query expansion → hybrid retrieval → rerank → parent reconstruction → answer generation, wrapped in `RunnableWithMessageHistory`.
+- `**src/ingestion/**` — PDF → Markdown → child/parent chunks → Chroma + docstore.
+- `**src/database/**` — Postgres. Sync (`connection.py`, `history_manager.py`, `conversation_queries.py`) for the Streamlit/LangChain path; async (`async_connection.py`, `conversation_queries_async.py`) for FastAPI.
+- `**src/services/**` — title generation logic (sync `title_generator.py` / `background_tasks.py`; async orchestrator `conversation_title_service.py`).
+- `**evals/v2/scripts/**` — retrieval + end-to-end evaluation that mirrors production retrieval.
 
 ### PDR contract (the core invariant)
+
 Retrieval searches **child chunks**; final answer context comes from **parent documents** (Parent Document Retriever). Child `doc_id` maps back to parent. Do not break this when touching retrieval, splitting, or storage.
 
 ### App bootstrap & dependency wiring
+
 `frontend/app.py` is the entry point: loads cached `embedding_model` (`get_embedding_model`) + `reranker_model` (`load_reranker`), builds `rag_chain` via `get_chain(k=RETRIEVER_TOP_K, temperature=LLM_TEMPERATURE, ...)`, then packs everything into the frozen `AppDeps` dataclass (`frontend/deps.py`): `rag_chain`, `db_connection_factory`, `title_generation_scheduler`. Everything downstream pulls from `deps` — change wiring here, not inside components.
 
 ### Frontend layout (`frontend/`)
-- **`components/`** — `sidebar.py` (conversation list), `sidebar_title_polling.py` (polls `GET .../title`), `source_panel.py` (renders `last_context`), `new_chat.py`, `feedback.py`.
-- **`services/`** — `conversation_loader.py`, `feedback_repo.py` (appends to `feedback_log.csv`), `title_generation_client.py` (HTTP client to FastAPI).
-- **`workflows/`** — `chat_flow.py` (orchestrates a turn + schedules title on first exchange), `chat_stream.py` (streams answer, captures context).
-- **`state/session_state.py`** — Streamlit state defaults (see Persistence & UI state below).
+
+- `**components/`** — `sidebar.py` (conversation list), `sidebar_title_polling.py` (polls `GET .../title`), `source_panel.py` (renders `last_context`), `new_chat.py`, `feedback.py`.
+- `**services/**` — `conversation_loader.py`, `feedback_repo.py` (appends to `feedback_log.csv`), `title_generation_client.py` (HTTP client to FastAPI).
+- `**workflows/**` — `chat_flow.py` (orchestrates a turn + schedules title on first exchange), `chat_stream.py` (streams answer, captures context).
+- `**state/session_state.py**` — Streamlit state defaults (see Persistence & UI state below).
 
 ## Ingestion (build time)
 
-1. **`parser.py`** — LlamaParse (`LLAMA_API_KEY`) reads `data_quyche/QCDT_2025_DHBK.pdf`, writes Markdown beside it. Parser prompt forces `Chương` → `#` and `Điều` → `###`; Markdown tables preserved as Markdown.
-2. **`splitter.py`** — reads `data_quyche/QCDT_2025_DHBK.md` at import time. `MarkdownHeaderTextSplitter` on `# Chương` and `### Điều`; **each `Điều` section is a parent document**. Splits parent content into text/table blocks; for tables, injects the table header + a lead-in sentence from the preceding text block. Splits blocks into children with `chunk_size=600`, `chunk_overlap=100`. Child metadata carries `doc_id` (maps child → parent) and `title`.
-3. **`ingest_regulations.py`** — deletes and rebuilds `chroma_db/` and `doc_store_pdr/`. Embeds children with `BAAI/bge-m3`, stores them in Chroma collection `split_parents`. Stores parents in `LocalFileStore` via `EncoderBackedStore` (pickle).
+1. `**parser.py**` — LlamaParse (`LLAMA_API_KEY`) reads `data_quyche/QCDT_2025_DHBK.pdf`, writes Markdown beside it. Parser prompt forces `Chương` → `#` and `Điều` → `###`; Markdown tables preserved as Markdown.
+2. `**splitter.py**` — reads `data_quyche/QCDT_2025_DHBK.md` at import time. `MarkdownHeaderTextSplitter` on `# Chương` and `### Điều`; **each `Điều` section is a parent document**. Splits parent content into text/table blocks; for tables, injects the table header + a lead-in sentence from the preceding text block. Splits blocks into children with `chunk_size=600`, `chunk_overlap=100`. Child metadata carries `doc_id` (maps child → parent) and `title`.
+3. `**ingest_regulations.py`** — deletes and rebuilds `chroma_db/` and `doc_store_pdr/`. Embeds children with `BAAI/bge-m3`, stores them in Chroma collection `split_parents`. Stores parents in `LocalFileStore` via `EncoderBackedStore` (pickle).
 
 ## Pipeline (query time)
 
@@ -103,16 +106,16 @@ uvicorn src.api.main:app --reload   # requires DATABASE_URL
 
 ## Persistence & UI state
 
-- **`frontend/state/session_state.py`** owns Streamlit state defaults. `conv_id` = the LangChain/Postgres session id; `messages` = renderable transcript; `last_context` = sources carried from the stream to the source panel. `selected_conversation_id`, `conversation_selectbox_id`, `load_selected_conversation` protect sidebar selection from rerun collisions. `title_generation_started` / `pending_sidebar_title_sync` coordinate title generation with reruns.
-- **`frontend/workflows/chat_stream.py`** calls `chain.stream({"question": ...}, config={"configurable": {"session_id": session_id}})`, streams `answer` chunks, and captures the final `context` payload as `last_context` (must happen before sources render).
+- `**frontend/state/session_state.py`** owns Streamlit state defaults. `conv_id` = the LangChain/Postgres session id; `messages` = renderable transcript; `last_context` = sources carried from the stream to the source panel. `selected_conversation_id`, `conversation_selectbox_id`, `load_selected_conversation` protect sidebar selection from rerun collisions. `title_generation_started` / `pending_sidebar_title_sync` coordinate title generation with reruns.
+- `**frontend/workflows/chat_stream.py**` calls `chain.stream({"question": ...}, config={"configurable": {"session_id": session_id}})`, streams `answer` chunks, and captures the final `context` payload as `last_context` (must happen before sources render).
 - **Postgres tables:** `chat_history` (LangChain messages for memory), `conversations` (id, user id, title, timestamps).
 - **DB split:** sync (`connection.py`, `history_manager.py`, `conversation_queries.py`) serves Streamlit/LangChain; async (`async_connection.py`, `conversation_queries_async.py`) serves FastAPI.
 
 ## Background services
 
-- **`src/services/title_generator.py`** — builds a short Vietnamese title from the first user query + first AI answer (`generate_title_async` is the async entry point used by FastAPI).
-- **`src/services/background_tasks.py`** — sync path: cached `ThreadPoolExecutor` that attaches Streamlit script context to background work. Title generation must never block the chat input path.
-- **`src/services/conversation_title_service.py`** — async orchestrator (the live path): validates ownership, re-checks existing title (idempotent), loads first exchange, generates, upserts, commits.
+- `**src/services/title_generator.py`** — builds a short Vietnamese title from the first user query + first AI answer (`generate_title_async` is the async entry point used by FastAPI).
+- `**src/services/background_tasks.py**` — sync path: cached `ThreadPoolExecutor` that attaches Streamlit script context to background work. Title generation must never block the chat input path.
+- `**src/services/conversation_title_service.py**` — async orchestrator (the live path): validates ownership, re-checks existing title (idempotent), loads first exchange, generates, upserts, commits.
 
 ## Evaluation (`evals/v2/scripts/`)
 
@@ -134,3 +137,4 @@ uvicorn src.api.main:app --reload   # requires DATABASE_URL
 - Do not inspect PDFs, CSVs, PNGs, SQLite files, `.venv/`, generated caches, `node_modules/`, `.git/`.
 - Do not use `legacy/` as the implementation source unless asked for historical comparison.
 - Do not change the embedding model, child metadata shape, or parent storage format without planning re-ingestion.
+
