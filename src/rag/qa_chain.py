@@ -126,10 +126,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         if not candidate_child_docs:
             return []
 
-        #limit to top 20 for reranking (independent of k)
-        candidate_child_docs = candidate_child_docs[:20]
-
-        #ghép với câu hỏi gốc để chấm điểm
+        # Bước 1: rerank toàn bộ candidates (span: rerank_children)
         #sub-queries chỉ làm nhiệm vụ tăng recall, mà reranker cần precision -> phải luôn đối chiếu với câu hỏi gốc với chunks
         pairs = [(original_question, doc.page_content) for doc in candidate_child_docs]
         scores = reranker.predict(pairs)
