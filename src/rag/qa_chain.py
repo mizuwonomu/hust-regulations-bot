@@ -96,6 +96,72 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     #hugging-face based reranker (bge-reranker-v2-m3 by default)
     reranker = _reranker_model
 
+    # ── Traceable helpers (child spans visible in LangSmith) ──────────────────
+    # Đóng gói 3 bước "trần" bên trong retreive_parents thành span riêng.
+    # Heavy objects (reranker, doc_store) ở closure — không lòi vào trace input.
+
+    @traceable(run_type="tool", name="rerank_children")
+    def _rerank_children(original_question: str, candidates: list) -> list:
+        """Chấm điểm toàn bộ candidate children, trả về list đã sort desc."""
+        pairs = [(original_question, doc.page_content) for doc in candidates]
+        scores = reranker.predict(pairs)
+
+        scored = sorted(
+            zip(candidates, [float(s) for s in scores]),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
+        result = []
+        for rank, (doc, score) in enumerate(scored):
+            doc.metadata["rerank_score"] = score
+            result.append({
+                "rank": rank,
+                "title": doc.metadata.get("title", ""),
+                "doc_id": doc.metadata.get("doc_id", ""),
+                "score": score,
+                "doc": doc,
+            })
+        return result
+
+    @traceable(run_type="tool", name="apply_score_floor")
+    def _apply_score_floor(scored_list: list, threshold: float) -> dict:
+        """Lọc theo floor threshold, trả metadata để trace rõ n_kept / n_dropped."""
+        kept = [item for item in scored_list if item["score"] >= threshold][:5]
+        max_score = scored_list[0]["score"] if scored_list else 0.0
+        return {
+            "n_candidates": len(scored_list),
+            "n_kept": len(kept),
+            "n_dropped": len(scored_list) - len(kept),
+            "max_score": max_score,
+            "threshold": threshold,
+            "kept": [
+                {"title": i["title"], "doc_id": i["doc_id"], "score": i["score"]}
+                for i in kept
+            ],
+            "docs": [i["doc"] for i in kept],
+        }
+
+    @traceable(run_type="tool", name="fetch_parents")
+    def _fetch_parents(requested_parent_ids: list) -> dict:
+        """Lấy parent docs từ doc_store, lộ rõ missing keys (mget trả None)."""
+        raw = doc_store.mget(requested_parent_ids)
+        found, missing = [], []
+        for pid, doc in zip(requested_parent_ids, raw):
+            if doc is not None:
+                found.append(pid)
+            else:
+                missing.append(pid)
+        parents = [doc for doc in raw if doc is not None]
+        return {
+            "requested_ids": requested_parent_ids,
+            "found_ids": found,
+            "missing_ids": missing,
+            "n_parents_returned": len(parents),
+            "docs": parents,
+        }
+
+    # ─────────────────────────────────────────────────────────────────────────
 
     #Custom chain de lay parent:
     #Query -> Ensemble -> List[child] -> rerank -> extract ids -> docstore -> list[parent]
@@ -128,25 +194,14 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
         # Bước 1: rerank toàn bộ candidates (span: rerank_children)
         #sub-queries chỉ làm nhiệm vụ tăng recall, mà reranker cần precision -> phải luôn đối chiếu với câu hỏi gốc với chunks
-        pairs = [(original_question, doc.page_content) for doc in candidate_child_docs]
-        scores = reranker.predict(pairs)
+        scored_list = _rerank_children(original_question, candidate_child_docs)
 
-        #zip docs with scores and sort descending
+        # Bước 2: floor filter (span: apply_score_floor)
+        floor_result = _apply_score_floor(scored_list, threshold=0.5)
+        thresholded_children = floor_result["docs"]
 
-        scored_docs = list(zip(candidate_child_docs, scores))
-        scored_docs.sort(key=lambda x: float(x[1]), reverse=True)
-
-        for doc, score in scored_docs:
-            try:
-                doc.metadata["rerank_score"] = float(score)
-
-            except Exception:
-                pass
-
-        # all children that pass the primary thresholds
-        #23/3/2026: chỉ lấy các child docs có điểm khá trở lên
-        #Giảm threshold, tránh ngưỡng cứng
-        thresholded_children = [doc for doc, s in scored_docs if float(s) >= 0.5][:5]
+        if not thresholded_children:
+            return []
 
         seen_parent_ids = set()
         unique_parent_ids = []
@@ -161,8 +216,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         if not unique_parent_ids:
             return []
 
-        parent_docs_raw = doc_store.mget(unique_parent_ids)
-        parents = [p for p in parent_docs_raw if p is not None]
+        # Bước 3: fetch parents (span: fetch_parents)
+        fetch_result = _fetch_parents(unique_parent_ids)
+        parents = fetch_result["docs"]
 
         max_parents = 4
         if len(parents) > max_parents:
