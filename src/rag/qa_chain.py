@@ -13,7 +13,7 @@ from langchain_classic.retrievers import EnsembleRetriever
 from pydantic import BaseModel, Field
 from typing import List
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough, RunnableBranch
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
@@ -398,9 +398,13 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         #để có thể delay cho đến khi được invoke đúng thời điểm, thay vì chạy ngay tức khắc
 
     ).assign( #Lấy context là danh sách các chunk gốc và question
-        #nhánh 3: Trả lòi
-        answer = (
-            RunnableLambda(lambda x: { #x: chứa dictionary của output runnableparallel 
+        #nhánh 3: Trả lời
+        answer = RunnableBranch(
+            (
+                RunnableLambda(lambda x: len(x["context"]) == 0), #x: chứa dictionary của output runnableparallel 
+                RunnableLambda(lambda x: "Thông tin này không có trong quy chế hiện tại.") #short-circuit: Nếu context rỗng, trả về answer no context tất định
+            ),
+            RunnableLambda(lambda x: { #chia nhánh runnable: chỉ gen answer khi có context
                 "context": format_docs(x["context"]),
                 "question": x["input_pass"]["question"],
                 "chat_history": x["input_pass"]["chat_history"]
