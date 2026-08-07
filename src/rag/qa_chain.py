@@ -392,7 +392,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     
     #test hybrid with no filter
     inference_llm = ChatGroq(
-        model = "qwen/qwen3-32b",
+        model = "openai/gpt-oss-120b",
         temperature = temperature,
         reasoning_format = "parsed"
     )
