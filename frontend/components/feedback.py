@@ -7,10 +7,10 @@ def render_feedback():
 
     msg_len = len(st.session_state.messages)
 
-    @st.dialog("👉Giúp em hiểu tại sao đại ca không thích câu này?")
+    @st.dialog("👉 Tại sao bạn không thích câu này?")
     def feedback_dialog():
         reasons = st.multiselect(
-            "Chọn vấn đề đại ca gặp phải:",
+            "Chọn vấn đề bạn gặp phải:",
             ["Thông tin không chính xác", "Thiếu thông tin", "Thông tin thừa thãi", "Văn phong không phù hợp"],
             key=f"reasons_{msg_len}",
         )
@@ -19,10 +19,10 @@ def render_feedback():
             last_msg = st.session_state.messages[-1]
             last_user_msg = st.session_state.messages[-2] if len(st.session_state.messages) > 1 else {"content": "Unknown"}
             save_feedback(last_user_msg["content"], last_msg["content"], "Dislike", reason=", ".join(reasons), comment=other_comment)
-            st.success("Đã ghi nhận, cảm ơn đại ca🙏! Sẽ bảo bot học lại bài thưa đại ca!")
+            st.success("Đã ghi nhận, cảm ơn ý kiến của bạn🙏! Phản hồi này sẽ được dùng để cải thiện chất lượng bot!")
 
     st.write("---")
-    st.caption("Đại ca thấy câu trả lời thế nào? (Feedback để giúp em khôn lên)")
+    st.caption("Bạn thấy câu trả lời thế nào? (Hãy phản hồi!)")
     col_fb, _ = st.columns([1, 4])
     with col_fb:
         feedback = st.feedback("thumbs", key=f"fb_{msg_len}")
@@ -33,4 +33,4 @@ def render_feedback():
         last_msg = st.session_state.messages[-1]
         last_user_msg = st.session_state.messages[-2] if len(st.session_state.messages) > 1 else {"content": "Unknown"}
         save_feedback(last_user_msg["content"], last_msg["content"], "Like")
-        st.toast("Cảm ơn đại ca đã ủng hộ🙏!", icon="💾")
+        st.toast("Cảm ơn bạn đã đóng góp ý kiến🙏!", icon="💾")
