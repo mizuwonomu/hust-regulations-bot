@@ -2,9 +2,9 @@ import streamlit as st
 from src.database.conversation_queries import get_user_conversations
 from frontend.services.conversation_loader import load_conversation_into_state
 
-def _on_conversation_selected():
-    #interaction của chính user, thực hiện 1 lần trong render sidebar
-    st.session_state.load_selected_conversation = True
+#Sentinel đại diện cho "cuộc trò chuyện mới chưa lưu" (đang ở Hero / vừa New Chat)
+NEW_CHAT_SENTINEL = "__new_chat__"
+
 
 def render_sidebar(db_connection_factory):
     with st.sidebar:
@@ -17,37 +17,39 @@ def render_sidebar(db_connection_factory):
         options = [(conv_id, title or "Cuộc trò chuyện chưa có tiêu đề") for conv_id, title in rows]
         current_conv_id = st.session_state.conv_id
 
-        if not options:
-            st.caption("Chưa có cuộc trò chuyện nào để tải lại.")
-            return
-
         option_ids = [conv_id for conv_id, _ in options]
         option_title_map = {conv_id: title for conv_id, title in options}
 
-        default_index = 0
-        if st.session_state.selected_conversation_id in option_ids:
-            default_index = option_ids.index(st.session_state.selected_conversation_id) #lấy index đầu tiên của conversation được chọn
+        # Mấu chốt kiến trúc: selectbox phải LUÔN có 1 option đại diện cho conv đang mở.
+        # Khi conv đang mở chưa lưu vào DB (Hero / vừa New Chat), nó không nằm trong list,
+        # nên ta chèn 1 sentinel ở đầu. Nhờ vậy "giá trị nên hiển thị" (display_id) LUÔN tồn
+        # tại trong options -> selected_id == display_id khi user CHƯA click, và chỉ khác khi
+        # user CHỦ ĐỘNG chọn conv khác. Không cần on_change, không cần theo dõi prev-state.
+        is_new_chat = current_conv_id not in option_ids
+        if is_new_chat:
+            option_ids = [NEW_CHAT_SENTINEL] + option_ids
+            option_title_map[NEW_CHAT_SENTINEL] = "✨ Cuộc trò chuyện mới"
+            display_id = NEW_CHAT_SENTINEL
+        else:
+            display_id = current_conv_id
 
-        elif current_conv_id in option_ids:
-            default_index = option_ids.index(current_conv_id)
+        if not option_ids:
+            st.caption("Chưa có cuộc trò chuyện nào để tải lại.")
+            return
 
-        if st.session_state.conversation_selectbox_id not in option_ids:
-            st.session_state.conversation_selectbox_id = option_ids[default_index]
+        # Dùng index (KHÔNG dùng key persistent): mỗi rerun selectbox được đặt mặc định về
+        # conv đang mở qua index. Vì display_id luôn ∈ option_ids nên index luôn hợp lệ.
+        # Không set st.session_state[key] thủ công (sẽ nuốt cú click của user trong cùng run).
+        default_index = option_ids.index(display_id)
 
         selected_id = st.selectbox(
             "Chọn cuộc trò chuyện",
             options=option_ids,
             index=default_index,
             format_func=lambda cid: option_title_map[cid],
-            key="conversation_selectbox_id",
-            on_change=_on_conversation_selected
         )
-        st.session_state.selected_conversation_id = selected_id
 
-        #chỉ load khi người dùng thay đổi selectbox value, tức chọn conversation khác nhau trong selectbox
-        if st.session_state.load_selected_conversation and selected_id != current_conv_id:
-            st.session_state.load_selected_conversation = False
+        # User chủ động chọn conv khác khi selected_id khác conv đang mở VÀ không phải sentinel.
+        if selected_id != display_id and selected_id != NEW_CHAT_SENTINEL:
             load_conversation_into_state(selected_id, db_connection_factory)
             st.rerun()
-        st.session_state.load_selected_conversation = False #reset flag nếu có gặp new chat trigger -> không còn query và tiếp tục render message cũ 
-                                                            #của cuộc hội thoại gần nhất

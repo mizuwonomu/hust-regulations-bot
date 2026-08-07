@@ -1,9 +1,19 @@
+"""
+    Định nghĩa LLM chain sinh title
+"""
+
 from __future__ import annotations
+
+from functools import lru_cache
 from typing import Any
+
 from langchain_core.messages import AIMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
+from dotenv import load_dotenv
+
+load_dotenv()
 
 prompt = ChatPromptTemplate.from_messages([
         (
@@ -42,12 +52,22 @@ prompt = ChatPromptTemplate.from_messages([
     ]
 )
 
-generate_title_llm = ChatGroq(
-    model="llama-3.1-8b-instant",
-        max_retries=0,
-        temperature= 0.3
-)
-title_chain = prompt | generate_title_llm | StrOutputParser()
+#1. Reuse: Cache để backend không cần tạo lại chain mỗi lần invoke sinh title 
+#=> tạo chain một lần. Lần sau dùng chỉ cần trả lại chain cũ và reuse
+#2. Lazy initialization: Không tạo ra LLM chain cho đến khi thực sự cần sinh title
+#Note: Đây chỉ cache chain object, kgông hề cache output title. Với mỗi input khác nhau, output cũng khác nhau
+#Tức các title vẫn được LLM gọi bình thường, nó không nhớ câu hỏi nào tạo ra title nào, chỉ nhớ pipeline dùng để gọi LLM
+@lru_cache(maxsize=1)
+def get_title_chain():
+    """Chain LCEL sinh title"""
+
+    generate_title_llm = ChatGroq(
+        model="llama-3.1-8b-instant",
+            max_retries=0,
+            temperature= 0.3
+    )
+    title = prompt | generate_title_llm | StrOutputParser()
+    return title
 
 def _normalize_assistant_answer(full_response: Any) -> str:
     """Chuẩn hoá AIMessage từ inference response sang dạng string
@@ -72,10 +92,10 @@ def _normalize_assistant_answer(full_response: Any) -> str:
 
 
 def generate_title(question: str, full_response: Any) -> str:
-    """Tạo title ngắn gọn"""
+    """Sync title generation for FastAPI background tasks"""
 
     assistant_text = _normalize_assistant_answer(full_response).strip()
-    result = title_chain.invoke(
+    result = get_title_chain().invoke(
         {
             "question": question.strip(),
             "full_response": assistant_text,
@@ -84,3 +104,16 @@ def generate_title(question: str, full_response: Any) -> str:
 
     return result.strip()
 
+
+async def generate_title_async(question: str, full_response: Any) -> str:
+    """Async title generation for FastAPI background tasks"""
+
+    assistant_text = _normalize_assistant_answer(full_response).strip()
+    result = await get_title_chain().ainvoke(
+        {
+            "question": question.strip(),
+            "full_response": assistant_text,
+        }
+    )
+
+    return result.strip()

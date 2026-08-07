@@ -13,11 +13,12 @@ from langchain_classic.retrievers import EnsembleRetriever
 from pydantic import BaseModel, Field
 from typing import List
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough
+from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough, RunnableBranch
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
-from .database.history_manager import get_postgres_history
-from .database.connection import get_db_connection
+from src.database.history_manager import get_postgres_history
+from src.database.connection import get_db_connection
+from src.rag.config import LLM_TEMPERATURE, RETRIEVER_TOP_K, RERANK_RATIO, RERANK_MAX_CHILDREN
 
 from langsmith import traceable
 
@@ -96,6 +97,94 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     #hugging-face based reranker (bge-reranker-v2-m3 by default)
     reranker = _reranker_model
 
+    # ── Traceable helpers (child spans visible in LangSmith) ──────────────────
+    # Đóng gói 3 bước "trần" bên trong retreive_parents thành span riêng.
+    # Heavy objects (reranker, doc_store) ở closure — không lòi vào trace input.
+
+    @traceable(run_type="tool", name="rerank_children")
+    def _rerank_children(original_question: str, candidates: list) -> list:
+        """Chấm điểm toàn bộ candidate children, trả về list đã sort desc."""
+        pairs = [(original_question, doc.page_content) for doc in candidates]
+        scores = reranker.predict(pairs)
+
+        scored = sorted(
+            zip(candidates, [float(s) for s in scores]),
+            key=lambda x: x[1],
+            reverse=True,
+        )
+
+        result = []
+        for rank, (doc, score) in enumerate(scored):
+            doc.metadata["rerank_score"] = score
+            result.append({
+                "rank": rank,
+                "title": doc.metadata.get("title", ""),
+                "doc_id": doc.metadata.get("doc_id", ""),
+                "score": score,
+                "doc": doc,
+            })
+        return result
+
+    @traceable(run_type="tool", name="apply_score_ratio")
+    def _apply_score_ratio(scored_list: list, ratio: float) -> dict:
+        """Chọn child theo TỈ LỆ tương đối với top-1, không dùng sàn tuyệt đối
+
+        - top-1 luôn được giữ (nó là ứng viên tốt nhất mà retrieval có)
+        - rank>=2 chỉ được giữ nếu score >= top_score * ratio
+        """
+
+        if not scored_list:
+            return {
+                "n_candidates": 0,
+                "n_kept": 0,
+                "n_dropped": 0,
+                "max_score": 0.0,
+                "ratio": ratio,
+                "cutoff": 0.0,
+                "kept": [],
+                "docs": [],
+            }
+
+        top_score = scored_list[0]["score"]
+        cutoff = top_score * ratio
+
+        #top-1 vô điều kiện, phần còn lại phải bám đủ sát top-1
+        keep_items = [scored_list[0]]
+        keep_items.extend(item for item in scored_list[1:] if item["score"] >= cutoff)
+
+        kept_items = keep_items[:RERANK_MAX_CHILDREN]
+        return {
+            "n_candidates": len(scored_list),
+            "n_kept": len(kept_items),
+            "n_dropped": len(scored_list) - len(kept_items),
+            "max_score": top_score,
+            "ratio": ratio,
+            "cutoff": cutoff,
+            "kept": [
+                {"title": i["title"], "doc_id": i["doc_id"], "score": i["score"]}
+                for i in kept_items
+            ],
+            "docs": [i["doc"] for i in kept_items],
+        }
+
+    @traceable(run_type="tool", name="fetch_parents")
+    def _fetch_parents(requested_parent_ids: list) -> dict:
+        """Lấy parent docs từ doc_store, lộ rõ missing keys (mget trả None)."""
+        raw = doc_store.mget(requested_parent_ids)
+        found, missing = [], []
+        for pid, doc in zip(requested_parent_ids, raw):
+            if doc is not None:
+                found.append(pid)
+            else:
+                missing.append(pid)
+        parents = [doc for doc in raw if doc is not None]
+        return {
+            "requested_ids": requested_parent_ids,
+            "found_ids": found,
+            "missing_ids": missing,
+            "n_parents_returned": len(parents),
+            "docs": parents,
+        }
 
     #Custom chain de lay parent:
     #Query -> Ensemble -> List[child] -> rerank -> extract ids -> docstore -> list[parent]
@@ -126,30 +215,16 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         if not candidate_child_docs:
             return []
 
-        #limit to top 20 for reranking (independent of k)
-        candidate_child_docs = candidate_child_docs[:20]
-
-        #ghép với câu hỏi gốc để chấm điểm
+        # Bước 1: rerank toàn bộ candidates (span: rerank_children)
         #sub-queries chỉ làm nhiệm vụ tăng recall, mà reranker cần precision -> phải luôn đối chiếu với câu hỏi gốc với chunks
-        pairs = [(original_question, doc.page_content) for doc in candidate_child_docs]
-        scores = reranker.predict(pairs)
+        scored_list = _rerank_children(original_question, candidate_child_docs)
 
-        #zip docs with scores and sort descending
+        # Bước 2: chọn theo tỉ lệ tương đối với top-1 (span: apply_score_ratio)
+        ratio_result = _apply_score_ratio(scored_list, ratio=RERANK_RATIO)
+        thresholded_children = ratio_result["docs"]
 
-        scored_docs = list(zip(candidate_child_docs, scores))
-        scored_docs.sort(key=lambda x: float(x[1]), reverse=True)
-
-        for doc, score in scored_docs:
-            try:
-                doc.metadata["rerank_score"] = float(score)
-
-            except Exception:
-                pass
-
-        # all children that pass the primary thresholds
-        #23/3/2026: chỉ lấy các child docs có điểm khá trở lên
-        #Giảm threshold, tránh ngưỡng cứng
-        thresholded_children = [doc for doc, s in scored_docs if float(s) >= 0.5][:5]
+        if not thresholded_children:
+            return []
 
         seen_parent_ids = set()
         unique_parent_ids = []
@@ -164,8 +239,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         if not unique_parent_ids:
             return []
 
-        parent_docs_raw = doc_store.mget(unique_parent_ids)
-        parents = [p for p in parent_docs_raw if p is not None]
+        # Bước 3: fetch parents (span: fetch_parents)
+        fetch_result = _fetch_parents(unique_parent_ids)
+        parents = fetch_result["docs"]
 
         max_parents = 4
         if len(parents) > max_parents:
@@ -316,7 +392,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     
     #test hybrid with no filter
     inference_llm = ChatGroq(
-        model = "qwen/qwen3-32b",
+        model = "openai/gpt-oss-120b",
         temperature = temperature,
         reasoning_format = "parsed"
     )
@@ -345,9 +421,13 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         #để có thể delay cho đến khi được invoke đúng thời điểm, thay vì chạy ngay tức khắc
 
     ).assign( #Lấy context là danh sách các chunk gốc và question
-        #nhánh 3: Trả lòi
-        answer = (
-            RunnableLambda(lambda x: { #x: chứa dictionary của output runnableparallel 
+        #nhánh 3: Trả lời
+        answer = RunnableBranch(
+            (
+                RunnableLambda(lambda x: len(x["context"]) == 0), #x: chứa dictionary của output runnableparallel 
+                RunnableLambda(lambda x: "Thông tin này không có trong quy chế hiện tại.") #short-circuit: Nếu context rỗng, trả về answer no context tất định
+            ),
+            RunnableLambda(lambda x: { #chia nhánh runnable: chỉ gen answer khi có context
                 "context": format_docs(x["context"]),
                 "question": x["input_pass"]["question"],
                 "chat_history": x["input_pass"]["chat_history"]

@@ -18,6 +18,9 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
 load_dotenv()
 
 DEFAULT_RETRIEVAL_RESULTS = "evals/v2/results/eval_20260405_063409.json"
+#model sinh đáp án — để lộ ra CLI vì đây là biến duy nhất khi so sánh model
+DEFAULT_INFERENCE_MODEL = "qwen/qwen3-32b"
+DEFAULT_TEMPERATURE = 0.1
 
 
 class E2EInputRow(BaseModel):
@@ -53,7 +56,12 @@ def _is_rate_limited_error(exc: Exception) -> bool:
     return ("429" in message) or ("rate limit" in message) or ("too many requests" in message)
 
 
-def run_generation(retrieval_results_path: str, output_path: str) -> None:
+def run_generation(
+    retrieval_results_path: str,
+    output_path: str,
+    model: str = DEFAULT_INFERENCE_MODEL,
+    temperature: float = DEFAULT_TEMPERATURE,
+) -> None:
     if "GROQ_API_KEY" not in os.environ:
         raise EnvironmentError("GROQ_API_KEY is required in environment or .env")
 
@@ -109,8 +117,8 @@ def run_generation(retrieval_results_path: str, output_path: str) -> None:
     ])
 
     inference_llm = ChatGroq(
-        model="qwen/qwen3-32b",
-        temperature=0.1,
+        model=model,
+        temperature=temperature,
         reasoning_format="parsed",
     )
     answer_chain = qa_prompt | inference_llm | StrOutputParser()
@@ -150,6 +158,11 @@ def run_generation(retrieval_results_path: str, output_path: str) -> None:
 
     output = {
         "created_at": datetime.now(timezone.utc).isoformat(),
+        #model/temperature là thuộc tính của CẢ lần chạy, không phải của từng row
+        #-> nhờ đó file kết quả tự mô tả được nó sinh ra từ model nào
+        "model": model,
+        "temperature": temperature,
+        "retrieval_results_path": retrieval_results_path,
         "dataset_path": raw.get("dataset_path", ""),
         "num_samples": len(generated),
         "results": generated,
@@ -162,8 +175,10 @@ def run_generation(retrieval_results_path: str, output_path: str) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate qwen responses from retrieval results")
+    parser = argparse.ArgumentParser(description="Generate answers from retrieval results with a chosen model")
     parser.add_argument("--retrieval-results", type=str, default=DEFAULT_RETRIEVAL_RESULTS)
+    parser.add_argument("--model", type=str, default=DEFAULT_INFERENCE_MODEL)
+    parser.add_argument("--temperature", type=float, default=DEFAULT_TEMPERATURE)
     parser.add_argument(
         "--output",
         type=str,
@@ -174,4 +189,9 @@ def parse_args() -> argparse.Namespace:
 
 if __name__ == "__main__":
     args = parse_args()
-    run_generation(retrieval_results_path=args.retrieval_results, output_path=args.output)
+    run_generation(
+        retrieval_results_path=args.retrieval_results,
+        output_path=args.output,
+        model=args.model,
+        temperature=args.temperature,
+    )

@@ -1,0 +1,184 @@
+[
+  {
+    "id": 1,
+    "user_input": "Đối tượng nào được áp dụng theo quy chế đào tạo này?",
+    "response": "",
+    "retrieved_contexts": "Điều 1. Phạm vi điều chỉnh và đối tượng áp dụng\n2. Quy chế này áp dụng cho sinh viên đại học, học viên của chương trình thạc sĩ, kỹ sư (kỹ sư chuyên sâu) và nghiên cứu sinh (NCS) của ĐHBK Hà Nội (sau đây gọi chung là người học).",
+    "type": "single"
+  },
+  {
+    "id": 2,
+    "user_input": "Một tín chỉ tương đương với bao nhiêu giờ học tập định mức?",
+    "response": "",
+    "retrieved_contexts": "Điều 4. Tín chỉ và học phần\n1. Tín chỉ là đơn vị đo khối lượng học tập. Một TC được tính tương đương 50 giờ học tập định mức của người học, bao gồm cả thời gian dự giờ giảng, giờ học có hướng dẫn, tự học, nghiên cứu, trải nghiệm và dự kiểm tra, đánh giá.",
+    "type": "single"
+  },
+  {
+    "id": 3,
+    "user_input": "Thế nào là học phần tiên quyết?",
+    "response": "",
+    "retrieved_contexts": "Điều 4. Tín chỉ và học phần\n6. Điều kiện tham dự một học phần...\na) Học phần tiên quyết: Học phần A là học phần tiên quyết của học phần B thì sinh viên phải hoàn thành học phần A (với mức điểm đạt) mới được dự lớp học phần B.",
+    "type": "single"
+  },
+  {
+    "id": 4,
+    "user_input": "Thế nào là học phần song hành?",
+    "response": "",
+    "retrieved_contexts": "Điều 4. Tín chỉ và học phần\n6. Điều kiện tham dự một học phần...\nc) Học phần song hành: Học phần A là học phần song hành của học phần B thì sinh viên phải theo học trước hoặc học đồng thời với học phần B.",
+    "type": "single"
+  },
+  {
+    "id": 5,
+    "user_input": "Điểm số bao nhiêu bị coi là điểm liệt đối với học phần đồ án tốt nghiệp cử nhân?",
+    "response": "",
+    "retrieved_contexts": "Điều 5. Điểm học phần\n5. Điểm quá trình và điểm cuối kỳ là điểm số được cho theo thang 10 và có thể lẻ tới 0,5: a) Điểm số dưới 5 đối với học phần đồ án tốt nghiệp/khóa luận tốt nghiệp cử nhân, đồ án tốt nghiệp kỹ sư được coi là điểm liệt;",
+    "type": "single"
+  },
+  {
+    "id": 6,
+    "user_input": "Người học có bao nhiêu ngày để đề nghị phúc tra điểm kể từ khi điểm học phần được cập nhật?",
+    "response": "",
+    "retrieved_contexts": "Điều 6. Hoãn thi, miễn thi, phúc tra và khiếu nại điểm\n4. Người học có thể đề nghị phúc tra hoặc khiếu nại điểm trong thời hạn 7 ngày kể từ khi điểm học phần được cập nhật vào tài khoản học tập của người học.",
+    "type": "single"
+  },
+  {
+    "id": 7,
+    "user_input": "Sinh viên không nộp đủ học phí đúng hạn sẽ bị xử lý như thế nào?",
+    "response": "",
+    "retrieved_contexts": "Điều 9. Học phí\n2. Người học không nộp đủ học phí sau thời gian quy định tại khoản 1 Điều này sẽ bị đình chỉ đăng ký học tập một học kỳ kế tiếp.",
+    "type": "single"
+  },
+  {
+    "id": 8,
+    "user_input": "Sinh viên đề nghị rút học phần trong tuần đầu tiên của học kỳ 2 và được chấp thuận thì phải nộp bao nhiêu phần trăm học phí?",
+    "response": "",
+    "retrieved_contexts": "Điều 9. Học phí\n3. ... Trường hợp ngoại lệ là khi đề nghị rút học phần trong tuần đầu tiên của học kỳ thứ 2, nếu được giải quyết theo nguyện vọng thì không phải đóng học phí của học phần đó.",
+    "type": "single"
+  },
+  {
+    "id": 9,
+    "user_input": "Học kỳ chính có sinh viên không bị cảnh báo học tập thì được đăng ký tối thiểu bao nhiêu tín chỉ?",
+    "response": "",
+    "retrieved_contexts": "Điều 10. Đăng ký học tập chương trình đại học\n2. Số lượng TC đăng ký:\na) Sinh viên không thuộc diện cảnh báo học tập theo quy định tại khoản 1 Điều 19 của Quy chế này được đăng ký tối đa 24 TC và tối thiểu 12 TC trong học kỳ chính, không áp dụng ngưỡng TC đăng ký tối thiểu với sinh viên trình độ năm cuối.",
+    "type": "single"
+  },
+  {
+    "id": 10,
+    "user_input": "Sinh viên chương trình chuẩn bị cảnh báo học tập mức 2 thì được đăng ký tối đa bao nhiêu tín chỉ một học kỳ chính?",
+    "response": "",
+    "retrieved_contexts": "Điều 19. Cảnh báo học tập và buộc thôi học\n2. Hạn chế khối lượng học tập là hình thức buộc những sinh viên đang bị cảnh báo học tập từ mức 2 trở lên đăng ký số TC học phần ít hơn bình thường tại học kỳ 1 của năm học, cụ thể như sau:\na) Sinh viên thuộc các CTĐT chuẩn được đăng ký tối đa 14 TC và tối thiểu 8 TC cho một học kỳ chính;",
+    "type": "single"
+  },
+  {
+    "id": 11,
+    "user_input": "Sinh viên từ năm thứ mấy thì mới được phép đăng ký học cùng lúc hai chương trình?",
+    "response": "",
+    "retrieved_contexts": "Điều 18. Học cùng lúc hai chương trình\n2. Sinh viên được phép đăng ký học chương trình thứ hai sớm nhất khi đã được xếp trình độ năm thứ hai của chương trình thứ nhất.",
+    "type": "single"
+  },
+  {
+    "id": 12,
+    "user_input": "Những sinh viên nào không được phép chuyển đến học tại một cơ sở đào tạo khác?",
+    "response": "",
+    "retrieved_contexts": "Điều 8. Chuyển cơ sở đào tạo khác\n1. Sinh viên đại học chuyển đến học tại một cơ sở đào tạo khác... Sinh viên năm thứ nhất, sinh viên năm cuối của khóa học và sinh viên đang bị xem xét buộc thôi học không được chuyển cơ sở đào tạo.",
+    "type": "single"
+  },
+  {
+    "id": 13,
+    "user_input": "Hạng tốt nghiệp của sinh viên đại học sẽ bị giảm một mức nếu khối lượng tín chỉ học lại vượt quá bao nhiêu phần trăm?",
+    "response": "",
+    "retrieved_contexts": "Điều 15. Điểm trung bình toàn khóa và hạng tốt nghiệp đại học\n2. Hạng tốt nghiệp được xếp dựa trên điểm trung bình toàn khóa ... riêng trong các trường hợp sau đây thì hạng tốt nghiệp của những sinh viên có điểm trung bình toàn khóa xếp loại giỏi trở lên sẽ bị giảm một mức: a) Khối lượng của các học phần phải học lại vượt quá 5% của tổng số TC của các học phần được dùng tính điểm trung bình toàn khóa.",
+    "type": "single"
+  },
+  {
+    "id": 14,
+    "user_input": "Sinh viên bị cảnh báo học tập mức 3 lần thứ hai liên tiếp sẽ bị xử lý như thế nào?",
+    "response": "",
+    "retrieved_contexts": "Điều 19. Cảnh báo học tập và buộc thôi học\n3. Buộc thôi học là hình thức áp dụng đối với những sinh viên có kết quả học tập rất kém theo một trong các trường hợp như sau: a) Sinh viên bị cảnh báo học tập mức 3 lần thứ hai liên tiếp.",
+    "type": "single"
+  },
+  {
+    "id": 15,
+    "user_input": "Học viên cao học không đăng ký học tập trong hai học kỳ liên tiếp sẽ phải nhận hình thức xử lý gì?",
+    "response": "",
+    "retrieved_contexts": "Điều 36. Gia hạn thời gian học tập, thôi học\n3. Học viên bị buộc thôi học trong các trường hợp sau đây:\n... b) Học viên không đăng ký học tập trong hai học kỳ liên tiếp.",
+    "type": "single"
+  },
+  {
+    "id": 16,
+    "user_input": "Nghiên cứu sinh phải hoàn thành 3 chuyên đề tiến sĩ trong thời hạn chậm nhất là khi nào?",
+    "response": "",
+    "retrieved_contexts": "Điều 39. Tiểu luận tổng quan và chuyên đề tiến sĩ\n2. ... a) NCS phải hoàn thành 3 chuyên đề tiến sĩ tương đương với khối lượng 6 TC với thời hạn chậm nhất là 1 tháng trước khi trình hồ sơ đăng ký đánh giá luận án ở đơn vị chuyên môn.",
+    "type": "single"
+  },
+  {
+    "id": 17,
+    "user_input": "Hội đồng đánh giá luận án tiến sĩ cấp cơ sở bao gồm bao nhiêu thành viên?",
+    "response": "",
+    "retrieved_contexts": "Điều 42. Đánh giá luận án tiến sĩ\n1. Đánh giá luận án tiến sĩ cấp cơ sở được quy định cụ thể như sau:\n... b) Hội đồng đánh giá luận án cấp cơ sở ... có 7 thành viên gồm chủ tịch, thư ký, 2 phản biện và các uỷ viên.",
+    "type": "single"
+  },
+  {
+    "id": 18,
+    "user_input": "Học viên thạc sĩ không bảo vệ thành công luận văn ở lần đầu thì được phép chỉnh sửa để bảo vệ lần thứ hai trong vòng bao lâu?",
+    "response": "",
+    "retrieved_contexts": "Điều 33. Bảo vệ luận văn lần thứ hai\n1. Trong trường hợp luận văn không đạt và học viên còn được phép học tối thiểu 3 tháng, học viên được phép chỉnh sửa, bổ sung luận văn để bảo vệ lần thứ hai trong thời hạn 3 tháng tính từ ngày bảo vệ luận văn lần thứ nhất.",
+    "type": "single"
+  },
+  {
+    "id": 19,
+    "user_input": "Muốn mở lớp học phần có giờ lên lớp thì cần tối thiểu bao nhiêu sinh viên đăng ký?",
+    "response": "",
+    "retrieved_contexts": "Điều 10. Đăng ký học tập chương trình đại học\n4. Đối với học phần có giờ lên lớp, chỉ mở lớp khi có tối thiểu 20 sinh viên đăng ký học.",
+    "type": "single"
+  },
+  {
+    "id": 20,
+    "user_input": "Thời gian nghỉ học tạm thời để đi làm nghĩa vụ quân sự có bị tính vào thời gian học chậm tiến độ không?",
+    "response": "",
+    "retrieved_contexts": "Điều 16. Nghỉ học tạm thời và tự nguyện thôi học\n2. ... c) Thời gian nghỉ học tạm thời do sinh viên được điều động vào lực lượng vũ trang (là thời gian được ghi trong quyết định của cấp có thẩm quyền) không tính vào thời gian học chậm tiến độ.",
+    "type": "single"
+  },
+  {
+    "id": 21,
+    "user_input": "Theo bảng cộng/trừ điểm quá trình đối với các giờ lên lớp, nếu sinh viên vắng mặt 4 buổi thì điểm quá trình bị cộng hay trừ bao nhiêu?",
+    "response": "",
+    "retrieved_contexts": "Điều 5. Điểm học phần\n2. ... Đối với các giờ lên lớp, kết quả điểm danh có thể được sử dụng để cộng/trừ vào điểm quá trình của học phần như sau:\nSố lần vắng mặt: 0 1-2 3-4 ≥ 5\nĐiểm quá trình được cộng/trừ: +1 0 -1 -2",
+    "type": "table"
+  },
+  {
+    "id": 22,
+    "user_input": "Trong bảng thời gian và khối lượng học tập chuẩn, chương trình Tiến sĩ đối với người đã tốt nghiệp đại học có khối lượng học tập tối thiểu là bao nhiêu tín chỉ?",
+    "response": "",
+    "retrieved_contexts": "Điều 2. Ngành đào tạo, chương trình đào tạo\n6. Thời gian và khối lượng học tập chuẩn đối với các CTĐT theo hình thức chính quy không kể các học phần bổ sung kiến thức được quy định như sau:\nChương trình Người học Thời gian Khối lượng tối thiểu\n... Tiến sĩ Tốt nghiệp đại học 4 năm 151 tín chỉ",
+    "type": "table"
+  },
+  {
+    "id": 23,
+    "user_input": "Theo bảng xếp hạng trình độ năm học căn cứ số tín chỉ tích lũy, sinh viên có 110 tín chỉ tích luỹ sẽ được xếp hạng trình độ là sinh viên năm thứ mấy?",
+    "response": "",
+    "retrieved_contexts": "Điều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n5. Sinh viên được xếp hạng trình độ năm học căn cứ số TC tích lũy (TCTL) như sau:\nSố TCTL < 32 32 - 63 64 - 95 96 -127 ≥ 128\nTrình độ Năm thứ nhất Năm thứ hai Năm thứ ba Năm thứ tư Năm thứ năm",
+    "type": "table"
+  },
+  {
+    "id": 24,
+    "user_input": "Dựa vào bảng xếp loại học lực theo điểm trung bình, mức GPA hoặc CPA là 3,50 thì được xếp loại học lực gì?",
+    "response": "",
+    "retrieved_contexts": "Điều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n6. Sinh viên được xếp loại học lực theo học kỳ căn cứ điểm trung bình học kỳ và xếp loại học lực từ đầu khóa căn cứ điểm trung bình tích lũy như sau:\nGPA hoặc CPA < 1,0 1,0-1,99 2,0-2,49 2,5-3,19 3,2-3,59 3,6-4,0\nXếp loại Kém Yếu Trung bình Khá Giỏi Xuất sắc",
+    "type": "table"
+  },
+  {
+    "id": 25,
+    "user_input": "Theo quy tắc quy đổi tương đương sang thang điểm 10, dải điểm thang 4 từ 3,2 đến cận 3,6 được sử dụng công thức tính với hệ số a và b là bao nhiêu?",
+    "response": "",
+    "retrieved_contexts": "Điều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n7. Trong trường hợp cần thiết, điểm trung bình học kỳ và điểm trung bình tích lũy đạt từ loại trung bình trở lên có thể được quy đổi tương đương sang thang điểm 10 theo quy tắc như sau:\nDải điểm thang 4 2,5 đến cận 3,2 | Dải điểm thang 10 tương đương 7,0 đến cận 8,0 | Công thức quy đổi Điểm thang 10 = Điểm thang 4 × a + b : a = 1,42; b = 3,45\n3,2 đến cận 3,6 8,0 đến cận 9,0 a = 2,50; b = 0.00",
+    "type": "table"
+  },
+  {
+    "id": 26,
+    "user_input": "Sinh viên có được phép làm đồ án tốt nghiệp tại một doanh nghiệp hoặc cơ sở đào tạo ở nước ngoài không, và nếu được thì hội đồng bảo vệ đánh giá sẽ được tổ chức ở đâu?",
+    "response": "",
+    "retrieved_contexts": "Điều 11. Công nhận kết quả học tập và chuyển đổi tín chỉ\n3. Sinh viên được phép thực hiện đồ án tốt nghiệp/khóa luận tốt nghiệp tại một cơ sở trong nước (cơ sở giáo dục đại học, viện nghiên cứu, doanh nghiệp,…) hoặc tại một cơ sở đào tạo ở nước ngoài theo chương trình trao đổi sinh viên đã được ký kết nhưng phải bảo vệ tại ĐHBK Hà Nội để được đánh giá và cho điểm. Với sinh viên thuộc các CTĐT theo hình thức VLVH tại đơn vị liên kết, việc đánh giá đồ án tốt nghiệp/khóa luận tốt nghiệp được phép thực hiện tại đơn vị liên kết hoặc tại ĐHBK Hà Nội.",
+    "type": "single"
+  }
+]
