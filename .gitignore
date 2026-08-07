@@ -28,3 +28,6 @@ cache/
 #skills, memory
 /skills
 /data
+
+#session handoff (baton tạm, không phải durable knowledge)
+.knowledge/handoffs/
