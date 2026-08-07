@@ -6,7 +6,7 @@ sys.path.append(os.path.abspath('.'))
 
 from langchain_classic.storage import LocalFileStore, EncoderBackedStore
 from langchain_chroma import Chroma
-from src.utils import get_embedding_model
+from src.rag.embedding_utils import get_embedding_model
 from src.ingestion.splitter import get_pdr_data
 from dotenv import load_dotenv
 

@@ -29,8 +29,8 @@ from ragas import experiment
 from ragas.llms import llm_factory
 from ragas.metrics.collections import ContextPrecision, ContextRecall
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
-from src.utils import get_embedding_model
-from src.reranker_utils import load_reranker
+from src.rag.embedding_utils import get_embedding_model
+from src.rag.reranker_utils import load_reranker
 
 load_dotenv()
 
