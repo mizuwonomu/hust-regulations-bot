@@ -1,0 +1,19 @@
+# model_migration — Log
+
+## Narrative  (2026-08-07)
+
+The trigger was external: `qwen/qwen3-32b` was decommissioned on Groq, so the answer-generation model had to move regardless of quality. The open question was not *which* model, but whether the forced move degraded anything — and whether that could still be measured before the old model became unreachable.
+
+Measuring it meant confronting a gap in the eval harness. `run_generate_e2e_responses.py` hardcoded the inference model, and `run_evals_e2e.py` discarded every field of the generated file except `dataset_path`. A scored result therefore had no record of which model produced it; runs were distinguishable only by filename timestamp, which is information outside the data. The harness was reworked so the generation model and temperature become CLI parameters and land in the generated file's run-level metadata, alongside the retrieval file used. The scoring script then carries that label through into the scored file, deliberately reading it from the generated file rather than accepting it as a CLI flag, so a label can never disagree with the responses it describes. Files predating the field fall back to `"unknown"` instead of crashing. Comparison itself was kept out of both scripts: they measure, they do not interpret.
+
+The run design froze retrieval. Both arms consumed `eval_20260405_063409.json`, the pre-existing retrieval output, so the generator was the only variable. This was a deliberate trade: it makes the model comparison clean, but it also means the numbers describe the generation layer on old context, not the current chain — `RERANK_RATIO = 0.6` was not part of the retrieval that produced these contexts. The scoring cooldown was cut from 30–60s to 1–3s once TPM/TPD limits were raised, while the post-429 backoff was left at 30–60s, since retrying a genuine rate limit after 1–3s only burns the retry budget.
+
+Only the gpt-oss arm could actually be executed. The qwen3 baseline had to be taken from `eval_e2e_20260405_104221.json`, scored on 2026-06-27 — the model was already unreachable. That file predates the metadata work, so it carries no `model` or `retrieval_results_path` field, and its comparability rests on inference (same corpus, same sample count) rather than on recorded fact. This cannot be repaired.
+
+Analysis was done inline rather than scripted: join the two scored files by id, print per-question deltas for both metrics, count wins and losses. That immediately reframed the headline. The correctness gain (14 improved, 6 regressed) held up as a directional signal, but the faithfulness mean turned out to be the residual of two large opposing tails — id=25 at +0.511 against id=14 at −0.500 — which on 25 samples is noise, not a lift. The user's initial reading of the result as a clear win, and the hypothesis that parameter count explained it, were both walked back against the per-question data. The user separately inspected the raw responses and confirmed no chain-of-thought leaked into `predicted_response`, which ruled out `reasoning_format` asymmetry as an artifact of the measurement.
+
+## Result / outcome
+
+The e2e harness is now model-parameterized and its outputs are self-describing: a generated file records the model, temperature and retrieval source; a scored file inherits all of it (f1755b4, results in 5fa4c6d). The migration to `openai/gpt-oss-120b` shipped as 506afcc, measured on 25 questions with retrieval held constant — correctness 0.6315 → 0.6951, faithfulness 0.7753 → 0.8108 — with the honest reading being "correctness improved, faithfulness is unchanged within noise, nothing regressed grossly."
+
+Definition-of-done is met for the migration and for the harness. It is not met as a quality claim about the bot: these figures cover generation on frozen 2026-04-05 retrieval, not the current chain, and the baseline arm can never be reproduced.
