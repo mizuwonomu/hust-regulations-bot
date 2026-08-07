@@ -18,6 +18,7 @@ from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnableP
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
 from src.database.connection import get_db_connection
+from src.rag.config import LLM_TEMPERATURE, RETRIEVER_TOP_K, RERANK_RATIO, RERANK_MAX_CHILDREN
 
 from langsmith import traceable
 
@@ -124,22 +125,46 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
             })
         return result
 
-    @traceable(run_type="tool", name="apply_score_floor")
-    def _apply_score_floor(scored_list: list, threshold: float) -> dict:
-        """Lọc theo floor threshold, trả metadata để trace rõ n_kept / n_dropped."""
-        kept = [item for item in scored_list if item["score"] >= threshold][:5]
-        max_score = scored_list[0]["score"] if scored_list else 0.0
+    @traceable(run_type="tool", name="apply_score_ratio")
+    def _apply_score_ratio(scored_list: list, ratio: float) -> dict:
+        """Chọn child theo TỈ LỆ tương đối với top-1, không dùng sàn tuyệt đối
+
+        - top-1 luôn được giữ (nó là ứng viên tốt nhất mà retrieval có)
+        - rank>=2 chỉ được giữ nếu score >= top_score * ratio
+        """
+
+        if not scored_list:
+            return {
+                "n_candidates": 0,
+                "n_kept": 0,
+                "n_dropped": 0,
+                "max_score": 0.0,
+                "ratio": ratio,
+                "cutoff": 0.0,
+                "kept": [],
+                "docs": [],
+            }
+
+        top_score = scored_list[0]["score"]
+        cutoff = top_score * ratio
+
+        #top-1 vô điều kiện, phần còn lại phải bám đủ sát top-1
+        keep_items = [scored_list[0]]
+        keep_items.extend(item for item in scored_list[1:] if item["score"] >= cutoff)
+
+        kept_items = keep_items[:RERANK_MAX_CHILDREN]
         return {
             "n_candidates": len(scored_list),
-            "n_kept": len(kept),
-            "n_dropped": len(scored_list) - len(kept),
-            "max_score": max_score,
-            "threshold": threshold,
+            "n_kept": len(kept_items),
+            "n_dropped": len(scored_list) - len(kept_items),
+            "max_score": top_score,
+            "ratio": ratio,
+            "cutoff": cutoff,
             "kept": [
                 {"title": i["title"], "doc_id": i["doc_id"], "score": i["score"]}
-                for i in kept
+                for i in kept_items
             ],
-            "docs": [i["doc"] for i in kept],
+            "docs": [i["doc"] for i in kept_items],
         }
 
     @traceable(run_type="tool", name="fetch_parents")
@@ -160,8 +185,6 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
             "n_parents_returned": len(parents),
             "docs": parents,
         }
-
-    # ─────────────────────────────────────────────────────────────────────────
 
     #Custom chain de lay parent:
     #Query -> Ensemble -> List[child] -> rerank -> extract ids -> docstore -> list[parent]
@@ -196,9 +219,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
         #sub-queries chỉ làm nhiệm vụ tăng recall, mà reranker cần precision -> phải luôn đối chiếu với câu hỏi gốc với chunks
         scored_list = _rerank_children(original_question, candidate_child_docs)
 
-        # Bước 2: floor filter (span: apply_score_floor)
-        floor_result = _apply_score_floor(scored_list, threshold=0.5)
-        thresholded_children = floor_result["docs"]
+        # Bước 2: chọn theo tỉ lệ tương đối với top-1 (span: apply_score_ratio)
+        ratio_result = _apply_score_ratio(scored_list, ratio=RERANK_RATIO)
+        thresholded_children = ratio_result["docs"]
 
         if not thresholded_children:
             return []
