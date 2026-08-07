@@ -1,0 +1,17 @@
+# rerank_ratio — Log
+
+## Narrative
+
+The work started from a production symptom: the bot sometimes returned `context=[]` and hallucinated, and separately, a tracked query showed the reranker keeping a top-1 at score 0.035 (below the intended floor) yet the app still displayed a source (Điều 9) while the LLM answered "not in the regulations" — a self-contradiction that exposed the floor/short-circuit design as incoherent.
+
+The autopsy separated three distinct failure mechanisms that had been lumped as "reranker bug": (1) the cross-encoder losing all confidence on heavily abbreviated queries (whole score column collapses toward zero, gold still rank-1 — id=4/id=11); (2) same-concept-across-degree-levels articles where the reranker picks the wrong-level twin (id=13 Đ24 over gold Đ15, id=15 Đ25 over gold Đ36); (3) pure table-comprehension and generation errors unrelated to retrieval (id=19 reading the wrong threshold row). Only the selection rule was in scope here; (1)/(3) were explicitly parked for query-normalization and parser layers.
+
+To get real numbers instead of guesses, the calibration harness (`run_rewrite_rerank_calibration.py`) was extended with an **A/B mode**: it runs the formal corpus and an id-matched abbreviated corpus sequentially through the identical loaded reranker/retriever/rewrite-chain, pairs results by `id` (same question, same gold Điều, only phrasing differs), and reports per-query delta, rank-drop, and gold-vs-noise margin. The abbreviated corpus was built from the formal one keeping ids and gold identical so deltas measure phrasing impact with question-difficulty cancelled out. A first A/B run's CSV output was found corrupted (all NUL bytes, from an interrupted write), so the output was moved to a single JSON file written atomically (tmp + fsync + os.replace) to prevent half-written artifacts; the sleep offsets were also cut to 1–2s since TPM limits were lifted.
+
+With clean data (`ab_phrasing_20260806_163755.json`), an offline ratio sweep — kept inline in the session, not scripted — was run over the candidates: for each (variant, query) apply "keep top-1 + rank≥2 iff score ≥ top·ratio", then count gold-survival, docs/query, noise/query across ratios 0.0–0.9. That produced the 0.6 knee and the finding that gold-survival on abbreviated tops out at 24/26 regardless of ratio. A second sweep fixed ratio at 0.6 and varied an absolute floor, which showed the floor to be pure downside.
+
+## Result / outcome  (2026-08-07)
+
+The calibration produced a concrete, evidence-backed rule — keep top-1 unconditionally, keep rank≥2 iff `score >= top_score * 0.6`, no absolute floor — and that rule is now live. `_apply_score_floor` was replaced by `_apply_score_ratio` in `src/rag/qa_chain.py`, `RERANK_FLOOR`/`RERANK_MARGIN` collapsed into a single `RERANK_RATIO = 0.6` in `src/rag/config.py`, and the LangSmith span was renamed `apply_score_floor` → `apply_score_ratio` (emitting `ratio`/`cutoff` in place of `threshold`/`out_of_scope`). Shipped as commit 9f48018 on branch feature/fastapi. The A/B harness and its atomic JSON output are shipped and reusable (commits e85205c, d055e0c).
+
+Definition-of-done is met for the selection rule itself. It is NOT met for verification: the expected e2e movement (id=13/15 recovering, id=11/22/4/19 staying red) is predicted from the offline sweep and has not been confirmed by an e2e run — that is the next step, tracked in tracker.md.
