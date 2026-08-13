@@ -290,9 +290,15 @@ def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]
     return rows
 
 
-async def run_eval(dataset_path: str, output_path: str) -> None:
+async def run_eval(dataset_path: str, output_path: str, ratio: float | None = None) -> None:
     if "GROQ_API_KEY" not in os.environ:
         raise EnvironmentError("GROQ_API_KEY is required in environment or .env")
+
+    #Cho phép quét ratio
+    global RERANK_RATIO
+    if ratio is not None:
+        RERANK_RATIO = ratio
+    print(f"[config] RERANK_RATIO = {RERANK_RATIO}")
 
     with open(dataset_path, "r", encoding="utf-8") as f:
         dataset_raw = json.load(f)
@@ -400,6 +406,13 @@ async def run_eval(dataset_path: str, output_path: str) -> None:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "aggregate_scores": aggregate_scores,
         "dataset_path": dataset_path,
+        #Kết quả phải tự mô tả: hai run chỉ khác nhau ở ratio thì filename không đủ
+        "config": {
+            "rerank_ratio": RERANK_RATIO,
+            "rerank_max_children": RERANK_MAX_CHILDREN,
+            "retriever_k": 15,
+            "max_parents": 4,
+        },
         "num_samples": len(all_results),
         "results": all_results,
     }
@@ -426,9 +439,15 @@ def parse_args() -> argparse.Namespace:
         default=f"evals/v2/results/eval_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         help="Path to output JSON file",
     )
+    parser.add_argument(
+        "--ratio",
+        type=float,
+        default=None,
+        help="Override RERANK_RATIO cho lần chạy này (mặc định: lấy từ src/rag/config.py)",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    asyncio.run(run_eval(dataset_path=args.dataset, output_path=args.output))
+    asyncio.run(run_eval(dataset_path=args.dataset, output_path=args.output, ratio=args.ratio))
