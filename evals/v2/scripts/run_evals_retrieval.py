@@ -252,7 +252,11 @@ def retrieve_parent_contexts(
     if len(parent_docs) > max_parents:
         parent_docs = parent_docs[:max_parents]
 
-    return [doc.page_content for doc in parent_docs]
+    #Ghép title vào context để mirror production
+    return [
+        f"{doc.metadata.get('title', '')}\n{doc.page_content}".strip()
+        for doc in parent_docs
+    ]
 
 
 def _metric_value(result: Any) -> float:
