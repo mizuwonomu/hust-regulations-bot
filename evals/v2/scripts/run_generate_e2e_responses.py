@@ -39,9 +39,16 @@ class E2EGeneratedRow(BaseModel):
 
 
 def format_docs(docs: list[str]) -> str:
+    """Mirror src/rag/qa_chain.py::format_docs
+
+    Production ghép title vào nhãn source và làm phẳng xuống dòng trong nội
+    dung. Ở đây context đã là string (title + content do retrieval eval ghép),
+    nên chỉ cần làm phẳng cho khớp cách LLM nhìn thấy ở production
+    """
     formatted = []
     for i, content in enumerate(docs):
-        formatted.append(f"Source [{i+1}]:\n{content}")
+        flattened = content.replace("\n", " ")
+        formatted.append(f"Source [{i+1}]:\n{flattened}")
     return "\n\n".join(formatted)
 
 

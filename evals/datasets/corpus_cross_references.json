@@ -1,0 +1,74 @@
+[
+  {
+    "id": 1,
+    "user_input": "Em đang học hệ kỹ sư chuyên sâu, kỳ này bắt đầu đăng ký môn học thì quy trình các bước đăng ký thế nào b? Có khác gì so với đăng ký của các em đại học khóa dưới không m?",
+    "response": "Theo Điều 21.2, quy trình đăng ký học tập của học viên chương trình kỹ sư được thực hiện giống hệt quy trình của sinh viên đại học quy định tại khoản 1 Điều 10. Do đó, bạn sẽ phải trải qua 3 giai đoạn bắt buộc: (a) Đăng ký học phần (diễn ra ở những tuần đầu kỳ trước); (b) Đăng ký lớp chính thức (chọn lớp cụ thể); và (c) Điều chỉnh đăng ký (2 đợt trước kỳ học và tuần đầu kỳ học để bổ sung/hủy lớp) [10.1, 21.2].",
+    "retrieved_contexts": "Điều 21. Đăng ký học tập chương trình kỹ sư\n2. Quy trình đăng ký học tập thực hiện theo khoản 1 Điều 10 của Quy chế này.\n\nĐiều 10. Đăng ký học tập chương trình đại học\n1. Đăng ký học tập là quy trình bắt buộc của sinh viên cho mỗi học kỳ... Quá trình đăng ký học tập gồm 3 giai đoạn:\na) Đăng ký học phần: sinh viên chọn đăng ký những học phần dự tính sẽ học trong học kỳ tiếp...\nb) Đăng ký lớp chính thức: sinh viên chọn lớp học cho những học phần đã đăng ký...\nc) Điều chỉnh đăng ký: sinh viên có thể chuyển lớp, hủy lớp hoặc đăng ký lớp bổ sung...",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "21 -> 10"
+  },
+  {
+    "id": 2,
+    "user_input": "Đồ án tốt nghiệp của hệ kỹ sư thì tính điểm quá trình và điểm bảo vệ thế nào m? Với cả được bao nhiêu điểm thì tính là qua môn v?",
+    "response": "Theo khoản 4 Điều 22, việc đánh giá kết quả Đồ án tốt nghiệp kỹ sư (ĐATN KS) được thực hiện theo khoản 2 Điều 13 (quy chế đại học) và học phần đồ án chỉ được đánh giá đạt khi điểm học phần đạt từ điểm C trở lên (thang 4 quy đổi là 2.0) [22.4]. Cụ thể theo khoản 2 Điều 13, điểm ĐATN được tính theo trọng số 0.5 điểm quá trình (trung bình cộng điểm người hướng dẫn và phản biện) và 0.5 điểm cuối kỳ (điểm bảo vệ tại hội đồng) [13.2a, 13.2c]. Nếu một thành viên hội đồng cho điểm dưới 5 thì điểm bảo vệ bị coi là điểm liệt và chỉ được tính tối đa là 4.9 điểm [13.2d].",
+    "retrieved_contexts": "Điều 22. Thực tập tốt nghiệp và Đồ án tốt nghiệp kỹ sư\n4. Việc đánh giá kết quả thực hiện ĐATN KS được thực hiện theo khoản 2 Điều 13 của Quy chế này. Đồ án tốt nghiệp kỹ sư được đánh giá đạt khi điểm đánh giá học phần đạt từ điểm C trở lên.\n\nĐiều 13. Đồ án/khóa luận tốt nghiệp đại học\n2. Kết quả ĐATN được đánh giá như sau:\na) Điểm ĐATN được tính từ các điểm thành phần theo trọng số 0,5 đối với điểm quá trình và trọng số 0,5 đối với điểm cuối kỳ.\n...c) Điểm quá trình của ĐATN được tính bằng trung bình cộng điểm của người hướng dẫn và điểm của người phản biện, làm tròn tới một chữ số thập phân...\nd) Điểm cuối kỳ là điểm bảo vệ tại hội đồng chấm ĐATN, được tính bằng trung bình cộng điểm của các thành viên hội đồng, làm tròn tới một chữ số thập phân. Nếu điểm của một thành viên hội đồng cho dưới 5 thì điểm bảo vệ là điểm liệt và khi đó chỉ được tính tối đa là 4,9 điểm.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "22 -> 13"
+  },
+  {
+    "id": 3,
+    "user_input": "Học viên hệ kỹ sư chuyên sâu nếu vi phạm quy chế thi cử hay gian lận trong học tập thì trường xử phạt dựa trên văn bản nào thế m?",
+    "response": "Theo Điều 26, việc xử lý vi phạm đối với học viên chương trình kỹ sư được thực hiện theo Điều 20 của Quy chế này [26]. Căn cứ theo Điều 20, các hành vi vi phạm và mức kỷ luật cụ thể của học viên sẽ được áp dụng trực tiếp theo quy định tại Quy chế công tác sinh viên đại học chính quy hiện hành của Đại học [20].",
+    "retrieved_contexts": "Điều 26. Xử lý vi phạm đối với học viên\nViệc xử lý vi phạm đối với học viên thực hiện theo Điều 20 Quy chế này.\n\nĐiều 20. Xử lý vi phạm đối với sinh viên\nCác hành vi vi phạm và mức kỷ luật thực hiện theo quy định tại Quy chế công tác sinh viên đại học chính quy hiện hành của Đại học.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "26 -> 20"
+  },
+  {
+    "id": 4,
+    "user_input": "Học viên cao học bị tạch bảo vệ luận văn lần 2 thì có được đổi sang đề tài mới để làm lại từ đầu không b? Có bị giới hạn gì về thời gian không m?",
+    "response": "Theo khoản 2 Điều 33, học viên thạc sĩ bảo vệ luận văn lần thứ hai vẫn không đạt yêu cầu thì có thể đăng ký đề tài mới để thực hiện, với điều kiện học viên còn thời gian học tập tối đa tại ĐHBK Hà Nội là 6 tháng [33.2]. Thời gian học tập tối đa này được giới hạn theo quy định tại điểm a khoản 3 Điều 3, trong đó quy định thời gian học chậm tiến độ tối đa không được vượt quá 2 học kỳ chính đối với chương trình cấp bằng thạc sĩ [3.3a, 33.2].",
+    "retrieved_contexts": "Điều 33. Bảo vệ luận văn lần thứ hai\n2. Trong trường hợp luận văn bảo vệ lần thứ hai vẫn không đạt yêu cầu, nếu học viên có nguyện vọng và còn được phép học tại ĐHBK Hà Nội đủ 6 tháng theo quy định về thời gian học tập tối đa tại điểm a khoản 3 Điều 3 Quy chế này thì có thể đăng ký đề tài mới cho luận văn thạc sĩ để thực hiện. Không tổ chức bảo vệ luận văn lần thứ ba.\n\nĐiều 3. Thời gian và kế hoạch học tập\n3. Căn cứ kế hoạch học tập chuẩn toàn khóa của CTĐT, người học tự xây dựng kế hoạch học tập theo từng học kỳ:\na) ...nhưng thời gian chậm tiến độ không được vượt quá 5 học kỳ chính đối với các chương trình cấp bằng cử nhân, không quá 2 học kỳ chính đối với các chương trình cấp bằng kỹ sư và thạc sĩ.",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "33 -> 3"
+  },
+  {
+    "id": 5,
+    "user_input": "Nghiên cứu sinh muốn nộp hồ sơ xin bảo vệ luận án cấp cơ sở thì phải nộp trước khi hết hạn học tập của chương trình tiến sĩ bao nhiêu ngày v m? Nếu sát ngày quá thì xử lý sao b?",
+    "response": "Theo điểm a khoản 1 Điều 42, NCS phải hoàn thành và nộp hồ sơ đăng ký bảo vệ cấp cơ sở trước tối thiểu 90 ngày tính đến thời điểm kết thúc thời gian học tập chương trình tiến sĩ quy định tại khoản 3 Điều 3 [42.1a]. Thời gian học tập chuẩn quy định tại điểm c khoản 3 Điều 3 là từ 3 năm đến 4 năm (được gia hạn tối đa 2 lần, tổng thời gian gia hạn không quá 24 tháng) [3.3c]. Trong trường hợp không đủ thời hạn 90 ngày này, NCS bắt buộc phải làm thủ tục xin gia hạn thời gian học tập theo quy định [42.1a].",
+    "retrieved_contexts": "Điều 42. Đánh giá luận án tiến sĩ\n1. Đánh giá luận án tiến sĩ cấp cơ sở được quy định cụ thể như sau:\na) NCS được bảo vệ luận án cấp cơ sở nếu đáp ứng đầy đủ các điều kiện quy định tại khoản 1 Điều 41 Quy chế này và hoàn thành hồ sơ đăng ký bảo vệ cấp cơ sở trong thời hạn đủ 90 ngày tính đến thời điểm kết thúc thời gian học tập chương trình tiến sĩ quy định tại khoản 3 Điều 3 Quy chế này. Trong trường hợp không đủ thời gian 90 ngày, NCS phải làm thủ tục xin gia hạn thời gian học tập theo quy định.\n\nĐiều 3. Thời gian và kế hoạch học tập\n3. ... c) Thời gian đào tạo chuẩn của trình độ tiến sĩ từ 3 năm đến 4 năm. ... NCS được gia hạn thời gian thực hiện luận án tối đa 2 lần, mỗi lần tối thiểu 6 tháng và tổng thời gian gia hạn không quá 24 tháng.",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "42 -> 3"
+  },
+  {
+    "id": 6,
+    "user_input": "Em đang bị cảnh báo học tập mức 2 thì kỳ này em được đăng ký học tập tối đa bao nhiêu tín chỉ thế b?",
+    "response": "Theo điểm b khoản 2 Điều 10, sinh viên đại học đang bị cảnh báo học tập sẽ bị giới hạn khối lượng đăng ký theo quy định tại khoản 2 Điều 19 [10.2b]. Cụ thể theo khoản 2 Điều 19, sinh viên thuộc chương trình đào tạo chuẩn bị cảnh báo từ mức 2 trở lên chỉ được đăng ký tối đa 14 tín chỉ (và tối thiểu 8 tín chỉ) trong một học kỳ chính; còn đối với chương trình ELITECH và hợp tác quốc tế thì giới hạn tối đa là 18 tín chỉ [19.2a, 19.2b].",
+    "retrieved_contexts": "Điều 10. Đăng ký học tập chương trình đại học\n2. Số lượng TC đăng ký:\nb) Sinh viên đang bị cảnh báo học tập bị giới hạn khối lượng đăng ký học tập theo quy định tại khoản 2 Điều 19 của Quy chế này.\n\nĐiều 19. Cảnh báo học tập và buộc thôi học\n2. Hạn chế khối lượng học tập là hình thức buộc những sinh viên đang bị cảnh báo học tập từ mức 2 trở lên đăng ký số TC học phần ít hơn bình thường tại học kỳ 1 của năm học, cụ thể như sau:\na) Sinh viên thuộc các CTĐT chuẩn được đăng ký tối đa 14 TC và tối thiểu 8 TC cho một học kỳ chính;\nb) Sinh viên thuộc các chương trình ELITECH và các CTĐT hợp tác quốc tế được đăng ký tối đa 18 TC và tối thiểu 8 TC cho một học kỳ chính.",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "10 -> 19"
+  },
+  {
+    "id": 7,
+    "user_input": "Sinh viên hệ đại học có điểm CPA toàn khóa đạt loại Giỏi thì có bị hạ hạng bằng tốt nghiệp nếu phải học lại nhiều môn không b?",
+    "response": "Theo khoản 2 Điều 15, hạng tốt nghiệp cử nhân được xếp dựa trên điểm CPA toàn khóa quy định tại khoản 6 Điều 12 (loại Giỏi tương ứng CPA từ 3.2 đến 3.59) [12.6, 15.2]. Tuy nhiên, theo điểm a khoản 2 Điều 15, hạng tốt nghiệp loại Giỏi trở lên sẽ bị giảm đi một mức (xuống thành loại Khá) nếu tổng khối lượng của các học phần phải học lại vượt quá 5% tổng số tín chỉ của các học phần được dùng tính điểm trung bình toàn khóa (không xét tới số tín học cải thiện điểm) [15.2a].",
+    "retrieved_contexts": "Điều 15. Điểm trung bình toàn khóa và hạng tốt nghiệp đại học\n2. Hạng tốt nghiệp được xếp dựa trên điểm trung bình toàn khóa như xếp loại học lực quy định tại khoản 6 Điều 12 của Quy chế này, riêng trong các trường hợp sau đây thì hạng tốt nghiệp của những sinh viên có điểm trung bình toàn khóa xếp loại giỏi trở lên sẽ bị giảm một mức:\na) Khối lượng của các học phần phải học lại vượt quá 5% của tổng số TC của các học phần được dùng tính điểm trung bình toàn khóa. Quy định này không xét tới số TC của các học phần học cải thiện điểm.\n\nĐiều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n6. Sinh viên được xếp loại học lực theo học kỳ căn cứ điểm trung bình học kỳ và xếp loại học lực từ đầu khóa căn cứ điểm trung bình tích lũy như sau:\nGPA hoặc CPA < 1,0 1,0-1,99 2,0-2,49 2,5-3,19 3,2-3,59 3,6-4,0\nXếp loại Kém Yếu Trung bình Khá Giỏi Xuất sắc",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "15 -> 12"
+  },
+  {
+    "id": 8,
+    "user_input": "Nghiên cứu sinh khi nộp hồ sơ bảo vệ luận án cấp Đại học thì quyển thuyết minh luận án phải tuân thủ các quy định trình bày thế nào m?",
+    "response": "Theo điểm a khoản 3 Điều 42, NCS được bảo vệ luận án cấp Đại học nếu đáp ứng đầy đủ các điều kiện quy định tại khoản 2 Điều 40 [42.3a]. Căn cứ theo khoản 2 Điều 40, quyển thuyết minh luận án tiến sĩ bắt buộc phải đáp ứng quy cách theo hướng dẫn của ĐHBK Hà Nội về hình thức, cách trình bày luận án, số trang nội dung, quy định trích dẫn và danh mục tài liệu tham khảo [40.2].",
+    "retrieved_contexts": "Điều 42. Đánh giá luận án tiến sĩ\n3. Đánh giá luận án tiến sĩ cấp Đại học được quy định cụ thể như sau:\na) NCS được bảo vệ luận án cấp Đại học nếu đáp ứng đầy đủ các điều kiện quy định tại khoản 2 Điều 40 Quy chế này và hoàn thành hồ sơ đề nghị đánh giá luận án ở hội đồng đánh giá luận án cấp Đại học.\n\nĐiều 40. Luận án tiến sĩ\n2. Quyển thuyết minh luận án tiến sĩ phải đáp ứng quy cách theo hướng dẫn của ĐHBK Hà Nội về hình thức, cách trình bày luận án; số trang nội dung; quy định trích dẫn và danh mục tài liệu tham khảo.",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "42 -> 40"
+  }
+]

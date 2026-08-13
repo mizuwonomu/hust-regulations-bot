@@ -31,6 +31,8 @@ from ragas.metrics.collections import ContextPrecision, ContextRecall
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
 from src.rag.embedding_utils import get_embedding_model
 from src.rag.reranker_utils import load_reranker
+#import từ config để eval tự bám theo production khi ratio đổi
+from src.rag.config import RERANK_RATIO, RERANK_MAX_CHILDREN
 
 load_dotenv()
 
@@ -70,7 +72,7 @@ class ExperimentResultRow(BaseModel):
     scores: EvalScores
 
 
-def _random_offset_sleep(label: str, min_seconds: int = 30, max_seconds: int = 60) -> None:
+def _random_offset_sleep(label: str, min_seconds: int = 1, max_seconds: int = 3) -> None:
     seconds = random.randint(min_seconds, max_seconds)
     print(f"[{label}] Sleeping {seconds}s for API offset policy...")
     time.sleep(seconds)
@@ -166,7 +168,7 @@ def _rewrite_into_subqueries(question: str, rewrite_chain) -> list[str]:
     """
     Parse rewrite output into QueryExpansion and return the `queries` field.
 
-    This intentionally mirrors `src/qa_chain.py` behavior:
+    This intentionally mirrors `src/rag/qa_chain.py` behavior:
     - rely on the Pydantic model (`QueryExpansion`) as contract
     - if parsed `queries` is empty, fallback to `[original_question]`
     """
@@ -185,7 +187,13 @@ def _rewrite_into_subqueries(question: str, rewrite_chain) -> list[str]:
     return queries
 
 
-def _dynamic_rerank_filter(question: str, docs: list[Document], reranker: Any) -> list[Document]:
+def _rerank_ratio_filter(question: str, docs: list[Document], reranker: Any) -> list[Document]:
+    """Mirror production: src/rag/qa_chain.py::_apply_score_ratio.
+
+    top-1 giữ vô điều kiện, rank>=2 giữ nếu score >= top_score * RERANK_RATIO.
+    KHÔNG có sàn tuyệt đối và KHÔNG có fallback top-k: production trả rỗng thì
+    eval cũng phải trả rỗng
+    """
     if not docs:
         return []
 
@@ -195,11 +203,13 @@ def _dynamic_rerank_filter(question: str, docs: list[Document], reranker: Any) -
     scored_docs = list(zip(docs, [float(s) for s in scores]))
     scored_docs.sort(key=lambda x: x[1], reverse=True)
 
-    thresholded_children = [doc for doc, s in scored_docs if float(s) >= 0.5][:5]
-    if thresholded_children:
-        return thresholded_children
+    top_score = scored_docs[0][1]
+    cutoff = top_score * RERANK_RATIO
 
-    return [d for d, _ in scored_docs[:5]]
+    kept = [scored_docs[0][0]]
+    kept.extend(doc for doc, s in scored_docs[1:] if s >= cutoff)
+
+    return kept[:RERANK_MAX_CHILDREN]
 
 
 def retrieve_parent_contexts(
@@ -210,7 +220,7 @@ def retrieve_parent_contexts(
     doc_store: EncoderBackedStore,
 ) -> list[str]:
     # Required offset before each retrieval-only invoke (query rewrite uses llama-70b)
-    _random_offset_sleep(label="retrieval_invoke", min_seconds=10, max_seconds=20)
+    _random_offset_sleep(label="retrieval_invoke")
 
     sub_queries = _rewrite_into_subqueries(query, rewrite_chain)
 
@@ -225,8 +235,8 @@ def retrieve_parent_contexts(
 
     merged_docs = list(dedup_map.values())
 
-    # Step 4: rerank with dynamic threshold
-    selected_children = _dynamic_rerank_filter(query, merged_docs, reranker)
+    # Step 4: rerank + chọn theo tỉ lệ tương đối với top-1 (khớp production)
+    selected_children = _rerank_ratio_filter(query, merged_docs, reranker)
 
     # Step 5: fetch parent docs by parent IDs
     parent_ids: list[str] = []
@@ -242,7 +252,11 @@ def retrieve_parent_contexts(
     if len(parent_docs) > max_parents:
         parent_docs = parent_docs[:max_parents]
 
-    return [doc.page_content for doc in parent_docs]
+    #Ghép title vào context để mirror production
+    return [
+        f"{doc.metadata.get('title', '')}\n{doc.page_content}".strip()
+        for doc in parent_docs
+    ]
 
 
 def _metric_value(result: Any) -> float:
@@ -276,9 +290,15 @@ def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]
     return rows
 
 
-async def run_eval(dataset_path: str, output_path: str) -> None:
+async def run_eval(dataset_path: str, output_path: str, ratio: float | None = None) -> None:
     if "GROQ_API_KEY" not in os.environ:
         raise EnvironmentError("GROQ_API_KEY is required in environment or .env")
+
+    #Cho phép quét ratio
+    global RERANK_RATIO
+    if ratio is not None:
+        RERANK_RATIO = ratio
+    print(f"[config] RERANK_RATIO = {RERANK_RATIO}")
 
     with open(dataset_path, "r", encoding="utf-8") as f:
         dataset_raw = json.load(f)
@@ -367,7 +387,7 @@ async def run_eval(dataset_path: str, output_path: str) -> None:
 
         # Required delay between each sample evaluation
         if i < len(dataset) - 1:
-            _random_offset_sleep(label="between_samples", min_seconds=30, max_seconds=60)
+            _random_offset_sleep(label="between_samples")
 
     metric_names = ("context_recall", "context_precision")
     aggregate_scores: dict[str, float | None] = {}
@@ -386,6 +406,13 @@ async def run_eval(dataset_path: str, output_path: str) -> None:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "aggregate_scores": aggregate_scores,
         "dataset_path": dataset_path,
+        #Kết quả phải tự mô tả: hai run chỉ khác nhau ở ratio thì filename không đủ
+        "config": {
+            "rerank_ratio": RERANK_RATIO,
+            "rerank_max_children": RERANK_MAX_CHILDREN,
+            "retriever_k": 15,
+            "max_parents": 4,
+        },
         "num_samples": len(all_results),
         "results": all_results,
     }
@@ -412,9 +439,15 @@ def parse_args() -> argparse.Namespace:
         default=f"evals/v2/results/eval_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
         help="Path to output JSON file",
     )
+    parser.add_argument(
+        "--ratio",
+        type=float,
+        default=None,
+        help="Override RERANK_RATIO cho lần chạy này (mặc định: lấy từ src/rag/config.py)",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    asyncio.run(run_eval(dataset_path=args.dataset, output_path=args.output))
+    asyncio.run(run_eval(dataset_path=args.dataset, output_path=args.output, ratio=args.ratio))

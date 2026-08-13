@@ -1,11 +1,19 @@
+import json
 import uuid
 import re
 from pathlib import Path
 from langchain_text_splitters import MarkdownHeaderTextSplitter
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
+
+from src.ingestion.degree_map import BAC_FIELDS
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 MARKDOWN_PATH = _REPO_ROOT / "data_quyche" / "QCDT_2025_DHBK.md"
+DEGREE_SCOPE_PATH = _REPO_ROOT / "data_quyche" / "degree_scope.json"
+
+#Số Điều nằm trong header dạng "Điều 24. Điểm trung bình toàn khóa..."
+_DIEU_NUMBER = re.compile(r"Điều\s+(\d+)")
 
 markdown_documents: str = MARKDOWN_PATH.read_text(encoding="utf-8")
 
@@ -17,6 +25,44 @@ headers_to_split_on = [
 markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
 markdown_chunk_documents = markdown_splitter.split_text(markdown_documents)
+
+def load_degree_scope() -> dict[int, dict]:
+    """Bảng bậc đào tạo theo số điều"""
+    if not DEGREE_SCOPE_PATH.exists():
+        raise FileNotFoundError(
+            f"Thiếu {DEGREE_SCOPE_PATH}. Chạy: python -m src.ingestion.degree_map"
+        )
+
+    records = json.loads(DEGREE_SCOPE_PATH.read_text(encoding="utf-8"))
+    return {r["dieu"]: r for r in records}
+
+
+def build_child_metadata(parent_id: str, title: str, dieu_header: str, degree_scope: dict) -> dict:
+    """Build child metadata bao gồm:
+     - doc_id: id của parent ứng với child
+     - title: 'Nội dung chương X' - 'Điều Y' 
+     - Các flag boolean như áp dụng đại học (ap_dung_dh), ap_dung_ks, ap_dung_ths, ap_dung_ts 
+    """
+    metadata = {"doc_id": parent_id, "title": title}
+
+    match = _DIEU_NUMBER.search(dieu_header or "")
+    if not match:
+        #Phần nội dung nằm trước header Điều đầu tiên -> không gắn cờ bậc
+        return metadata
+
+    dieu = int(match.group(1))
+    metadata["dieu"] = dieu
+
+    scope = degree_scope.get(dieu)
+    if scope is None:
+        return metadata
+
+    metadata["chuong"] = scope["chuong"]
+    for field in BAC_FIELDS:
+        metadata[field] = scope[field]
+
+    return metadata
+
 
 _GFM_SEPARATOR_CELL = re.compile(r"^:?-{3,}:?$")
 
@@ -61,6 +107,7 @@ def get_pdr_data():
     child_splitter = RecursiveCharacterTextSplitter(chunk_size=600, chunk_overlap=100)
     all_child_docs = []
     all_parent_pairs = []
+    degree_scope = load_degree_scope()
 
     for doc in markdown_chunk_documents:
         chuong = doc.metadata.get('Chương', '')
@@ -109,7 +156,9 @@ def get_pdr_data():
                 #rồi mới cộng thêm header, dán ngược lại vào object
                 c_doc = Document(
                     page_content=final_content,
-                    metadata={"doc_id": parent_id, "title": doc.metadata['title']}
+                    metadata=build_child_metadata(
+                        parent_id, doc.metadata['title'], dieu, degree_scope
+                    )
                 )
 
                 all_child_docs.append(c_doc)
