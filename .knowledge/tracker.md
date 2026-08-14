@@ -1,16 +1,26 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-08-13)
-Migrate the Streamlit-coupled chat path (stream, memory, SQL) onto the FastAPI backend, which so far owns only title generation  -> features/index.md (no feature folder yet)
+## Current focus  (2026-08-14)
+Migrate the memory connection off the Streamlit-cached sync psycopg connection onto a pool, so `POST /chat` becomes writable  -> features/backend_migration/log.md
 
 ## Features
 
+- backend_migration: IN PROGRESS (33edb1c, branch api-migration) — `src/rag` decoupled from Streamlit; models + chain now owned by the FastAPI lifespan. No chat endpoint yet, memory layer untouched  -> features/backend_migration/log.md
 - cross_reference: DONE (2026-08-13, commit d7611fd) — degree filtering rejected on evidence; fixed instead by retuning RERANK_RATIO to 0.45  -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
 - model_migration: DONE (2026-08-07, commit 506afcc) — qwen3-32b decommissioned, moved to gpt-oss-120b; harness now model-parameterized (f1755b4)  -> features/model_migration/log.md
 
 ## Known limitations / debt left open
 
+- **A regression was introduced and not fixed: `lru_cache` was never added to the leaf loaders.** 9b0ab52 removed `@st.cache_resource` from `get_embedding_model` and `load_reranker` but put nothing in its place. `evals/v2/scripts/run_rewrite_rerank_calibration.py` calls `get_embedding_model()` at both line 423 and line 775, so it now loads bge-m3 **twice per run** where the Streamlit cache previously covered it. This was identified before the commit and shipped anyway. One decorator fixes it.
+- **`src/database/connection.py` is still Streamlit-cached, so `src/` is not Streamlit-free.** `qa_chain.get_session_history` imports it, which means importing `src.api.main` pulls `streamlit` into the uvicorn process (verified via `sys.modules`). It is also a *single* cached sync connection shared by every caller — see the transaction hazard in `features/backend_migration/decisions.md`. This is the next thing to change and the reason `POST /chat` cannot be written yet.
+- **`RunnableWithMessageHistory` is constructed inside `get_chain`**, i.e. once at lifespan startup, with a `get_session_history` that fetches its own connection. A per-request pooled connection has nowhere to enter. `get_chain` must be split so it returns the core chain and the history wrapper is applied per request — decided but not implemented.
+- **The FastAPI lifespan loads models that nothing consumes.** uvicorn startup pays the full bge-m3 + bge-reranker-v2-m3 load to serve title routes only. Running Streamlit and uvicorn concurrently holds two copies of both models — do not run both until the frontend switches to HTTP.
+- **No ownership check exists on `session_id` in the chat path.** `get_session_history` takes a session id and never verifies the owner; `get_conversation_messages` has no `user_id` filter either. Both are harmless while `conv_id` lives only in Streamlit session state and become IDOR the moment either is exposed over HTTP. The title routes already do this check correctly and are the pattern to copy.
+- **`src/services/background_tasks.py` is dead code and was not deleted.** Nothing calls `fire_and_forget`; title generation moved to FastAPI `BackgroundTasks`. It cannot be migrated either — `add_script_run_ctx` solves a Streamlit-only problem.
+- **No concurrency test exists anywhere in the repo.** Every hazard above (shared transaction, pool exhaustion, session bleed, message loss on client disconnect) is reasoned about but unmeasured. The plan agreed: N=5 concurrent requests with distinct `conv_id`s, a deliberately shrunk pool `max_size` to force starvation, and a stubbed LLM — otherwise the test measures Groq's rate limiter.
+- **`app.state.embedding_model` and `app.state.reranker_model` are stored but read by nothing.** Only `app.state.rag_chain` has a dependency. Harmless, but they are speculative surface until something needs them.
+- **`get_device()` returns `None` on a CPU-only machine** in both `src/rag/embedding_utils.py` and `src/rag/reranker_utils.py` (it only returns `"cuda"`). `embedding_utils` then calls `device.upper()` in its startup print and raises `AttributeError`. Pre-existing, untouched by this feature, and it will surface the first time the backend runs anywhere without a GPU.
 - **The gpt-oss migration has no reproducible baseline.** The qwen3-32b arm is a frozen file scored on 2026-06-27 against a decommissioned model; it cannot be re-run, it predates the metadata fields, and its comparability rests on inference (same corpus, same n) rather than recorded fact. Judge/RAGAS drift between 2026-06-27 and 2026-08-07 is unmeasurable. Treat the deltas as one-time, non-repeatable evidence.
 - **Faithfulness was NOT shown to improve.** +0.0355 on n=25 with per-question swings up to ±0.5 (10 win / 7 lose / 8 unchanged) is inside the noise. Only answer_correctness (+0.0636, 14 win / 6 lose) is a directional signal. Do not cite the faithfulness number as a gain.
 - **Questions that regressed on the model swap are unexplained.** Faithfulness: id=14, 13, 8, 23, 22, 6, 18. Correctness: id=17, 1, 12, 6, 16, 15 (id=6 lost on both). Nobody has looked at why. If a quality complaint arrives later, this list is the only place to start, since the old model cannot be queried for comparison.
