@@ -18,16 +18,28 @@ from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnableP
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
 from src.database.connection import get_db_connection
-from src.rag.config import LLM_TEMPERATURE, RETRIEVER_TOP_K, RERANK_RATIO, RERANK_MAX_CHILDREN
+from src.rag.config import (
+    LLM_TEMPERATURE,
+    RETRIEVER_TOP_K,
+    RERANK_RATIO,
+    RERANK_MAX_CHILDREN,
+    ROUTER_MODEL,
+    QUERY_REWRITE_MODEL,
+    CHITCHAT_MODEL,
+    INFERENCE_MODEL,
+    ROUTER_TEMPERATURE,
+    QUERY_REWRITE_TEMPERATURE,
+    CHITCHAT_TEMPERATURE,
+    CHROMA_PATH,
+    CHROMA_COLLECTION,
+    DOC_STORE_PATH,
+)
 
 from langsmith import traceable
 
 from dotenv import load_dotenv
 load_dotenv()
 
-
-CHROMA_PATH = "chroma_db"
-DOC_STORE_PATH = "doc_store_pdr"
 
 def format_docs(docs):
     formatted = []
@@ -59,7 +71,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     embedding_model = embedding_model
     #load vector store
     vector_store = Chroma(
-        collection_name= "split_parents",
+        collection_name= CHROMA_COLLECTION,
         embedding_function = embedding_model,
         persist_directory = CHROMA_PATH
     )
@@ -276,9 +288,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #ở bước rewrite, giữ nguyên từ khoá luật từ history và new input nhưng văn phong cần tự nhiên theo Việt, tránh rập khuôn -> temp 0.3
     query_rewrite_llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=QUERY_REWRITE_MODEL,
         max_retries=0,
-        temperature=0.2
+        temperature=QUERY_REWRITE_TEMPERATURE
     )
 
     #chain nhỏ chỉ làm nhiệm vụ: Input (History + Query) -> Output (List string query mới) + Plan thoughts
@@ -309,9 +321,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #router bắt buộc không chứa bất cứ thông tin cảm xúc hay sáng tạo, chỉ dùng để định tuyến
     router_llm = ChatGroq(
-        model="llama-3.1-8b-instant",
+        model=ROUTER_MODEL,
         max_retries=0,
-        temperature= 0.0
+        temperature=ROUTER_TEMPERATURE
     )
 
     router_chain = router_prompt | router_llm | StrOutputParser()
@@ -338,9 +350,9 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #do chat thông thường không nhất thiết cần dùng luật -> chọn model có khả năng nói tự nhiên, response nhanh
     chitchat_llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=CHITCHAT_MODEL,
         max_retries=0,
-        temperature=0.7
+        temperature=CHITCHAT_TEMPERATURE
     )
     
     #Chuẩn hóa output format giống rag chain, trả về dạng 辞書型
@@ -392,7 +404,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     
     #test hybrid with no filter
     inference_llm = ChatGroq(
-        model = "openai/gpt-oss-120b",
+        model = INFERENCE_MODEL,
         temperature = temperature,
         reasoning_format = "parsed"
     )
