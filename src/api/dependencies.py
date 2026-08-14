@@ -22,3 +22,8 @@ def get_current_user_id(
 def get_db_pool(request: Request) -> AsyncConnectionPool:
     """Lấy global DB pool đã được mở từ lifespan"""
     return request.app.state.db_pool
+
+
+def get_rag_chain(request: Request):
+    """Lấy RAG chain đã build sẵn trong lifespan (không build lại mỗi request)"""
+    return request.app.state.rag_chain

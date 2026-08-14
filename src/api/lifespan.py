@@ -1,5 +1,6 @@
 """
-    Định nghĩa lifespan của app, như mở pool connection, startup, resources ready, shutdown,...
+    Định nghĩa lifespan của app: load model/chain một lần, mở DB pool,
+    dọn dẹp khi shutdown
 """
 
 from __future__ import annotations
@@ -9,11 +10,27 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.database.async_connection import create_async_pool
+from src.rag.config import LLM_TEMPERATURE, RETRIEVER_TOP_K
+from src.rag.embedding_utils import get_embedding_model
+from src.rag.qa_chain import get_chain
+from src.rag.reranker_utils import load_reranker
 
-#Decorator để tạo lifespan cho app, phase startup -> tạo kết nối async tới database (tức load các resources)
-#Nếu không có decorator, lập tức khối lifespan này chỉ như 1 tác vụ thực hiện async và await thông thường mà không có phân biệt rõ các phase
-@asynccontextmanager 
+
+@asynccontextmanager
 async def lifespan(app: FastAPI):
+    embedding_model = get_embedding_model()
+    reranker_model = load_reranker()
+    rag_chain = get_chain(
+        k=RETRIEVER_TOP_K,
+        temperature=LLM_TEMPERATURE,
+        embedding_model=embedding_model,
+        reranker_model=reranker_model,
+    )
+
+    app.state.embedding_model = embedding_model
+    app.state.reranker_model = reranker_model
+    app.state.rag_chain = rag_chain
+
     pool = create_async_pool()
     await pool.open() #Tạo một pool global, sau đó với các connection đang rảnh hiện có, từng user lần lượt sẽ mượn 1 connection
                       #-> Khi thực hiện xong, sẽ trả connection đã mượn về trạng thái đang rảnh 
