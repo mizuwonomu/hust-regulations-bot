@@ -1,6 +1,5 @@
 try:
     from sentence_transformers import CrossEncoder
-    import streamlit as st
     import torch
     import torch.nn as nn
 
@@ -14,7 +13,6 @@ def get_device():
     if torch.cuda.is_available():
         return "cuda"
 
-@st.cache_resource(show_spinner="Loading model...")
 def load_reranker():
     """Lazily load and return a CrossEncoder reranker"""
     device = get_device()

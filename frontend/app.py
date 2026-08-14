@@ -12,10 +12,7 @@ import os
 sys.path.append(os.path.abspath('.'))
 import streamlit as st
 
-from src.rag.qa_chain import get_chain
-from src.rag.embedding_utils import get_embedding_model
-from src.rag.reranker_utils import load_reranker
-from src.rag.config import RETRIEVER_TOP_K, LLM_TEMPERATURE
+from frontend.services.model_loader import get_rag_chain
 
 from src.database.connection import get_db_connection
 
@@ -40,9 +37,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-embedding_model = get_embedding_model()
-reranker_model = load_reranker()
-rag_chain = get_chain(k=RETRIEVER_TOP_K, temperature=LLM_TEMPERATURE, embedding_model=embedding_model, _reranker_model=reranker_model)
+rag_chain = get_rag_chain()
 deps = AppDeps(
     rag_chain=rag_chain,
     db_connection_factory=get_db_connection,
