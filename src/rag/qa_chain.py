@@ -2,6 +2,7 @@ import os
 import sys
 sys.path.append(os.path.abspath('.'))
 import pickle
+from functools import partial
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_classic.storage import LocalFileStore, EncoderBackedStore
@@ -16,7 +17,6 @@ from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnableP
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
-from src.database.connection import get_db_connection
 from src.rag.config import (
     LLM_TEMPERATURE,
     RETRIEVER_TOP_K,
@@ -51,11 +51,20 @@ def format_docs(docs):
 
     return "\n\n".join(formatted)
 
-#connect database
-def get_session_history(session_id: str):
-    conn = get_db_connection()
-
+#chỉ nhận conn
+def get_session_history(conn, session_id: str):
     return get_postgres_history(conn, session_id)
+
+
+def bind_history(core_chain, conn):
+    #bọc RunnableWithMessageHistory per-run, conn do caller (frontend hoặc G3) đưa vào
+    return RunnableWithMessageHistory(
+        core_chain,
+        partial(get_session_history, conn),
+        input_messages_key="question",
+        history_messages_key="chat_history",
+        output_messages_key="answer",
+    )
 
 
 #base model pydantic output for query rephrasing (multi-query expansion)
@@ -465,32 +474,4 @@ def get_chain(k, temperature, embedding_model, reranker_model):
     # Tổng hợp final chain
     full_chain = RunnableLambda(route_decision)
 
-    chain_with_history = RunnableWithMessageHistory(
-        full_chain,
-        get_session_history,
-        input_messages_key= "question",
-        history_messages_key= "chat_history",
-        output_messages_key= "answer",
-    )
-    
-    return chain_with_history
-
-def debug_memory(session_id):
-
-    history_obj = get_postgres_history(session_id)
-
-    #lúc này langchain sẽ chạy câu select trong DB
-    messages = history_obj.messages
-
-    if not messages:
-        return ["Chưa có lịch sử chat nào trong Database của session này!"]
-
-    readable_history = []
-
-    for msg in history_obj.messages:
-        readable_history.append({
-            "Role": msg.type.upper(), #msg type could be ai or human role
-            "Content": msg.content 
-        })
-
-    return readable_history
+    return full_chain

@@ -9,6 +9,7 @@
 """
 import streamlit as st
 from frontend.workflows.chat_stream import render_streamed_ai_answer
+from src.rag.qa_chain import bind_history
 
 def handle_query(question: str, deps):
     with st.chat_message("user"):
@@ -17,7 +18,9 @@ def handle_query(question: str, deps):
     st.session_state.messages.append({"role": "user", "content": question})
 
     session_id = st.session_state.conv_id
-    full_response, sources = render_streamed_ai_answer(deps.rag_chain, question, session_id)
+    conn = deps.db_connection_factory()
+    wrapped_chain = bind_history(deps.rag_chain, conn) #rag_chain giờ là core chain, bọc history theo từng run
+    full_response, sources = render_streamed_ai_answer(wrapped_chain, question, session_id)
 
     #luu cau tra loi cua AI vao history de hien thi
     st.session_state.messages.append({
