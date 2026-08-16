@@ -1,11 +1,11 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-08-14)
-Migrate the memory connection off the Streamlit-cached sync psycopg connection onto a pool, so `POST /chat` becomes writable  -> features/backend_migration/log.md
+## Current focus  (2026-08-15)
+G2: repoint `get_session_history` at the sync pool (accept a borrowed conn) and split `get_chain` so the history wrapper is applied per request — this touches the frontend chain contract too  -> features/backend_migration/log.md
 
 ## Features
 
-- backend_migration: IN PROGRESS (33edb1c, branch api-migration) — `src/rag` decoupled from Streamlit; models + chain now owned by the FastAPI lifespan. No chat endpoint yet, memory layer untouched  -> features/backend_migration/log.md
+- backend_migration: IN PROGRESS (41a0a58, branch api-migration) — `src/` now fully Streamlit-free; models + chain owned by the FastAPI lifespan; sync + async pools built and lifecycle-managed. Memory path not yet on the pool, no chat endpoint yet  -> features/backend_migration/log.md
 - cross_reference: DONE (2026-08-13, commit d7611fd) — degree filtering rejected on evidence; fixed instead by retuning RERANK_RATIO to 0.45  -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
 - model_migration: DONE (2026-08-07, commit 506afcc) — qwen3-32b decommissioned, moved to gpt-oss-120b; harness now model-parameterized (f1755b4)  -> features/model_migration/log.md
@@ -13,7 +13,8 @@ Migrate the memory connection off the Streamlit-cached sync psycopg connection o
 ## Known limitations / debt left open
 
 - **A regression was introduced and not fixed: `lru_cache` was never added to the leaf loaders.** 9b0ab52 removed `@st.cache_resource` from `get_embedding_model` and `load_reranker` but put nothing in its place. `evals/v2/scripts/run_rewrite_rerank_calibration.py` calls `get_embedding_model()` at both line 423 and line 775, so it now loads bge-m3 **twice per run** where the Streamlit cache previously covered it. This was identified before the commit and shipped anyway. One decorator fixes it.
-- **`src/database/connection.py` is still Streamlit-cached, so `src/` is not Streamlit-free.** `qa_chain.get_session_history` imports it, which means importing `src.api.main` pulls `streamlit` into the uvicorn process (verified via `sys.modules`). It is also a *single* cached sync connection shared by every caller — see the transaction hazard in `features/backend_migration/decisions.md`. This is the next thing to change and the reason `POST /chat` cannot be written yet.
+- **The sync pool exists but nothing consumes it.** `app.state.sync_db_pool` is built and lifecycle-managed (f765c81) but `get_session_history` still borrows `connection.py`'s raw opener (fresh connection per turn, uncached). Repointing it at the pool is G2. Until then the memory path pays a fresh connect every turn — works, not optimal.
+- **The async pool lacks the `prepare_threshold=None` guard.** Only `sync_connection.py` disables prepared statements for the Supavisor 6543 pooler. The async pool (title + SQL) will hit intermittent `prepared statement already exists` under any real concurrency over 6543 — add the same guard before that happens. CROSS-CUTTING: any pool over 6543.
 - **`RunnableWithMessageHistory` is constructed inside `get_chain`**, i.e. once at lifespan startup, with a `get_session_history` that fetches its own connection. A per-request pooled connection has nowhere to enter. `get_chain` must be split so it returns the core chain and the history wrapper is applied per request — decided but not implemented.
 - **The FastAPI lifespan loads models that nothing consumes.** uvicorn startup pays the full bge-m3 + bge-reranker-v2-m3 load to serve title routes only. Running Streamlit and uvicorn concurrently holds two copies of both models — do not run both until the frontend switches to HTTP.
 - **No ownership check exists on `session_id` in the chat path.** `get_session_history` takes a session id and never verifies the owner; `get_conversation_messages` has no `user_id` filter either. Both are harmless while `conv_id` lives only in Streamlit session state and become IDOR the moment either is exposed over HTTP. The title routes already do this check correctly and are the pattern to copy.

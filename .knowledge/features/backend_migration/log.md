@@ -21,3 +21,17 @@ Branch `api-migration`, three commits: 17b247c → 9b0ab52 → 33edb1c.
 `src/rag` is now runtime-agnostic: the same build functions serve Streamlit (through a transitional shim), the FastAPI lifespan, and the existing `evals/` and `ingestion/` scripts. FastAPI owns a built chain on `app.state` and can inject it. Streamlit behaviour is unchanged for the user.
 
 Against the original definition of done — Streamlit sending a request instead of invoking the chain — this is **step zero plus the model-ownership half of step one**. No chat endpoint exists, the memory layer still runs on a Streamlit-cached sync connection, and the frontend still builds and invokes its own chain. What this feature delivered is the precondition that made the rest possible, plus the proof (a uvicorn process that starts and loads) that the decoupling worked.
+
+## 2026-08-15 — Finish de-Streamliting src/ and add the sync memory pool
+
+Branch `api-migration`, three commits: a46a031 → f765c81 → 41a0a58.
+
+**a46a031 — remove Streamlit from `connection.py`.** `src/database/connection.py` is now a plain sync opener (fresh connection per call, no cache, no streamlit import). The process-wide cache + liveness check moved to `frontend/services/connection_provider.py`, a Streamlit-side shim mirroring `model_loader.py`; `app.py` sources its connection factory from there. This closes step 0: importing `src.api.main` no longer pulls `streamlit` into the uvicorn process. Transitional wart, documented in the file's own docstring: the memory path (`get_session_history`) now opens a fresh connection per turn until it moves onto the pool.
+
+**f765c81 — add the sync pool.** New `src/database/sync_connection.py` builds a sync `ConnectionPool` (min 2 / max 10) with `prepare_threshold=None` (Supavisor 6543 guard) and a checkout liveness check. `lifespan` now opens both pools and parks them on `app.state` as `db_pool` (async) and `sync_db_pool` (sync), closing both on shutdown. The async pool got explicit `min_size=2, max_size=5` to replace the hidden default of 4. No consumer yet — the pool exists for the future `POST /chat` handler.
+
+**41a0a58 — delete dead `background_tasks.py`.** Nothing referenced `fire_and_forget`; title generation runs on FastAPI `BackgroundTasks`. Not migrated because `add_script_run_ctx` solves a Streamlit-only session-context problem.
+
+## Result (as of 2026-08-15)
+
+The connection layer now has three deliberate mechanisms: a Streamlit-side cached single connection (`connection.py` + shim), a FastAPI sync pool (`sync_connection.py`, unconsumed), and the FastAPI async pool (title + SQL). `src/` is fully Streamlit-free. The sync pool is built and lifecycle-managed but not yet wired into memory — that is G2/G3. Definition-of-done progress: step 0 complete, the pool infrastructure for the memory path is in place, and the next move is repointing `get_session_history` at the pool and writing the chat endpoint.

@@ -37,3 +37,29 @@
 - **Async moves the ceiling rather than removing it.** `ChatGroq` is natively async so the three Groq round-trips genuinely release the loop, but sync `RunnableLambda`s (`retreive_parents`) fall back to `run_in_executor`, so blocking moves into asyncio's default thread pool. BM25 scoring is pure Python and therefore GIL-bound; the reranker is a single CUDA model. Async also makes streaming natural (`astream` + `async def` generator), whereas a sync chain requires a *sync* generator so Starlette threadpools it — wrapping a sync chain in an `async def` generator blocks the loop on every `next()`.
 - **What this project needs is concurrency testing, not load testing.** Every hazard identified (shared transaction, pool exhaustion, session bleed, message loss on client disconnect) surfaces at N=5; N=1000 adds nothing. Deliberately shrinking pool `max_size` turns rare bugs into reproducible ones. And load-testing the real chain measures Groq's rate limiter rather than this server — the LLM must be stubbed for the test to mean anything.
 - **`src/` is not yet Streamlit-free, and this was verified rather than assumed.** After 9b0ab52, importing `src.api.main` still leaves `streamlit` in `sys.modules`, because `qa_chain.py` imports `src/database/connection.py`, which is still `@st.cache_resource`-decorated. The commit message for 9b0ab52 records this honestly rather than overclaiming.
+
+---
+
+## Connection layer — two sync mechanisms + one async pool (commits a46a031, f765c81, 41a0a58, branch api-migration, 2026-08-15)
+
+**Chosen approach + why.** Finished de-Streamliting `src/` and stood up a sync `ConnectionPool` for the memory path, leaving three distinct connection mechanisms that are *not* redundant:
+
+- `src/database/connection.py` — a plain sync opener (one fresh connection per call), Streamlit-free. Feeds the Streamlit cached singleton via `frontend/services/connection_provider.py` (the shim that re-adds `@st.cache_resource` + the liveness check outside `src/`).
+- `src/database/sync_connection.py` — a sync **pool** (min 2 / max 10) for the FastAPI memory path.
+- `src/database/async_connection.py` — the async **pool** (min 2 / max 5) for title generation + SQL reads.
+
+The split is along **two axes, not one**: *which process consumes it* (Streamlit vs FastAPI — separate address spaces, cannot share a pool object) and *what shape* (a single cached connection vs a pool). Streamlit historically needs only one connection because it processes one thing at a time; FastAPI needs a pool because it is built for many in-flight requests. **Connection shape tracks the process's concurrency model, not whether the driver call is sync or async.** This is the same two-process split already seen with model loading (`model_loader.py` shim vs lifespan).
+
+- **Two sync mechanisms is transitional, not a design smell.** `get_session_history` currently borrows `connection.py`'s raw opener (uncached, fresh per turn) as a stopgap — documented in that file's docstring. `sync_connection.py` exists precisely to replace that role. Timeline: now → `connection.py` serves both Streamlit and (temporarily) memory; after G2/G3 → memory moves to the sync pool and `connection.py` serves only Streamlit; after frontend→HTTP → `connection.py` dies. Do not try to merge the two sync files: they feed two different processes.
+
+**Assumptions it rests on.**
+- **Port 6543 (Supavisor transaction pooler), Supabase 60-connection plan, 1 uvicorn worker.** Peak real connections = (sync max 10 + async max 5) × 1 worker = 15, well under 60. The whole budget assumes 1 worker; `--workers N` multiplies it by N *and* loads N copies of bge-m3 + reranker, so the worker count is pinned at 1 by GPU memory, not by connections.
+- **Async pool is smaller than sync on purpose.** Async holds are millisecond (title + SQL reads); the sync memory connection is held across the whole multi-second chat turn. Pool size ≈ hold-time × concurrency, so short holds need fewer connections for the same throughput. This is why copying sync's `max_size` onto async would be over-provisioning, not symmetry.
+
+**Failed approaches / traps.**
+- Tried: **leaving the async pool's `max_size` at its hidden default** — Failed because: `psycopg_pool` defaults `max_size` to `None`, which collapses to `min_size` (4), so the pool silently cannot grow past 4 and this is invisible in the code — Avoid when: reading pool code and assuming an unset `max_size` means "unbounded". Now set explicitly to 2/5.
+- Trap recorded, not yet hit: **psycopg3 auto-promotes queries to server-side prepared statements after `prepare_threshold` (default 5) uses**, which breaks under Supavisor transaction mode because the real connection is swapped between clients per transaction → intermittent `prepared statement "_pg3_x" already exists` under load only. Guarded in `sync_connection.py` with `prepare_threshold=None`. **The async pool does NOT yet carry this guard** — it must be added there too before the async pool is used over 6543 at any real concurrency. **CROSS-CUTTING** (any pool over 6543).
+
+**Nuances agreed with the user.**
+- **Supavisor's 200 virtual connections are not 200 parallel workers.** It exploits the fact that a chat turn holds a DB connection only in millisecond bursts (the multi-second Groq wait is idle), returning the real connection to a small pool the instant each transaction ends. 200 = people in the room; ~15 = open counters. It converts "connection refused" into "queued", which is exactly the desired behaviour for concurrency testing — but the 200 is not throughput.
+- **The transaction hazard of a shared connection already exists in Streamlit today**, just rarely: `cache_resource` is process-global while each session runs its own thread, so two tabs touching the DB at the same instant already share one connection and one transaction. FastAPI turns rare into constant.
