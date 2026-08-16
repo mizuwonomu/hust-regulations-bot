@@ -35,3 +35,11 @@ Branch `api-migration`, three commits: a46a031 → f765c81 → 41a0a58.
 ## Result (as of 2026-08-15)
 
 The connection layer now has three deliberate mechanisms: a Streamlit-side cached single connection (`connection.py` + shim), a FastAPI sync pool (`sync_connection.py`, unconsumed), and the FastAPI async pool (title + SQL). `src/` is fully Streamlit-free. The sync pool is built and lifecycle-managed but not yet wired into memory — that is G2/G3. Definition-of-done progress: step 0 complete, the pool infrastructure for the memory path is in place, and the next move is repointing `get_session_history` at the pool and writing the chat endpoint.
+
+## 2026-08-16 — G2: core chain + per-run history binding
+
+Branch `api-migration`, commit 912e5f1. `get_chain` no longer wraps `RunnableWithMessageHistory`; it returns the core chain (route → retrieve → rerank → answer). A new `bind_history(core_chain, conn)` builds the wrapper per run, binding a caller-supplied connection through `partial(get_session_history, conn)`; `get_session_history` was changed to take `(conn, session_id)` and no longer fetches its own connection. This removes the fresh-connection-per-turn wart G0 left in the memory path.
+
+The Streamlit frontend now does the wrap itself: `chat_flow.handle_query` borrows the cached connection from `deps.db_connection_factory()`, calls `bind_history` on the core chain, and passes the wrapped chain into `render_streamed_ai_answer` — `chat_stream.py` is untouched because it still receives an already-wrapped chain and calls `.stream()`. The dead `debug_memory` util was deleted (it called `get_postgres_history` without a connection).
+
+`app.state.rag_chain` now holds the core chain. The G3 handler will apply the same `bind_history` with a pooled connection per request — one helper, two consumers, differing only in connection source and lifecycle. Verified end-to-end in Streamlit: a context-dependent follow-up ("thế còn miễn giảm?") resolves against the prior turn, so read-at-start and write-at-end both work through the new bind path.

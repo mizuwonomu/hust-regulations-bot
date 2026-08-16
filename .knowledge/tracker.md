@@ -1,11 +1,11 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-08-15)
-G2: repoint `get_session_history` at the sync pool (accept a borrowed conn) and split `get_chain` so the history wrapper is applied per request — this touches the frontend chain contract too  -> features/backend_migration/log.md
+## Current focus  (2026-08-16)
+G3: write `POST /chat` — handler borrows a sync-pool conn, verifies session ownership, wraps the core chain with `bind_history`, invokes, returns the conn  -> features/backend_migration/log.md
 
 ## Features
 
-- backend_migration: IN PROGRESS (41a0a58, branch api-migration) — `src/` now fully Streamlit-free; models + chain owned by the FastAPI lifespan; sync + async pools built and lifecycle-managed. Memory path not yet on the pool, no chat endpoint yet  -> features/backend_migration/log.md
+- backend_migration: IN PROGRESS (branch api-migration) — `src/` Streamlit-free; models + chain owned by lifespan; sync + async pools built. `get_chain` returns the core chain, history bound per-run via `bind_history`; Streamlit wraps with its cached conn. Sync pool still unconsumed, no chat endpoint yet  -> features/backend_migration/log.md
 - cross_reference: DONE (2026-08-13, commit d7611fd) — degree filtering rejected on evidence; fixed instead by retuning RERANK_RATIO to 0.45  -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
 - model_migration: DONE (2026-08-07, commit 506afcc) — qwen3-32b decommissioned, moved to gpt-oss-120b; harness now model-parameterized (f1755b4)  -> features/model_migration/log.md
@@ -13,7 +13,7 @@ G2: repoint `get_session_history` at the sync pool (accept a borrowed conn) and 
 ## Known limitations / debt left open
 
 - **A regression was introduced and not fixed: `lru_cache` was never added to the leaf loaders.** 9b0ab52 removed `@st.cache_resource` from `get_embedding_model` and `load_reranker` but put nothing in its place. `evals/v2/scripts/run_rewrite_rerank_calibration.py` calls `get_embedding_model()` at both line 423 and line 775, so it now loads bge-m3 **twice per run** where the Streamlit cache previously covered it. This was identified before the commit and shipped anyway. One decorator fixes it.
-- **The sync pool exists but nothing consumes it.** `app.state.sync_db_pool` is built and lifecycle-managed (f765c81) but `get_session_history` still borrows `connection.py`'s raw opener (fresh connection per turn, uncached). Repointing it at the pool is G2. Until then the memory path pays a fresh connect every turn — works, not optimal.
+- **The sync pool exists but nothing consumes it yet.** `app.state.sync_db_pool` is built and lifecycle-managed (f765c81). G2 rewired the memory path onto `bind_history(core_chain, conn)`, but the only live consumer (Streamlit) passes its *cached* connection, not the pool. The pool gets its first consumer at G3 when `POST /chat` borrows from it per request.
 - **The async pool lacks the `prepare_threshold=None` guard.** Only `sync_connection.py` disables prepared statements for the Supavisor 6543 pooler. The async pool (title + SQL) will hit intermittent `prepared statement already exists` under any real concurrency over 6543 — add the same guard before that happens. CROSS-CUTTING: any pool over 6543.
 - **`RunnableWithMessageHistory` is constructed inside `get_chain`**, i.e. once at lifespan startup, with a `get_session_history` that fetches its own connection. A per-request pooled connection has nowhere to enter. `get_chain` must be split so it returns the core chain and the history wrapper is applied per request — decided but not implemented.
 - **The FastAPI lifespan loads models that nothing consumes.** uvicorn startup pays the full bge-m3 + bge-reranker-v2-m3 load to serve title routes only. Running Streamlit and uvicorn concurrently holds two copies of both models — do not run both until the frontend switches to HTTP.
