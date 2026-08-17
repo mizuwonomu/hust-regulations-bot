@@ -297,7 +297,8 @@ def get_chain(k, temperature, embedding_model, reranker_model):
     query_rewrite_llm = ChatGroq(
         model=QUERY_REWRITE_MODEL,
         max_retries=0,
-        temperature=QUERY_REWRITE_TEMPERATURE
+        temperature=QUERY_REWRITE_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: tắt thinking-mode, rewrite nằm trên critical path, không cần suy luận
     )
 
     #chain nhỏ chỉ làm nhiệm vụ: Input (History + Query) -> Output (List string query mới) + Plan thoughts
@@ -330,7 +331,8 @@ def get_chain(k, temperature, embedding_model, reranker_model):
     router_llm = ChatGroq(
         model=ROUTER_MODEL,
         max_retries=0,
-        temperature=ROUTER_TEMPERATURE
+        temperature=ROUTER_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: phân loại nhị phân, reasoning ở đây chỉ tốn latency + token
     )
 
     router_chain = router_prompt | router_llm | StrOutputParser()
@@ -359,7 +361,8 @@ def get_chain(k, temperature, embedding_model, reranker_model):
     chitchat_llm = ChatGroq(
         model=CHITCHAT_MODEL,
         max_retries=0,
-        temperature=CHITCHAT_TEMPERATURE
+        temperature=CHITCHAT_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: tán gẫu realtime, user đang đợi, không cần thinking
     )
     
     #Chuẩn hóa output format giống rag chain, trả về dạng 辞書型

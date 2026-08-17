@@ -13,6 +13,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 
+from src.rag.config import TITLE_GENERATOR_MODEL
+
 load_dotenv()
 
 prompt = ChatPromptTemplate.from_messages([
@@ -62,9 +64,10 @@ def get_title_chain():
     """Chain LCEL sinh title"""
 
     generate_title_llm = ChatGroq(
-        model="llama-3.1-8b-instant",
+        model=TITLE_GENERATOR_MODEL,
             max_retries=0,
-            temperature= 0.3
+            temperature= 0.3,
+            reasoning_effort="none"  #qwen3: tóm tắt 8 từ, không cần thinking token
     )
     title = prompt | generate_title_llm | StrOutputParser()
     return title

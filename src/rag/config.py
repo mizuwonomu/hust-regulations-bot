@@ -7,10 +7,12 @@ RERANK_RATIO = 0.45
 RERANK_MAX_CHILDREN = 5 #số lượng rerank docs tối đa để xét
 
 #Model identifiers
-ROUTER_MODEL = "llama-3.1-8b-instant"
-QUERY_REWRITE_MODEL = "llama-3.3-70b-versatile"
-CHITCHAT_MODEL = "llama-3.3-70b-versatile"
+ROUTER_MODEL = "qwen/qwen3.6-27b"
+QUERY_REWRITE_MODEL = "qwen/qwen3.6-27b"
+CHITCHAT_MODEL = "qwen/qwen3.6-27b"
 INFERENCE_MODEL = "openai/gpt-oss-120b"
+TITLE_GENERATOR_MODEL = "qwen/qwen3.6-27b"
+JUDGE_MODEL = "qwen/qwen3.6-27b"
 
 #Temperatures
 ROUTER_TEMPERATURE = 0.0
