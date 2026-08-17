@@ -1,17 +1,19 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-08-16)
-G3: write `POST /chat` — handler borrows a sync-pool conn, verifies session ownership, wraps the core chain with `bind_history`, invokes, returns the conn  -> features/backend_migration/log.md
+## Current focus  (2026-08-17)
+Second Groq decommission unblocked (live chain swapped to qwen3 no-think, c740dc7) — resume G3: write `POST /chat` (borrow sync-pool conn, verify session ownership, wrap core chain with `bind_history`, invoke, return conn)  -> features/backend_migration/log.md
 
 ## Features
 
 - backend_migration: IN PROGRESS (branch api-migration) — `src/` Streamlit-free; models + chain owned by lifespan; sync + async pools built. `get_chain` returns the core chain, history bound per-run via `bind_history`; Streamlit wraps with its cached conn. Sync pool still unconsumed, no chat endpoint yet  -> features/backend_migration/log.md
 - cross_reference: DONE (2026-08-13, commit d7611fd) — degree filtering rejected on evidence; fixed instead by retuning RERANK_RATIO to 0.45  -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
-- model_migration: DONE (2026-08-07, commit 506afcc) — qwen3-32b decommissioned, moved to gpt-oss-120b; harness now model-parameterized (f1755b4)  -> features/model_migration/log.md
+- model_migration: live chain DONE (2026-08-17, commit c740dc7) — 2nd Groq decommission (llama family) swapped to qwen3 `reasoning_effort="none"` for router/rewrite/chitchat/title, gpt-oss-120b kept for answer; eval scripts still on dead ids (deferred). First phase: qwen3-32b→gpt-oss-120b + model-parameterized harness (2026-08-07, 506afcc/f1755b4)  -> features/model_migration/log.md
 
 ## Known limitations / debt left open
 
+- **Eval scripts still call the retired llama ids (deferred job 3).** `run_generate_e2e_responses.py`, `run_evals_e2e.py`, `run_evals_retrieval.py`, `run_ratio_sweep.py`, `run_rewrite_rerank_calibration.py`, `run_evals_v1.py` — any eval run fails until migrated. `JUDGE_MODEL` already sits in `src/rag/config.py` (qwen3) with no live consumer, waiting for this. Migrating carries two rules: judge≠generator (qwen3, not gpt-oss-120b), and the baseline epoch break (the old judge llama-70b is gone, so no pre-2026-08-17 run is comparable).
+- **The RAGAS judge on qwen3 is unverified.** The judge goes through `llm_factory` (OpenAI-compat), which has no `reasoning_format="parsed"`, so qwen3 may leak `<think>` into the content field and break RAGAS parsing. The judge wants reasoning ON so it cannot be set to `none`. Check on the first eval run when job 3 lands.
 - **A regression was introduced and not fixed: `lru_cache` was never added to the leaf loaders.** 9b0ab52 removed `@st.cache_resource` from `get_embedding_model` and `load_reranker` but put nothing in its place. `evals/v2/scripts/run_rewrite_rerank_calibration.py` calls `get_embedding_model()` at both line 423 and line 775, so it now loads bge-m3 **twice per run** where the Streamlit cache previously covered it. This was identified before the commit and shipped anyway. One decorator fixes it.
 - **The sync pool exists but nothing consumes it yet.** `app.state.sync_db_pool` is built and lifecycle-managed (f765c81). G2 rewired the memory path onto `bind_history(core_chain, conn)`, but the only live consumer (Streamlit) passes its *cached* connection, not the pool. The pool gets its first consumer at G3 when `POST /chat` borrows from it per request.
 - **The async pool lacks the `prepare_threshold=None` guard.** Only `sync_connection.py` disables prepared statements for the Supavisor 6543 pooler. The async pool (title + SQL) will hit intermittent `prepared statement already exists` under any real concurrency over 6543 — add the same guard before that happens. CROSS-CUTTING: any pool over 6543.
