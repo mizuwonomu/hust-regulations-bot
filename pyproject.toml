@@ -144,3 +144,9 @@ dependencies = [
     "zipp==3.23.0",
     "zstandard==0.24.0",
 ]
+
+[dependency-groups]
+dev = ["pytest>=8.3"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
