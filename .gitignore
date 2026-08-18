@@ -10,6 +10,7 @@ chroma_db/
 *.txt
 !requirements.txt
 __pycache__/
+.pytest_cache/
 .cursor/
 .agent/
 
