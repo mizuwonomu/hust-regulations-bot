@@ -1,7 +1,7 @@
 # Tracker — HUST Regulations Bot
 
 ## Current focus  (2026-08-18)
-G3 done (`POST /conversations/{id}/messages`, 600c3f0) — next: concurrency test (N=5, stubbed LLM, shrunk pool, verify via `chat_history`) before trusting the two-borrow path, then frontend→HTTP cutover (feature DoD)  -> features/backend_migration/log.md
+Concurrency test for G3 WRITTEN but not yet run (`tests/`, uncommitted) — need local test DB bootstrapped (`tests/bootstrap_test_db.py`) + `TEST_DATABASE_URL` set, then `uv run pytest tests/concurrency -v`; after it passes, capture the deadlock/FIFO/disconnect insights into decisions.md, then frontend→HTTP cutover (feature DoD)  -> features/backend_migration/log.md
 
 ## Features
 
