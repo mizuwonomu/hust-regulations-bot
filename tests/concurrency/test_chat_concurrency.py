@@ -1,6 +1,6 @@
 """Bộ test concurrency cho POST /conversations/{id}/messages (G3).
 
-5 phép đo, verify qua bảng chat_history và/hoặc cờ memory_persisted:
+7 phép đo, verify qua bảng chat_history và/hoặc cờ memory_persisted:
 
 (a) distinct sessions — 5 uuid4, gather 5 → mỗi session đúng 2 msg của chính nó
                         (bleed check: không lẫn msg giữa các session).
@@ -16,7 +16,12 @@
                         stub đang sleep → VẪN 200 kèm answer nhưng
                         memory_persisted=false (lỗi ghi bị nuốt, không vứt bỏ
                         câu trả lời), không phantom write, pool tự thay conn chết.
-
+(f) read failure     — kill conn idle trong pool TRƯỚC request → cú đọc DB đầu
+                        tiên (fetch_conversation_owner ở BORROW-1, không phải
+                        load_history) nổ 500: đường đọc không bị nuốt nên không
+                        cần cờ. Guard cho đường đọc memory thật vẫn còn trống.
+(g) happy path       — ghi thành công → memory_persisted=true và chat_history
+                        đủ 2 msg (chống cờ kẹt cứng ở một giá trị).
 Chạy: TEST_DATABASE_URL=<url DB test> uv run pytest tests/concurrency -v
 """
 
@@ -361,3 +366,107 @@ async def test_e_db_side_failure_no_write_conn_replaced(
     assert new_pids, (
         f"không có conn mới thế chỗ conn chết: before={pids_before} now={live_pids}"
     )
+
+@pytest.mark.anyio
+async def test_f_ownership_read_failure_surfaces_500(
+    client, test_pool, admin_conn, fetch_messages
+):
+    """Kill conn IDLE trong pool TRƯỚC request → cú đọc DB ĐẦU TIÊN nổ 500.
+
+    PHẠM VI CHÍNH XÁC — đọc kỹ trước khi tin tên test: cú nổ xảy ra ở
+    BORROW-1, tại fetch_conversation_owner (routes/chat.py), KHÔNG phải ở
+    đường đọc memory (load_history) trong borrow-2. Giết sạch conn của pool
+    thì borrow-1 chết trước và handler không bao giờ tới được invoke.
+
+    Bằng chứng: test chạy hết ~0.14s, trong khi stub ngủ SLEEP=0.3s — nếu đã
+    vào borrow-2 thì tối thiểu phải mất 0.3s. Exception nhận được là
+    AdminShutdown ném từ borrow-1.
+
+    Vậy test này chốt: một cú đọc DB hỏng thì lỗi SURFACE (500 / raise), KHÔNG
+    bị nuốt thành 200 degraded như đường ghi. Đây là regression guard cho hành
+    vi ĐÃ ĐÚNG sẵn, nên kỳ vọng xanh ngay lần chạy đầu — không phải bắt lỗi.
+
+    CHƯA CÓ GUARD cho đường đọc memory thật (_enter_history / load_history):
+    muốn chạm tới nó phải giết conn trong cửa sổ giữa borrow-1 và cú đọc của
+    borrow-2 — chỉ vài ms, canh bằng pg_terminate_backend sẽ flaky. Cần một cơ
+    chế khác (chèn độ trễ giữa hai borrow, hoặc inject lỗi ở tầng
+    get_session_history thay vì giết conn thật). Xem debt trong tracker.
+
+    Không canh cửa sổ vài ms (flaky): giết conn lúc idle trong pool rồi mới bắn
+    request → borrow-1 mượn phải conn chết → nổ ngay. Deterministic, vì pool
+    mặc định KHÔNG check khi checkout nên conn chết được giao thật.
+
+    Kill CẢ HAI conn của pool (không chỉ 1): pool max_size=2, nếu chỉ giết 1
+    conn thì request có thể mượn nhầm conn còn sống → 200 lắt léo.
+    """
+    sid = str(uuid.uuid4())
+
+    _require_terminate_privilege(admin_conn)
+
+    pids = _pool_pids(admin_conn)
+    assert len(pids) == POOL_MAX_SIZE, (
+        f"pool phải mở sẵn {POOL_MAX_SIZE} conn, thấy {len(pids)}: {pids}"
+    )
+    for pid in pids:
+        with admin_conn.cursor() as cur:
+            cur.execute("SELECT pg_terminate_backend(%s)", (pid,))
+            assert cur.fetchone()[0] is True, f"pg_terminate_backend({pid}) trả false"
+    print(f"[db-kill-read] đã terminate toàn bộ conn idle của pool: {pids}")
+
+    # Đường đọc không bị nuốt: lỗi phải surface — dưới dạng 500 response, hoặc
+    # exception raise thẳng qua test client (Starlette 0.50 luôn re-raise sau khi
+    # gửi 500; httpx ASGITransport mặc định raise_app_exceptions=True). Trong
+    # production (uvicorn) client nhận 500 + server log exception.
+    try:
+        resp = await _post(client, sid, "câu hỏi gặp conn chết từ trước")
+    except Exception as exc:
+        print(
+            f"[db-kill-read] task raise {type(exc).__name__}: {exc} "
+            "— đọc thất bại surfaced qua exception (Starlette re-raise sau khi gửi 500)"
+        )
+    else:
+        assert resp.status_code == 500, (
+            f"đọc thất bại phải surface thành 500, nhận {resp.status_code} "
+            f"{resp.text} — đường đọc không được nuốt lỗi như đường ghi"
+        )
+
+    # Turn chết ở borrow-1 thì không được để lại gì trong chat_history.
+    # Retry: pool chỉ discard conn chết khi nó được trả về sau một lần dùng
+    # fail, nên fetch_messages có thể mượn trúng conn chết còn lại — chờ tới
+    # khi pool tự lành thay vì fail oan.
+    deadline = time.monotonic() + POOL_TIMEOUT
+    while True:
+        try:
+            msgs = await fetch_messages(sid)
+            break
+        except psycopg.OperationalError:
+            assert time.monotonic() < deadline, "pool không lành lại sau khi kill"
+            await asyncio.sleep(0.05)
+
+    assert msgs == [], f"turn chết ở borrow-1 không được ghi msg nào: {msgs}"
+
+
+@pytest.mark.anyio
+async def test_g_happy_path_memory_persisted(client, fetch_messages):
+    """Ghi thành công → memory_persisted=true và chat_history đủ 2 msg.
+
+    Bảo vệ chống cờ kẹt cứng ở một giá trị (vd luôn false vì hộp thư không
+    được nối, hoặc luôn true vì lỗi bị quên): happy path phải ra true và DB
+    phải có đủ msg — hai chiều xác nhận lẫn nhau.
+    """
+    sid = str(uuid.uuid4())
+    question = _question(sid, 0)
+
+    resp = await _post(client, sid, question)
+    assert resp.status_code == 200, resp.text
+
+    body = resp.json()
+    assert body["memory_persisted"] is True, (
+        f"happy path phải báo memory_persisted=true, nhận {body['memory_persisted']!r}"
+    )
+    assert body["answer"] == f"Stub trả lời: {question}", f"answer sai: {body['answer']!r}"
+
+    msgs = await fetch_messages(sid)
+    assert len(msgs) == 2, f"chat_history phải đủ 2 msg sau turn thành công: {msgs}"
+    roles = [m["role"] for m in msgs]
+    assert roles.count("user") == 1 and roles.count("ai") == 1, roles
