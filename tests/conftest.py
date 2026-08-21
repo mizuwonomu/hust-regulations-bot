@@ -12,6 +12,11 @@ Cấu hình chạy:
 
 clean_db (autouse) TRUNCATE chat_history + conversations trước mỗi test và
 từ chối chạy nếu dbname không chứa "test" — không bao giờ để lỡ tay xoá DB thật.
+
+Test (e) cần bắn backend của pool từ ngoài: test_pool mở conn với
+application_name=KILL_APP_NAME ("hust-test-kill") để admin_conn query
+pg_stat_activity + pg_terminate_backend nhắm đúng conn của pool, không lẫn
+vào conn nào khác (kể cả conn admin của chính test).
 """
 
 from __future__ import annotations
@@ -29,6 +34,8 @@ import anyio
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from langchain_core.runnables import RunnableLambda
+import psycopg
+from psycopg.conninfo import make_conninfo
 from psycopg_pool import ConnectionPool
 
 # App tự load .env (xem src/rag/qa_chain.py) — làm tương tự để TEST_DATABASE_URL
@@ -52,6 +59,8 @@ POOL_MAX_SIZE = 2    # thu nhỏ cố ý: N=5 trên pool 2 conn → ép starvati
 POOL_TIMEOUT = 5.0   # phải > 3 × SLEEP (tổng thời gian 3 wave = 0.9s); nếu nhỏ hơn,
                      # phép (b) ăn timeout thay vì xếp hàng → đo nhầm
 N_CONCURRENT = 5     # số request đồng thời cho mỗi phép đo
+KILL_APP_NAME = "hust-test-kill"  # application_name của test_pool — để admin_conn (test e)
+                                  # bắn pg_terminate_backend đúng conn của pool, không bắn nhầm
 
 
 @pytest.fixture
@@ -82,9 +91,13 @@ def test_pool(test_database_url: str) -> Iterator[ConnectionPool]:
     kwargs={"prepare_threshold": None}: guard Supavisor 6543 (giống
     src/database/sync_connection.py), tránh lỗi prepared statement khi
     nhiều request chạy cùng lúc.
+
+    application_name=KILL_APP_NAME: gán nhãn mọi conn của pool để test (e)
+    có thể nhắm đúng backend của pool khi kill (xem pg_stat_activity), thay
+    vì bắn bừa vào conn của admin hay của app khác.
     """
     pool = ConnectionPool(
-        conninfo=test_database_url,
+        conninfo=make_conninfo(test_database_url, application_name=KILL_APP_NAME),
         min_size=POOL_MAX_SIZE,
         max_size=POOL_MAX_SIZE,
         timeout=POOL_TIMEOUT,
@@ -95,6 +108,25 @@ def test_pool(test_database_url: str) -> Iterator[ConnectionPool]:
         yield pool
     finally:
         pool.close()
+
+
+@pytest.fixture
+def admin_conn(test_database_url):
+    """Conn hành chính KHÔNG thuộc pool: query pg_stat_activity + pg_terminate_backend.
+
+    psycopg.connect thẳng tới test_database_url — dùng test_pool thì chính nó
+    làm nhiễu phép đo (chiếm/trả conn, lẫn vào application_name mà test đang
+    theo dõi). autocommit=True để terminate không kẹt trong transaction.
+    """
+    conn = psycopg.connect(
+        test_database_url,
+        application_name="hust-test-admin",
+        autocommit=True,
+    )
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 @pytest.fixture

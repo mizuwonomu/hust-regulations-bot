@@ -1,6 +1,6 @@
 """Bộ test concurrency cho POST /conversations/{id}/messages (G3).
 
-4 phép đo, mỗi phép gather N request rồi verify qua bảng chat_history:
+5 phép đo, verify qua bảng chat_history và/hoặc cờ memory_persisted:
 
 (a) distinct sessions — 5 uuid4, gather 5 → mỗi session đúng 2 msg của chính nó
                         (bleed check: không lẫn msg giữa các session).
@@ -12,6 +12,10 @@
                         max_size (không leak connection).
 (d) same-session race — 2 request cùng 1 conversation_id → chat_history đủ
                         4 msg (2 user + 2 ai), không mất msg.
+(e) db-side failure  — kill backend của pool (pg_terminate_backend) giữa lúc
+                        stub đang sleep → VẪN 200 kèm answer nhưng
+                        memory_persisted=false (lỗi ghi bị nuốt, không vứt bỏ
+                        câu trả lời), không phantom write, pool tự thay conn chết.
 
 Chạy: TEST_DATABASE_URL=<url DB test> uv run pytest tests/concurrency -v
 """
@@ -22,9 +26,10 @@ import asyncio
 import time
 import uuid
 
+import psycopg
 import pytest
 
-from conftest import N_CONCURRENT, POOL_MAX_SIZE, POOL_TIMEOUT, SLEEP
+from conftest import KILL_APP_NAME, N_CONCURRENT, POOL_MAX_SIZE, POOL_TIMEOUT, SLEEP
 from concurrency.probe import PoolProbe
 
 
@@ -179,3 +184,180 @@ async def test_d_same_session_race_no_loss(client, fetch_messages):
         assert q in contents, f"thiếu user msg {q!r}: {contents}"
         expected_answer = f"Stub trả lời: {q}"
         assert expected_answer in contents, f"thiếu ai msg {expected_answer!r}: {contents}"
+
+
+def _pool_pids(admin_conn) -> set[int]:
+    """Tập backend pid của mọi conn thuộc test_pool (lọc theo application_name)."""
+    with admin_conn.cursor() as cur:
+        cur.execute(
+            "SELECT pid FROM pg_stat_activity WHERE application_name = %s",
+            (KILL_APP_NAME,),
+        )
+        return {row[0] for row in cur.fetchall()}
+
+
+def _pool_activity(admin_conn) -> list[tuple]:
+    """Toàn bộ conn của pool kèm state/query — debug khi timing lệch."""
+    with admin_conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT pid, state, left(query, 60)
+            FROM pg_stat_activity
+            WHERE application_name = %s
+            ORDER BY pid
+            """,
+            (KILL_APP_NAME,),
+        )
+        return cur.fetchall()
+
+
+def _require_terminate_privilege(admin_conn) -> None:
+    """Skip test nếu user DB thiếu quyền pg_terminate_backend.
+
+    Terminate pid 0 (không tồn tại → trả false, vô hại) để thử quyền; thiếu
+    quyền → InsufficientPrivilege → skip thay vì fail khó hiểu.
+    """
+    try:
+        with admin_conn.cursor() as cur:
+            cur.execute("SELECT pg_terminate_backend(0)")
+            cur.fetchone()
+    except psycopg.errors.InsufficientPrivilege as exc:
+        pytest.skip(
+            "user DB thiếu quyền pg_terminate_backend "
+            f"(cần superuser hoặc pg_signal_backend): {exc}"
+        )
+
+
+@pytest.mark.anyio
+async def test_e_db_side_failure_no_write_conn_replaced(
+    client, test_pool, admin_conn, fetch_messages
+):
+    """Kill conn của pool giữa lúc stub đang sleep — DB-side failure (N=1).
+
+    Mô phỏng server bóp chết backend đang giữ borrow-2 (restart, crash,
+    terminate thủ công): transaction của PostgresChatMessageHistory đang mở,
+    mọi INSERT chưa commit bị rollback trọn vẹn khi backend chết.
+
+    Chứng minh 3 điều:
+    1. Cú ghi thất bại không thành 500: theo contract mới, vẫn 200 kèm answer
+       (không vứt bỏ câu trả lời hợp lệ đã tốn tiền LLM) nhưng cờ
+       memory_persisted phải = false.
+    2. Không phantom write: chat_history của session vẫn rỗng — turn bị kill
+       không để lại nửa turn trong DB. (Không assert conversations: borrow-1
+       đã commit row conversation trước khi kill.)
+    3. Pool tự lành: conn chết bị discard + conn mới thế chỗ → sau deadline
+       pool_available == POOL_MAX_SIZE và killed_pid biến mất khỏi
+       pg_stat_activity.
+
+    Skip nếu user DB thiếu quyền pg_terminate_backend (superuser / pg_signal_backend).
+    """
+    sid = str(uuid.uuid4())
+    question = "câu hỏi bị kill giữa chừng bởi DB"
+
+    # 0. Skip guard: terminate pid 0 (không tồn tại → trả false, vô hại) để thử
+    #    quyền; thiếu quyền → InsufficientPrivilege → skip thay vì fail khó hiểu
+    _require_terminate_privilege(admin_conn)
+
+    # 1. Snapshot pid của pool trước khi chạy (để sau này chứng minh conn chết
+    #    đã được thay bằng pid mới, chứ không phải reuse lại pid cũ)
+    pids_before = _pool_pids(admin_conn)
+    assert len(pids_before) == POOL_MAX_SIZE, (
+        f"pool phải mở sẵn {POOL_MAX_SIZE} conn, thấy {len(pids_before)}: {pids_before}"
+    )
+
+    # 2-3. Tạo request, chờ request vào giữa cửa sổ stub-sleep: borrow-2 đang
+    #      giữ conn, transaction còn mở (state = 'idle in transaction'),
+    #      chưa tới khâu write
+    task = asyncio.create_task(_post(client, sid, question))
+    await asyncio.sleep(SLEEP / 2)
+
+    # 4. Tìm backend đang bận của pool rồi terminate. state <> 'idle' bắt
+    #    borrow-2 (idle in transaction trong lúc stub sleep); conn còn lại
+    #    nằm idle trong pool nên không bị bắt nhầm
+    with admin_conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT pid, state, left(query, 60)
+            FROM pg_stat_activity
+            WHERE application_name = %s AND state <> 'idle'
+            """,
+            (KILL_APP_NAME,),
+        )
+        rows = cur.fetchall()
+
+    assert rows, (
+        f"không bắt được conn borrow-2 đang active/idle-in-transaction tại "
+        f"SLEEP/2 — timing lệch hoặc transaction đã commit sớm. Toàn bộ conn "
+        f"của pool lúc đó: {_pool_activity(admin_conn)}"
+    )
+    killed_pid, killed_state, killed_query = rows[0]
+    print(
+        f"[db-kill] terminate backend pid={killed_pid} "
+        f"state={killed_state} query={killed_query!r}"
+    )
+
+    with admin_conn.cursor() as cur:
+        cur.execute("SELECT pg_terminate_backend(%s)", (killed_pid,))
+        assert cur.fetchone()[0] is True, f"pg_terminate_backend({killed_pid}) trả false"
+
+    # 5. Chờ task kết thúc: theo contract mới, cú ghi thất bại bị
+    #    CallbackManager nuốt (raise_error=False) → vẫn 200 kèm answer,
+    #    nhưng cờ memory_persisted phải = false — client biết turn bị bỏ rơi
+    try:
+        resp = await task
+    except Exception as exc:
+        pytest.fail(
+            f"task raise {type(exc).__name__}: {exc} — cú ghi thất bại phải bị "
+            f"nuốt thành 200 + memory_persisted=false, không được ném lên handler"
+        )
+    assert resp.status_code == 200, (
+        f"ghi memory thất bại vẫn phải trả 200 kèm answer (không vứt bỏ câu trả "
+        f"lời hợp lệ), nhận {resp.status_code} {resp.text}"
+    )
+    body = resp.json()
+    assert body["memory_persisted"] is False, (
+        f"memory_persisted phải = false khi cú ghi thất bại, "
+        f"nhận {body['memory_persisted']!r}"
+    )
+    assert body["answer"] == f"Stub trả lời: {question}", (
+        f"answer phải còn nguyên vẹn khi ghi memory thất bại: {body['answer']!r}"
+    )
+
+    # 2. Không phantom write: turn bị kill không để lại gì trong chat_history
+    msgs = await fetch_messages(sid)
+    assert msgs == [], (
+        f"PHANTOM WRITE: turn bị kill vẫn để lại msg trong chat_history: {msgs} — "
+        f"transaction của PostgresChatMessageHistory không bị rollback trọn vẹn"
+    )
+
+    # 6. Pool tự lành là async (refill qua worker thread của pool) → poll deadline
+    #    như test (c), đừng assert ngay sau kill
+    deadline = time.monotonic() + POOL_TIMEOUT
+    stats = test_pool.get_stats()
+    live_pids = _pool_pids(admin_conn)
+    while (
+        (stats["pool_available"] < POOL_MAX_SIZE or killed_pid in live_pids)
+        and time.monotonic() < deadline
+    ):
+        await asyncio.sleep(0.02)
+        stats = test_pool.get_stats()
+        live_pids = _pool_pids(admin_conn)
+
+    print(
+        f"[db-kill] pool sau lành: available={stats['pool_available']}/{POOL_MAX_SIZE} "
+        f"pids={live_pids}"
+    )
+
+    # 3. Conn chết đã bị discard và được thay bằng conn mới
+    assert stats["pool_available"] == POOL_MAX_SIZE, (
+        f"pool không tự lành sau {POOL_TIMEOUT}s: "
+        f"pool_available={stats['pool_available']}/{POOL_MAX_SIZE} — conn chết "
+        f"không được discard/refill?"
+    )
+    assert killed_pid not in live_pids, (
+        f"killed_pid={killed_pid} vẫn còn trong pg_stat_activity: {live_pids}"
+    )
+    new_pids = live_pids - pids_before
+    assert new_pids, (
+        f"không có conn mới thế chỗ conn chết: before={pids_before} now={live_pids}"
+    )
