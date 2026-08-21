@@ -51,16 +51,17 @@ def format_docs(docs):
 
     return "\n\n".join(formatted)
 
-#chỉ nhận conn
-def get_session_history(conn, session_id: str):
-    return get_postgres_history(conn, session_id)
+#chỉ nhận conn; status là hộp thư MemoryStatus do caller sở hữu, để
+#TrackedPostgresHistory ghi cờ kết quả cú ghi (mặc định None: không ghi cờ)
+def get_session_history(conn, session_id: str, status=None):
+    return get_postgres_history(conn, session_id, status=status)
 
 
-def bind_history(core_chain, conn):
+def bind_history(core_chain, conn, status=None):
     #bọc RunnableWithMessageHistory per-run, conn do caller (frontend hoặc G3) đưa vào
     return RunnableWithMessageHistory(
         core_chain,
-        partial(get_session_history, conn),
+        partial(get_session_history, conn, status=status),
         input_messages_key="question",
         history_messages_key="chat_history",
         output_messages_key="answer",

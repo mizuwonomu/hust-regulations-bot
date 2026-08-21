@@ -24,6 +24,10 @@ class SourceItem(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[SourceItem]
+    # Ghi memory vào Postgres có thành công không. G3 trả 200 kèm answer kể cả
+    # khi cú ghi thất bại (không vứt bỏ câu trả lời hợp lệ) — client bắt buộc
+    # phải đọc cờ này
+    memory_persisted: bool
 
 
 def serialize_sources(docs) -> list[SourceItem]:

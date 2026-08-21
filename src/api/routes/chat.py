@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -16,7 +17,10 @@ from psycopg_pool import ConnectionPool
 from src.api.dependencies import get_current_user_id, get_rag_chain, get_sync_db_pool
 from src.api.schemas.chat import ChatRequest, ChatResponse, serialize_sources
 from src.database.conversation_queries import claim_conversation, fetch_conversation_owner
+from src.database.history_manager import MemoryStatus
 from src.rag.qa_chain import bind_history
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/conversations", tags=["chat"])
 
@@ -46,14 +50,30 @@ def post_message(
     #build wrapper sau khi mượn conn per-request
     #memory sẽ lưu trong suốt thời gian invoke
     #sau khi xong 1 chain, trả lại conn cho pool sync
+    #Hộp thư MemoryStatus mới mỗi request — dùng lại giữa các request sẽ rò
+    #trạng thái turn trước vào turn sau. Handler không với tới object history
+    #(RunnableWithMessageHistory gọi factory ngầm), nên cờ phải đi qua hộp thư
+    status = MemoryStatus()
     with pool.connection() as conn:
-        chain = bind_history(core_chain, conn)
+        chain = bind_history(core_chain, conn, status=status)
         result = chain.invoke(
             {"question": payload.question},
             config={"configurable": {"session_id": conversation_id}},
         )
 
+    #Cú ghi bị CallbackManager nuốt (raise_error=False), nên lỗi không tự
+    #surface — log error kèm lý do là nửa còn lại của mục tiêu quan sát được.
+    if status.persisted is False:
+        logger.error(
+            "memory persist thất bại cho conversation %s (vẫn trả 200 kèm answer): %s",
+            conversation_id,
+            status.error,
+        )
+
     return ChatResponse(
         answer=result["answer"],
         sources=serialize_sources(result.get("context")),
+        #persisted is True -> true; False hoặc None (chưa từng tới bước ghi)
+        #-> false — đối với client, None cũng nghĩa là "chưa lưu"
+        memory_persisted=status.persisted is True,
     )
