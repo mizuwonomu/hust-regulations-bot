@@ -46,7 +46,7 @@ deps = AppDeps(
 
 render_new_chat_button(reset_conversation_state)
 
-render_sidebar(deps.db_connection_factory)
+render_sidebar(st.session_state.user_id)
 poll_sidebar_title()
     
 #CHI ve 1 an duy nhat - tranh loi double display
