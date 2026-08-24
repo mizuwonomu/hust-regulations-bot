@@ -5,11 +5,12 @@
 """
 
 from __future__ import annotations
-import json
 from typing import Literal, overload
 
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
+
+from src.database.message_normalizer import normalize_message
 
 TitleState = Literal["pending", "ready", "missing", "failed"]
 """Trả về title state để polling
@@ -129,54 +130,6 @@ async def fetch_conversation_owner_and_title(
 
     return row[0], row[1]
 
-#vì khi lấy object messages của langchain cho session state của streamlit
-#metadata của dict không phải dạng thông thường là {"role": ..., "content": ...} cho streamlit
-#->phải chuẩn hoá về đúng dạng role và content từ property message của object langchain
-def _normalize_message(raw_message) -> dict | None:
-    if raw_message is None:
-        return None
-    
-    parsed_message = raw_message
-    if isinstance(raw_message, str):
-        try:
-            parsed_message = json.loads(raw_message)
-        except json.JSONDecodeError:
-            return None
-        
-    if not isinstance(parsed_message, dict):
-        return None
-    
-    message_type = parsed_message.get("type")
-    message_data = parsed_message.get("data", {})
-    content = message_data.get("content", parsed_message.get("content"))
-
-    if isinstance(content, list):
-        text_chunks = []
-        for chunk in content:
-            if isinstance(chunk, str):
-                text_chunks.append(chunk)
-            elif isinstance(chunk, dict):
-                maybe_text = chunk.get("text")
-                if maybe_text:
-                    text_chunks.append(str(maybe_text))
-
-        content = "\n".join(text_chunks)
-
-    role_map = {
-        "human": "user",
-        "user": "user",
-        "ai": "ai",
-        "assistant": "ai"
-    }
-
-    role = role_map.get(message_type)
-
-    if role is None or content is None:
-        return None
-    
-    return {"role": role, "content": str(content)}
-
-
 async def fetch_first_exchange(
     conn: AsyncConnection,
     conversation_id: str,
@@ -200,7 +153,7 @@ async def fetch_first_exchange(
     ai_message = None
 
     for row in rows:
-        normalized = _normalize_message(row[0])
+        normalized = normalize_message(row[0])
         if not normalized:
             continue
 
@@ -236,3 +189,66 @@ async def upsert_conversation_title(
             """,
             (conversation_id, user_id, title),
         )
+
+async def fetch_conversation_owner_and_title_pool(
+    pool: AsyncConnectionPool,
+    conversation_id: str,
+) -> tuple[str, str | None] | None:
+    """Wrapper mỏng lấy owner + title theo pool, thay vì connection"""
+    async with pool.connection() as conn:
+        return await fetch_conversation_owner_and_title(conn, conversation_id)
+
+
+async def list_user_conversations(
+    pool: AsyncConnectionPool,
+    user_id: str,
+) -> list[tuple[str, str | None]]:
+    """List (conversation_id, title) của một user, mới nhất trước.
+
+    Giữ nguyên ngữ nghĩa của bản sync `get_user_conversations`
+    (conversation_queries.py) để UI không đổi hành vi: order by created_at
+    DESC, title có thể None (placeholder là quyết định hiển thị của sidebar,
+    không phải của tầng dữ liệu). Filter user_id chính là gate"""
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT conversation_id, title
+                FROM conversations
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                """,
+                (user_id,),
+            )
+            rows = await cur.fetchall()
+
+    return [(row[0], row[1]) for row in rows]
+
+
+async def fetch_conversation_messages(
+    pool: AsyncConnectionPool,
+    conversation_id: str,
+    user_id: str,
+) -> list[dict]:
+    """Load messages của một conversation, đã chuẩn hoá {role, content}"""
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                SELECT ch.message
+                FROM chat_history ch
+                JOIN conversations c
+                  ON ch.session_id = c.conversation_id
+                WHERE c.conversation_id = %s AND c.user_id = %s
+                ORDER BY ch.id ASC
+                """,
+                (conversation_id, user_id),
+            )
+            rows = await cur.fetchall()
+
+    messages: list[dict] = []
+    for row in rows:
+        normalized = normalize_message(row[0])
+        if normalized:
+            messages.append(normalized)
+    return messages
