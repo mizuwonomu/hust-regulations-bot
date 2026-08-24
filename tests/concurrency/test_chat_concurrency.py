@@ -23,6 +23,15 @@
 (g) happy path       — ghi thành công → memory_persisted=true và chat_history
                         đủ 2 msg (chống cờ kẹt cứng ở một giá trị).
 Chạy: TEST_DATABASE_URL=<url DB test> uv run pytest tests/concurrency -v
+
+SUPABASE POOLER (6543) — cách thích nghi của (e)/(f): Supavisor tước
+application_name của mọi client conn (xem docs/testing-setup.md), nên không
+thể nhắm conn pool theo KILL_APP_NAME như localhost. (e) nhắm theo
+state='idle in transaction' (conn borrow-2 duy nhất ở trạng thái đó trong
+cửa sổ stub-sleep) và bỏ phần verify pid thay conn chết (chỉ giữ
+pool_available + bằng chứng chức năng). (f) skip qua pooler: conn idle của
+pool lẫn với conn nội bộ của pooler, kill bừa là phá pooler — guard này chạy
+đúng nghĩa trên localhost.
 """
 
 from __future__ import annotations
@@ -192,13 +201,30 @@ async def test_d_same_session_race_no_loss(client, fetch_messages):
 
 
 def _pool_pids(admin_conn) -> set[int]:
-    """Tập backend pid của mọi conn thuộc test_pool (lọc theo application_name)."""
+    """Tập backend pid của mọi conn thuộc test_pool (lọc theo application_name).
+
+    Chỉ có nghĩa trên localhost: qua Supabase 6543, Supavisor tước
+    application_name nên filter này trả set rỗng (caller phải xử lý).
+    """
     with admin_conn.cursor() as cur:
         cur.execute(
             "SELECT pid FROM pg_stat_activity WHERE application_name = %s",
             (KILL_APP_NAME,),
         )
         return {row[0] for row in cur.fetchall()}
+
+
+def _is_transaction_pooler(admin_conn) -> bool:
+    """True nếu connection đi qua Supavisor transaction pooler (6543).
+
+    Supavisor tước application_name của mọi client conn (cả conninfo lẫn
+    options) — SHOW application_name trả 'Supavisor' thay vì giá trị đặt.
+    Trên localhost trả giá trị conninfo (vd 'hust-test-admin'). Đây là cách
+    duy nhất phân biệt hai môi trường cho (e)/(f).
+    """
+    with admin_conn.cursor() as cur:
+        cur.execute("SHOW application_name")
+        return cur.fetchone()[0] == "Supavisor"
 
 
 def _pool_activity(admin_conn) -> list[tuple]:
@@ -263,38 +289,69 @@ async def test_e_db_side_failure_no_write_conn_replaced(
     #    quyền; thiếu quyền → InsufficientPrivilege → skip thay vì fail khó hiểu
     _require_terminate_privilege(admin_conn)
 
+    pooler = _is_transaction_pooler(admin_conn)
+
     # 1. Snapshot pid của pool trước khi chạy (để sau này chứng minh conn chết
-    #    đã được thay bằng pid mới, chứ không phải reuse lại pid cũ)
-    pids_before = _pool_pids(admin_conn)
-    assert len(pids_before) == POOL_MAX_SIZE, (
-        f"pool phải mở sẵn {POOL_MAX_SIZE} conn, thấy {len(pids_before)}: {pids_before}"
-    )
+    #    đã được thay bằng pid mới, chứ không phải reuse lại pid cũ).
+    #    Qua Supabase 6543 không phân biệt được pid conn của pool (Supavisor
+    #    tước application_name) nên bỏ qua bước này.
+    pids_before: set[int] = set()
+    if not pooler:
+        pids_before = _pool_pids(admin_conn)
+        assert len(pids_before) == POOL_MAX_SIZE, (
+            f"pool phải mở sẵn {POOL_MAX_SIZE} conn, thấy {len(pids_before)}: {pids_before}"
+        )
 
-    # 2-3. Tạo request, chờ request vào giữa cửa sổ stub-sleep: borrow-2 đang
-    #      giữ conn, transaction còn mở (state = 'idle in transaction'),
-    #      chưa tới khâu write
+    # 2-3. Tạo request rồi POLL pg_stat_activity tới khi bắt được borrow-2:
+    #      conn 'idle in transaction' có query cuối là history read
+    #      (SELECT ... FROM chat_history) — dấu hiệu chắc chắn đang trong cửa
+    #      sổ stub-sleep, transaction còn mở, chưa tới khâu write.
+    #      KHÔNG ngủ cố định SLEEP/2: trên Supabase RTT ~90ms nên bản thân
+    #      borrow-1 (fetch owner + claim + commit = ~2-3 RTT) đã mất ~200ms >
+    #      SLEEP/2 — kill tại thời điểm cố định trúng borrow-1 (AdminShutdown
+    #      raise thay vì 200 + memory_persisted=false). Poll theo dấu hiệu
+    #      query thì robust với mọi RTT.
     task = asyncio.create_task(_post(client, sid, question))
-    await asyncio.sleep(SLEEP / 2)
 
-    # 4. Tìm backend đang bận của pool rồi terminate. state <> 'idle' bắt
-    #    borrow-2 (idle in transaction trong lúc stub sleep); conn còn lại
-    #    nằm idle trong pool nên không bị bắt nhầm
-    with admin_conn.cursor() as cur:
-        cur.execute(
-            """
+    # 4. Tiêu chí bắt backend của pool rồi terminate.
+    #    Localhost: state <> 'idle' bắt borrow-2 (idle in transaction trong lúc
+    #    stub sleep); conn còn lại nằm idle trong pool nên không bị bắt nhầm.
+    #    Supabase 6543: Supavisor tước application_name nên không lọc theo
+    #    KILL_APP_NAME; thêm query LIKE '%chat_history%' để loại borrow-1
+    #    (query cuối là 'SELECT user_id FROM conversations ...') — borrow-1
+    #    cũng nằm ở 'idle in transaction' giữa 2 query nhưng cửa sổ đó hẹp và
+    #    không phải thứ cần kill. Loại trừ chính admin conn: pid của câu query
+    #    đang chạy có state='active' và cũng nằm trong pg_stat_activity.
+    if pooler:
+        select_sql = """
+            SELECT pid, state, left(query, 60)
+            FROM pg_stat_activity
+            WHERE state = 'idle in transaction'
+              AND pid <> pg_backend_pid()
+              AND query LIKE '%%chat_history%%'
+        """
+        select_params = ()
+    else:
+        select_sql = """
             SELECT pid, state, left(query, 60)
             FROM pg_stat_activity
             WHERE application_name = %s AND state <> 'idle'
-            """,
-            (KILL_APP_NAME,),
-        )
-        rows = cur.fetchall()
+        """
+        select_params = (KILL_APP_NAME,)
 
-    assert rows, (
-        f"không bắt được conn borrow-2 đang active/idle-in-transaction tại "
-        f"SLEEP/2 — timing lệch hoặc transaction đã commit sớm. Toàn bộ conn "
-        f"của pool lúc đó: {_pool_activity(admin_conn)}"
-    )
+    deadline = time.monotonic() + POOL_TIMEOUT
+    rows: list[tuple] = []
+    while not rows:
+        with admin_conn.cursor() as cur:
+            cur.execute(select_sql, select_params)
+            rows = cur.fetchall()
+        if not rows:
+            assert time.monotonic() < deadline, (
+                f"không bắt được conn borrow-2 trong {POOL_TIMEOUT}s — request "
+                f"có thể đã chạy xong (timing lệch) hoặc chết sớm. Toàn bộ conn "
+                f"của pool lúc đó: {_pool_activity(admin_conn)}"
+            )
+            await asyncio.sleep(0.02)
     killed_pid, killed_state, killed_query = rows[0]
     print(
         f"[db-kill] terminate backend pid={killed_pid} "
@@ -336,14 +393,16 @@ async def test_e_db_side_failure_no_write_conn_replaced(
     )
 
     # 6. Pool tự lành là async (refill qua worker thread của pool) → poll deadline
-    #    như test (c), đừng assert ngay sau kill
+    #    như test (c), đừng assert ngay sau kill.
+    #    Qua pooler, không verify được pid thay thế (không phân biệt được conn
+    #    của pool) — chỉ verify pool_available đủ và request sau đó chạy được.
     deadline = time.monotonic() + POOL_TIMEOUT
     stats = test_pool.get_stats()
     live_pids = _pool_pids(admin_conn)
     while (
-        (stats["pool_available"] < POOL_MAX_SIZE or killed_pid in live_pids)
-        and time.monotonic() < deadline
-    ):
+        stats["pool_available"] < POOL_MAX_SIZE
+        or (not pooler and killed_pid in live_pids)
+    ) and time.monotonic() < deadline:
         await asyncio.sleep(0.02)
         stats = test_pool.get_stats()
         live_pids = _pool_pids(admin_conn)
@@ -359,13 +418,22 @@ async def test_e_db_side_failure_no_write_conn_replaced(
         f"pool_available={stats['pool_available']}/{POOL_MAX_SIZE} — conn chết "
         f"không được discard/refill?"
     )
-    assert killed_pid not in live_pids, (
-        f"killed_pid={killed_pid} vẫn còn trong pg_stat_activity: {live_pids}"
-    )
-    new_pids = live_pids - pids_before
-    assert new_pids, (
-        f"không có conn mới thế chỗ conn chết: before={pids_before} now={live_pids}"
-    )
+    if pooler:
+        # Qua Supabase 6543 không nhìn thấy pid của pool trong pg_stat_activity
+        # (Supavisor tước application_name) — bằng chứng lành: pool_available
+        # đủ (client-side truth) + request sau đây chạy được.
+        print(
+            "[db-kill] pooler mode: bỏ qua verify pid thay thế — "
+            "pool_available đủ là bằng chứng lành trên Supavisor"
+        )
+    else:
+        assert killed_pid not in live_pids, (
+            f"killed_pid={killed_pid} vẫn còn trong pg_stat_activity: {live_pids}"
+        )
+        new_pids = live_pids - pids_before
+        assert new_pids, (
+            f"không có conn mới thế chỗ conn chết: before={pids_before} now={live_pids}"
+        )
 
 @pytest.mark.anyio
 async def test_f_ownership_read_failure_surfaces_500(
@@ -402,6 +470,15 @@ async def test_f_ownership_read_failure_surfaces_500(
     sid = str(uuid.uuid4())
 
     _require_terminate_privilege(admin_conn)
+
+    if _is_transaction_pooler(admin_conn):
+        pytest.skip(
+            "Supavisor (6543) tước application_name: conn idle của pool không "
+            "phân biệt được với conn nội bộ của pooler nên không thể nhắm kill "
+            "mà không phá pooler. Guard này chạy đúng nghĩa trên localhost; "
+            "property 'đọc hỏng phải surface' qua pooler được bảo vệ gián tiếp "
+            "bởi test (e) (kill giữa turn) + đường đọc không bị nuốt theo thiết kế."
+        )
 
     pids = _pool_pids(admin_conn)
     assert len(pids) == POOL_MAX_SIZE, (

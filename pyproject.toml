@@ -150,3 +150,7 @@ dev = ["pytest>=8.3"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-m 'not slow'"
+markers = [
+    "slow: phép đo dài (capacity với turn/pool giống prod) — chạy bằng -m slow",
+]
