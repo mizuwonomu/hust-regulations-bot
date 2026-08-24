@@ -12,6 +12,8 @@ import os
 
 from psycopg_pool import ConnectionPool
 
+from .pool_config import SYNC_MIN_POOL, SYNC_MAX_POOL, POOL_TIMEOUT_SECONDS
+
 
 def create_sync_pool() -> ConnectionPool:
     database_url = os.environ.get("DATABASE_URL")
@@ -20,8 +22,9 @@ def create_sync_pool() -> ConnectionPool:
 
     return ConnectionPool(
         conninfo=database_url,
-        min_size=2,
-        max_size=10,
+        min_size=SYNC_MIN_POOL,
+        max_size=SYNC_MAX_POOL,
+        timeout=POOL_TIMEOUT_SECONDS,
         #tắt prepared statement 
         kwargs={"prepare_threshold": None},
         check=ConnectionPool.check_connection,
