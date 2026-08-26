@@ -1,15 +1,13 @@
 """
     Module orchestrate frontend Streamlit.
 
-    Với từng messages nhận được từ câu hỏi của user, tạo ra một session id cho cuộc hội thoại hiện tại
-    Với answer trả về từ RAG chain, sẽ stream token cùng với nguồn tài liệu truy vấn và hiển thị ra UI.
-
-    Đồng thời, khi đã đủ lượng messages trong state, status sinh title hợp lệ, và backend verify messages type
-    -> sẽ trigger sinh title và poll sync sidebar để rerun, trả về title hiển thị ra UI.
+    Khi đủ lượng messages trong state và là first exchange -> trigger sinh title
+    và poll sync sidebar để rerun, trả về title hiển thị ra UI
 """
 import streamlit as st
-from frontend.workflows.chat_stream import render_streamed_ai_answer
-from src.rag.qa_chain import bind_history
+
+from frontend.components.source_panel import render_sources
+from frontend.services.chat_client import send_message
 
 def handle_query(question: str, deps):
     with st.chat_message("user"):
@@ -18,21 +16,35 @@ def handle_query(question: str, deps):
     st.session_state.messages.append({"role": "user", "content": question})
 
     session_id = st.session_state.conv_id
-    conn = deps.db_connection_factory()
-    wrapped_chain = bind_history(deps.rag_chain, conn) #rag_chain giờ là core chain, bọc history theo từng run
-    full_response, sources = render_streamed_ai_answer(wrapped_chain, question, session_id)
+    user_id = st.session_state.user_id
 
-    #luu cau tra loi cua AI vao history de hien thi
+    result = send_message(session_id, user_id, question)
+
+    if result is None:
+        # Hard fail (404 / transport): KHÔNG append AI message và KHÔNG trigger
+        # title -> để user hỏi lại. User message đã append thì giữ nguyên.
+        with st.chat_message("ai"):
+            st.error("Không nhận được câu trả lời từ máy chủ. Vui lòng thử lại.")
+        return
+
+    with st.chat_message("ai"):
+        st.markdown(result.answer)
+        render_sources(result.sources)
+        if not result.memory_persisted:
+            # Soft degrade: answer đã sinh thành công server-side, chỉ phần ghi
+            # history thất bại -> cảnh báo, không vứt bỏ lượt chat này.
+            st.warning(
+                "Câu trả lời đã hiển thị nhưng không được lưu vào lịch sử hội thoại."
+            )
+
+    # Lưu câu trả lời của AI vào state để hiển thị
     st.session_state.messages.append({
-        "role": "ai", 
-        "content": full_response,
-        "sources": sources #avoid losing sources when reload
+        "role": "ai",
+        "content": result.answer,
+        "sources": result.sources,  # avoid losing sources when reload
     })
 
-    user_id = st.session_state.user_id
-    message_count = len(st.session_state.messages) #khi bắt đầu có câu hỏi đầu tiên của user + answer của llm
-                                                   #tức 2 message trong state -> lập tức run task sinh title
-
+    message_count = len(st.session_state.messages)  # 2 = first exchange (user + AI)
     is_first_exchange = message_count == 2
     already_scheduled = session_id in st.session_state.title_generation_started
 

@@ -12,10 +12,6 @@ import os
 sys.path.append(os.path.abspath('.'))
 import streamlit as st
 
-from frontend.services.model_loader import get_rag_chain
-
-from frontend.services.connection_provider import get_cached_db_connection
-
 from frontend.components.new_chat import render_new_chat_button
 from frontend.components.sidebar import render_sidebar
 from frontend.components.sidebar_title_polling import poll_sidebar_title
@@ -37,10 +33,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-rag_chain = get_rag_chain()
 deps = AppDeps(
-    rag_chain=rag_chain,
-    db_connection_factory=get_cached_db_connection,
     title_generation_scheduler=schedule_title_generation,
 )
 
