@@ -1,4 +1,5 @@
-# CLAUDE.md
+
+# AGENTS.md
 
 Guidance for working in this repository. This is a **Vietnamese RAG chatbot for HUST academic regulations** (HUST Regulations Bot).
 
