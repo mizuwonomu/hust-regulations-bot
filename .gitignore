@@ -10,6 +10,7 @@ chroma_db/
 *.txt
 !requirements.txt
 __pycache__/
+.pytest_cache/
 .cursor/
 .agent/
 
@@ -31,3 +32,6 @@ cache/
 
 #session handoff (baton tạm, không phải durable knowledge)
 .knowledge/handoffs/
+
+#harness packages
+packages/

@@ -1,18 +1,20 @@
 import streamlit as st
-from src.database.conversation_queries import get_user_conversations
+from frontend.services.conversation_client import list_conversations
 from frontend.services.conversation_loader import load_conversation_into_state
 
 #Sentinel đại diện cho "cuộc trò chuyện mới chưa lưu" (đang ở Hero / vừa New Chat)
 NEW_CHAT_SENTINEL = "__new_chat__"
 
 
-def render_sidebar(db_connection_factory):
+def render_sidebar(user_id: str):
     with st.sidebar:
         st.header("💬 Cuộc trò chuyện")
         st.divider()
 
-        conn = db_connection_factory()
-        rows = get_user_conversations(conn, st.session_state.user_id)
+        rows = list_conversations(user_id)
+        if rows is None:
+            st.warning("Không kết nối được server để tải cuộc trò chuyện.")
+            return
 
         options = [(conv_id, title or "Cuộc trò chuyện chưa có tiêu đề") for conv_id, title in rows]
         current_conv_id = st.session_state.conv_id
@@ -50,6 +52,8 @@ def render_sidebar(db_connection_factory):
         )
 
         # User chủ động chọn conv khác khi selected_id khác conv đang mở VÀ không phải sentinel.
+        # Chỉ rerun khi load thành công - fail thì giữ nguyên state, tránh vòng lặp.
+        # Khi fail ngoài giữ nguyên state, phần if sẽ cho cả st.error kịp hiện thay vì nuốt lỗi exception
         if selected_id != display_id and selected_id != NEW_CHAT_SENTINEL:
-            load_conversation_into_state(selected_id, db_connection_factory)
-            st.rerun()
+            if load_conversation_into_state(selected_id, user_id):
+                st.rerun()

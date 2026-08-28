@@ -12,13 +12,6 @@ import os
 sys.path.append(os.path.abspath('.'))
 import streamlit as st
 
-from src.rag.qa_chain import get_chain
-from src.rag.embedding_utils import get_embedding_model
-from src.rag.reranker_utils import load_reranker
-from src.rag.config import RETRIEVER_TOP_K, LLM_TEMPERATURE
-
-from src.database.connection import get_db_connection
-
 from frontend.components.new_chat import render_new_chat_button
 from frontend.components.sidebar import render_sidebar
 from frontend.components.sidebar_title_polling import poll_sidebar_title
@@ -40,18 +33,13 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-embedding_model = get_embedding_model()
-reranker_model = load_reranker()
-rag_chain = get_chain(k=RETRIEVER_TOP_K, temperature=LLM_TEMPERATURE, embedding_model=embedding_model, _reranker_model=reranker_model)
 deps = AppDeps(
-    rag_chain=rag_chain,
-    db_connection_factory=get_db_connection,
     title_generation_scheduler=schedule_title_generation,
 )
 
 render_new_chat_button(reset_conversation_state)
 
-render_sidebar(deps.db_connection_factory)
+render_sidebar(st.session_state.user_id)
 poll_sidebar_title()
     
 #CHI ve 1 an duy nhat - tranh loi double display

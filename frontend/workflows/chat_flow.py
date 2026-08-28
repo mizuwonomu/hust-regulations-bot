@@ -1,14 +1,18 @@
 """
     Module orchestrate frontend Streamlit.
 
-    Với từng messages nhận được từ câu hỏi của user, tạo ra một session id cho cuộc hội thoại hiện tại
-    Với answer trả về từ RAG chain, sẽ stream token cùng với nguồn tài liệu truy vấn và hiển thị ra UI.
-
-    Đồng thời, khi đã đủ lượng messages trong state, status sinh title hợp lệ, và backend verify messages type
-    -> sẽ trigger sinh title và poll sync sidebar để rerun, trả về title hiển thị ra UI.
+    Khi đủ lượng messages trong state và là first exchange -> trigger sinh title
+    và poll sync sidebar để rerun, trả về title hiển thị ra UI
 """
 import streamlit as st
-from frontend.workflows.chat_stream import render_streamed_ai_answer
+
+from frontend.services.chat_stream_client import stream_message
+from frontend.workflows.chat_stream import (
+    NO_ANSWER_MESSAGE,
+    classify_turn_outcome,
+    render_streamed_ai_answer,
+)
+
 
 def handle_query(question: str, deps):
     with st.chat_message("user"):
@@ -17,19 +21,34 @@ def handle_query(question: str, deps):
     st.session_state.messages.append({"role": "user", "content": question})
 
     session_id = st.session_state.conv_id
-    full_response, sources = render_streamed_ai_answer(deps.rag_chain, question, session_id)
+    user_id = st.session_state.user_id
 
-    #luu cau tra loi cua AI vao history de hien thi
+    stream = stream_message(session_id, user_id, question)
+
+    if stream is None:
+        # Hard fail (404 / transport / non-200): không append AI message và
+        # không trigger title -> để user hỏi lại. User message đã append thì
+        # giữ nguyên
+        with st.chat_message("ai"):
+            st.error(NO_ANSWER_MESSAGE)
+        return
+
+    full_response, sources = render_streamed_ai_answer(stream)
+
+    if classify_turn_outcome(stream, full_response) != "complete":
+        # Incomplete turn: no_answer (error trước token, đã st.error) hay partial
+        # (error sau token, đã render + st.error) đều không append AI message và
+        # không trigger title - incomplete turn không được sống sót qua reload
+        return
+
+    # Lưu câu trả lời của AI vào state để hiển thị
     st.session_state.messages.append({
-        "role": "ai", 
+        "role": "ai",
         "content": full_response,
-        "sources": sources #avoid losing sources when reload
+        "sources": sources,  # avoid losing sources when reload
     })
 
-    user_id = st.session_state.user_id
-    message_count = len(st.session_state.messages) #khi bắt đầu có câu hỏi đầu tiên của user + answer của llm
-                                                   #tức 2 message trong state -> lập tức run task sinh title
-
+    message_count = len(st.session_state.messages)  # 2 = first exchange (user + AI)
     is_first_exchange = message_count == 2
     already_scheduled = session_id in st.session_state.title_generation_started
 

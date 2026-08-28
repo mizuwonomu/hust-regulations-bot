@@ -2,7 +2,7 @@ import os
 import sys
 sys.path.append(os.path.abspath('.'))
 import pickle
-import streamlit as st
+from functools import partial
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_classic.storage import LocalFileStore, EncoderBackedStore
@@ -17,17 +17,28 @@ from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnableP
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
-from src.database.connection import get_db_connection
-from src.rag.config import LLM_TEMPERATURE, RETRIEVER_TOP_K, RERANK_RATIO, RERANK_MAX_CHILDREN
+from src.rag.config import (
+    LLM_TEMPERATURE,
+    RETRIEVER_TOP_K,
+    RERANK_RATIO,
+    RERANK_MAX_CHILDREN,
+    ROUTER_MODEL,
+    QUERY_REWRITE_MODEL,
+    CHITCHAT_MODEL,
+    INFERENCE_MODEL,
+    ROUTER_TEMPERATURE,
+    QUERY_REWRITE_TEMPERATURE,
+    CHITCHAT_TEMPERATURE,
+    CHROMA_PATH,
+    CHROMA_COLLECTION,
+    DOC_STORE_PATH,
+)
 
 from langsmith import traceable
 
 from dotenv import load_dotenv
 load_dotenv()
 
-
-CHROMA_PATH = "chroma_db"
-DOC_STORE_PATH = "doc_store_pdr"
 
 def format_docs(docs):
     formatted = []
@@ -40,11 +51,21 @@ def format_docs(docs):
 
     return "\n\n".join(formatted)
 
-#connect database
-def get_session_history(session_id: str):
-    conn = get_db_connection()
+#chỉ nhận conn; status là hộp thư MemoryStatus do caller sở hữu, để
+#TrackedPostgresHistory ghi cờ kết quả cú ghi (mặc định None: không ghi cờ)
+def get_session_history(conn, session_id: str, status=None):
+    return get_postgres_history(conn, session_id, status=status)
 
-    return get_postgres_history(conn, session_id)
+
+def bind_history(core_chain, conn, status=None):
+    #bọc RunnableWithMessageHistory per-run, conn do caller (frontend hoặc G3) đưa vào
+    return RunnableWithMessageHistory(
+        core_chain,
+        partial(get_session_history, conn, status=status),
+        input_messages_key="question",
+        history_messages_key="chat_history",
+        output_messages_key="answer",
+    )
 
 
 #base model pydantic output for query rephrasing (multi-query expansion)
@@ -54,12 +75,11 @@ class QueryExpansion(BaseModel):
     queries: List[str] = Field(description="Danh sách tối đa 3 câu hỏi đơn lẻ bằng tiếng Việt để tìm kiếm")
 
 @traceable(run_type='chain')
-@st.cache_resource
-def get_chain(k, temperature, embedding_model, _reranker_model):
+def get_chain(k, temperature, embedding_model, reranker_model):
     embedding_model = embedding_model
     #load vector store
     vector_store = Chroma(
-        collection_name= "split_parents",
+        collection_name= CHROMA_COLLECTION,
         embedding_function = embedding_model,
         persist_directory = CHROMA_PATH
     )
@@ -95,7 +115,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     )
 
     #hugging-face based reranker (bge-reranker-v2-m3 by default)
-    reranker = _reranker_model
+    reranker = reranker_model
 
     # ── Traceable helpers (child spans visible in LangSmith) ──────────────────
     # Đóng gói 3 bước "trần" bên trong retreive_parents thành span riêng.
@@ -276,9 +296,10 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #ở bước rewrite, giữ nguyên từ khoá luật từ history và new input nhưng văn phong cần tự nhiên theo Việt, tránh rập khuôn -> temp 0.3
     query_rewrite_llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=QUERY_REWRITE_MODEL,
         max_retries=0,
-        temperature=0.2
+        temperature=QUERY_REWRITE_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: tắt thinking-mode, rewrite nằm trên critical path, không cần suy luận
     )
 
     #chain nhỏ chỉ làm nhiệm vụ: Input (History + Query) -> Output (List string query mới) + Plan thoughts
@@ -309,9 +330,10 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #router bắt buộc không chứa bất cứ thông tin cảm xúc hay sáng tạo, chỉ dùng để định tuyến
     router_llm = ChatGroq(
-        model="llama-3.1-8b-instant",
+        model=ROUTER_MODEL,
         max_retries=0,
-        temperature= 0.0
+        temperature=ROUTER_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: phân loại nhị phân, reasoning ở đây chỉ tốn latency + token
     )
 
     router_chain = router_prompt | router_llm | StrOutputParser()
@@ -338,9 +360,10 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
 
     #do chat thông thường không nhất thiết cần dùng luật -> chọn model có khả năng nói tự nhiên, response nhanh
     chitchat_llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=CHITCHAT_MODEL,
         max_retries=0,
-        temperature=0.7
+        temperature=CHITCHAT_TEMPERATURE,
+        reasoning_effort="none"  #qwen3: tán gẫu realtime, user đang đợi, không cần thinking
     )
     
     #Chuẩn hóa output format giống rag chain, trả về dạng 辞書型
@@ -392,7 +415,7 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     
     #test hybrid with no filter
     inference_llm = ChatGroq(
-        model = "openai/gpt-oss-120b",
+        model = INFERENCE_MODEL,
         temperature = temperature,
         reasoning_format = "parsed"
     )
@@ -455,32 +478,4 @@ def get_chain(k, temperature, embedding_model, _reranker_model):
     # Tổng hợp final chain
     full_chain = RunnableLambda(route_decision)
 
-    chain_with_history = RunnableWithMessageHistory(
-        full_chain,
-        get_session_history,
-        input_messages_key= "question",
-        history_messages_key= "chat_history",
-        output_messages_key= "answer",
-    )
-    
-    return chain_with_history
-
-def debug_memory(session_id):
-
-    history_obj = get_postgres_history(session_id)
-
-    #lúc này langchain sẽ chạy câu select trong DB
-    messages = history_obj.messages
-
-    if not messages:
-        return ["Chưa có lịch sử chat nào trong Database của session này!"]
-
-    readable_history = []
-
-    for msg in history_obj.messages:
-        readable_history.append({
-            "Role": msg.type.upper(), #msg type could be ai or human role
-            "Content": msg.content 
-        })
-
-    return readable_history
+    return full_chain
