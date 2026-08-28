@@ -6,8 +6,13 @@
 """
 import streamlit as st
 
-from frontend.components.source_panel import render_sources
-from frontend.services.chat_client import send_message
+from frontend.services.chat_stream_client import stream_message
+from frontend.workflows.chat_stream import (
+    NO_ANSWER_MESSAGE,
+    classify_turn_outcome,
+    render_streamed_ai_answer,
+)
+
 
 def handle_query(question: str, deps):
     with st.chat_message("user"):
@@ -18,30 +23,29 @@ def handle_query(question: str, deps):
     session_id = st.session_state.conv_id
     user_id = st.session_state.user_id
 
-    result = send_message(session_id, user_id, question)
+    stream = stream_message(session_id, user_id, question)
 
-    if result is None:
-        # Hard fail (404 / transport): KHÔNG append AI message và KHÔNG trigger
-        # title -> để user hỏi lại. User message đã append thì giữ nguyên.
+    if stream is None:
+        # Hard fail (404 / transport / non-200): không append AI message và
+        # không trigger title -> để user hỏi lại. User message đã append thì
+        # giữ nguyên
         with st.chat_message("ai"):
-            st.error("Không nhận được câu trả lời từ máy chủ. Vui lòng thử lại.")
+            st.error(NO_ANSWER_MESSAGE)
         return
 
-    with st.chat_message("ai"):
-        st.markdown(result.answer)
-        render_sources(result.sources)
-        if not result.memory_persisted:
-            # Soft degrade: answer đã sinh thành công server-side, chỉ phần ghi
-            # history thất bại -> cảnh báo, không vứt bỏ lượt chat này.
-            st.warning(
-                "Câu trả lời đã hiển thị nhưng không được lưu vào lịch sử hội thoại."
-            )
+    full_response, sources = render_streamed_ai_answer(stream)
+
+    if classify_turn_outcome(stream, full_response) != "complete":
+        # Incomplete turn: no_answer (error trước token, đã st.error) hay partial
+        # (error sau token, đã render + st.error) đều không append AI message và
+        # không trigger title - incomplete turn không được sống sót qua reload
+        return
 
     # Lưu câu trả lời của AI vào state để hiển thị
     st.session_state.messages.append({
         "role": "ai",
-        "content": result.answer,
-        "sources": result.sources,  # avoid losing sources when reload
+        "content": full_response,
+        "sources": sources,  # avoid losing sources when reload
     })
 
     message_count = len(st.session_state.messages)  # 2 = first exchange (user + AI)
