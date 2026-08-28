@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 
 from langchain_postgres import PostgresChatMessageHistory
@@ -26,15 +27,16 @@ class MemoryStatus:
 class TrackedPostgresHistory(PostgresChatMessageHistory):
     """PostgresChatMessageHistory + ghi cờ kết quả cú ghi vào hộp thư.
 
-    Chỉ override add_messages — các method còn lại (messages, clear, ...)
-    thừa hưởng nguyên vẹn từ PostgresChatMessageHistory (cây kế thừa chỉ 2
-    tầng), ít bề mặt hỏng hơn composition.
+    Override add_messages để ghi cờ; aget_messages/aadd_messages delegate về
+    bản sync qua asyncio.to_thread - astream của RunnableWithMessageHistory
+    (route SSE) đi qua đường đọc/ghi async mà langchain_postgres hard-reject
+    khi history dựng từ sync conn.
 
     Vẫn raise exception: giữ đúng ngữ nghĩa và log của LangChain vẫn có;
     cờ trong hộp thư mới là thứ thật sự mang tín hiệu ra ngoài (exception
     của cú ghi bị CallbackManager nuốt ở tầng listener).
 
-    status=None (mặc định): bỏ qua việc ghi cờ
+    status=None (mặc định): bỏ qua việc ghi cờ.
     """
 
     def __init__(
@@ -62,6 +64,16 @@ class TrackedPostgresHistory(PostgresChatMessageHistory):
                 self._status.persisted = False
                 self._status.error = repr(exc) #repr giữ lại loại exception, ví dụ như OperationalError
             raise
+
+    async def aget_messages(self) -> list:
+        # astream của wrapper đọc history qua đường async - delegate về bản
+        # sync chạy trong executor: conn sync vẫn được dùng tuần tự
+        return await asyncio.to_thread(self.get_messages)
+
+    async def aadd_messages(self, messages) -> None:
+        # Ghi trên đường async cũng phải đi qua add_messages của chính class
+        # này - hộp thư MemoryStatus ghi cờ đúng trên cả astream, không chỉ invoke
+        await asyncio.to_thread(self.add_messages, messages)
 
 
 def get_postgres_history(
