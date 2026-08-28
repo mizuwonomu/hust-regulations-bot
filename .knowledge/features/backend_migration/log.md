@@ -111,4 +111,4 @@ The only code change was hardening `tests/concurrency/probe.py`: the silent `exc
 
 ## Result / outcome — Step 3
 
-SSE token streaming is live and committed; streaming, memory persistence, and the poll-acquire pool wait all work on the real path. The feature's remaining arc is the de-wrapper memory split (the next Current focus), with the cross-test `PoolTimeout` root cause and the borrow-1 `INTRANS` tidy-up as open items.
+SSE token streaming is live and committed; streaming, memory persistence, and the poll-acquire pool wait all work on the real path. The feature's remaining arc is the de-wrapper memory split (the next Current focus), with the borrow-1 `INTRANS` tidy-up as an open item.
