@@ -7,16 +7,15 @@ requests_waiting / pool_available:
   chứ không ngẫu nhiên chạy tuần tự) — requests_waiting phải có lúc > 0.
 - test (c) dùng để xác nhận không leak connection — pool_available phải trở
   về đủ max_size sau khi một request bị hủy giữa chừng.
-
-psycopg_pool >= 3.2: ConnectionPool.get_stats() trả về dict có khóa
-"requests_waiting" (số request đang chờ connection, live) và "pool_available"
-(số connection rảnh, live). Xem psycopg_pool.ConnectionPool.get_stats.
 """
 
 from __future__ import annotations
 
+import logging
 import threading
 import time
+
+logger = logging.getLogger(__name__)
 
 
 class PoolProbe:
@@ -31,7 +30,7 @@ class PoolProbe:
             target=self._run, name="pool-probe", daemon=True
         )
 
-    def start(self) -> "PoolProbe":
+    def start(self) -> PoolProbe:
         """Bắt đầu lấy mẫu (thread daemon, không chặn test)."""
         self._thread.start()
         return self
@@ -53,8 +52,7 @@ class PoolProbe:
                     }
                 )
             except Exception:
-                # pool chưa open / đang đóng → bỏ qua mẫu, không làm crash test
-                pass
+                logger.debug("pool-probe: get_stats() lỗi, bỏ mẫu", exc_info=True)
             self._stop.wait(self._interval)
 
     def get_stats(self) -> dict:
@@ -63,6 +61,7 @@ class PoolProbe:
         available = [m["available"] for m in self._timeline]
         return {
             "n_samples": len(self._timeline),
+            "t": [m["t"] for m in self._timeline],
             "requests_waiting": {
                 "max": max(waiting) if waiting else 0,
                 "timeline": waiting,
