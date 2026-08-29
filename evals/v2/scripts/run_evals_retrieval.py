@@ -6,14 +6,14 @@ import pickle
 import random
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
 sys.path.append(os.path.abspath('.'))
 
 import torch
 from dotenv import load_dotenv
-import openai
 from langchain_chroma import Chroma
 from langchain_classic.retrievers import EnsembleRetriever
 from langchain_classic.storage import EncoderBackedStore, LocalFileStore
@@ -24,15 +24,22 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel, Field
-from ragas.cache import DiskCacheBackend as DiskCachedBackend
 from ragas import experiment
-from ragas.llms import llm_factory
-from ragas.metrics.collections import ContextPrecision, ContextRecall
+from ragas.cache import DiskCacheBackend as DiskCachedBackend
+from ragas.dataset_schema import SingleTurnSample
+from ragas.llms import LangchainLLMWrapper
+from ragas.metrics import ContextPrecision, ContextRecall
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
+
+#import từ config để eval tự bám theo production khi ratio đổi
+from src.rag.config import (
+    JUDGE_MODEL,
+    QUERY_REWRITE_MODEL,
+    RERANK_MAX_CHILDREN,
+    RERANK_RATIO,
+)
 from src.rag.embedding_utils import get_embedding_model
 from src.rag.reranker_utils import load_reranker
-#import từ config để eval tự bám theo production khi ratio đổi
-from src.rag.config import RERANK_RATIO, RERANK_MAX_CHILDREN
 
 load_dotenv()
 
@@ -219,7 +226,7 @@ def retrieve_parent_contexts(
     reranker: Any,
     doc_store: EncoderBackedStore,
 ) -> list[str]:
-    # Required offset before each retrieval-only invoke (query rewrite uses llama-70b)
+    # Required offset before each retrieval-only invoke (query rewrite uses qwen3)
     _random_offset_sleep(label="retrieval_invoke")
 
     sub_queries = _rewrite_into_subqueries(query, rewrite_chain)
@@ -259,12 +266,6 @@ def retrieve_parent_contexts(
     ]
 
 
-def _metric_value(result: Any) -> float:
-    if hasattr(result, "value"):
-        return float(result.value)
-    return float(result)
-
-
 def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]:
     if isinstance(exp_results, list):
         normalized = exp_results
@@ -292,7 +293,7 @@ def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]
 
 async def run_eval(dataset_path: str, output_path: str, ratio: float | None = None) -> None:
     if "GROQ_API_KEY" not in os.environ:
-        raise EnvironmentError("GROQ_API_KEY is required in environment or .env")
+        raise OSError("GROQ_API_KEY is required in environment or .env")
 
     #Cho phép quét ratio
     global RERANK_RATIO
@@ -300,37 +301,35 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
         RERANK_RATIO = ratio
     print(f"[config] RERANK_RATIO = {RERANK_RATIO}")
 
-    with open(dataset_path, "r", encoding="utf-8") as f:
+    with open(dataset_path, "r", encoding="utf-8") as f:  # noqa: ASYNC230
         dataset_raw = json.load(f)
 
     if not isinstance(dataset_raw, list):
-        raise ValueError("Dataset must be a JSON array of samples")
+        raise ValueError("Dataset must be a JSON array of samples")  # noqa: TRY004
     dataset = [EvalInputRow.model_validate(row) for row in dataset_raw]
 
     embedding_model = _build_embedding_model()
     reranker = load_reranker()
     ensemble_retriever, doc_store = _build_retrievers(k=15, embedding_model=embedding_model)
 
-    # llama-70b for query rewrite
     rewrite_llm = ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=QUERY_REWRITE_MODEL,
         temperature=0.2,
         max_retries=0,
+        reasoning_effort="none",
     )
     rewrite_chain = _build_rewrite_chain(rewrite_llm)
 
-    # llama-70b judge for ragas metrics
+    # Judge đi qua LangchainLLMWrapper + ChatGroq thay vì llm_factory
     RAW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cacher = DiskCachedBackend(cache_dir=str(RAW_CACHE_DIR))
-    async_openai_client = openai.AsyncOpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=os.environ.get("GROQ_API_KEY"),
-    )
-    judge_llm = llm_factory(
-        "llama-3.3-70b-versatile",
-        provider="openai",
-        client=async_openai_client,
-        temperature=0,
+    judge_llm = LangchainLLMWrapper(
+        ChatGroq(
+            model=JUDGE_MODEL,
+            temperature=0,
+            max_retries=0,
+            reasoning_format="parsed",
+        ),
         cache=cacher,
     )
 
@@ -347,20 +346,14 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
             doc_store=doc_store,
         )
 
-        precision = _metric_value(
-            await context_precision_metric.ascore(
-                user_input=row.user_input,
-                reference=row.response,
-                retrieved_contexts=retrieved_contexts,
-            )
+        # Metric legacy nhận SingleTurnSample thay vì kwargs như collections
+        sample = SingleTurnSample(
+            user_input=row.user_input,
+            retrieved_contexts=retrieved_contexts,
+            reference=row.response,
         )
-        recall = _metric_value(
-            await context_recall_metric.ascore(
-                user_input=row.user_input,
-                reference=row.response,
-                retrieved_contexts=retrieved_contexts,
-            )
-        )
+        precision = float(await context_precision_metric.single_turn_ascore(sample))
+        recall = float(await context_recall_metric.single_turn_ascore(sample))
 
         print(
             f"id={row.id} precision={precision:.4f} "
@@ -403,7 +396,7 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
         aggregate_scores[metric] = round(sum(values) / len(values), 4) if values else None
 
     output = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
         "aggregate_scores": aggregate_scores,
         "dataset_path": dataset_path,
         #Kết quả phải tự mô tả: hai run chỉ khác nhau ở ratio thì filename không đủ
@@ -419,7 +412,7 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
 
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
+    with open(output_file, "w", encoding="utf-8") as f:  # noqa: ASYNC230
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"Saved evaluation results to: {output_file}")
@@ -436,7 +429,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=str,
-        default=f"evals/v2/results/eval_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        default=f"evals/v2/results/eval_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",  # noqa: DTZ005
         help="Path to output JSON file",
     )
     parser.add_argument(

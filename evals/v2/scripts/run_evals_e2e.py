@@ -3,21 +3,27 @@ import asyncio
 import json
 import os
 import random
+import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import openai
+sys.path.append(os.path.abspath('.'))
+
 import torch
 from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 from pydantic import BaseModel
 from ragas import experiment
 from ragas.cache import DiskCacheBackend
+from ragas.dataset_schema import SingleTurnSample
 from ragas.embeddings import HuggingFaceEmbeddings
-from ragas.llms import llm_factory
-from ragas.metrics.collections import Faithfulness, AnswerCorrectness
+from ragas.llms import LangchainLLMWrapper
+from ragas.metrics import AnswerCorrectness, Faithfulness
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
+
+from src.rag.config import JUDGE_MODEL
 
 load_dotenv()
 
@@ -79,7 +85,7 @@ def _normalize_experiment_results(exp_results: Any) -> list[E2EScoredRow]:
 
 async def run_scoring(generated_results_path: str, output_path: str) -> None:
     if "GROQ_API_KEY" not in os.environ:
-        raise EnvironmentError("GROQ_API_KEY is required in environment or .env")
+        raise OSError("GROQ_API_KEY is required in environment or .env")
 
     raw = json.loads(Path(generated_results_path).read_text(encoding="utf-8"))
     dataset = [E2EGeneratedRow.model_validate(row) for row in raw.get("results", [])]
@@ -93,15 +99,14 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
 
     RAW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cacher = DiskCacheBackend(cache_dir=str(RAW_CACHE_DIR))
-    async_openai_client = openai.AsyncOpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=os.environ.get("GROQ_API_KEY"),
-    )
-    judge_llm = llm_factory(
-        "llama-3.3-70b-versatile",
-        client=async_openai_client,
-        provider="openai",
-        temperature=0.0,
+    # Judge đi qua LangchainLLMWrapper + ChatGroq thay vì llm_factory
+    judge_llm = LangchainLLMWrapper(
+        ChatGroq(
+            model=JUDGE_MODEL,
+            temperature=0.0,
+            max_retries=0,
+            reasoning_format="parsed",
+        ),
         cache=cacher,
     )
 
@@ -120,17 +125,16 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
         reraise=True,
     )
     async def _score_metrics(row: E2EGeneratedRow) -> tuple[float, float]:
-        faithfulness = await faithfulness_metric.ascore(
+        # Metric legacy nhận SingleTurnSample thay vì kwargs như collections
+        sample = SingleTurnSample(
             user_input=row.query,
             response=row.predicted_response,
             retrieved_contexts=row.retrieved_contexts,
-        )
-        answer_correctness = await answer_correctness_metric.ascore(
-            user_input=row.query,
-            response=row.predicted_response,
             reference=row.reference,
         )
-        return float(faithfulness.value), float(answer_correctness.value)
+        faithfulness = await faithfulness_metric.single_turn_ascore(sample)
+        answer_correctness = await answer_correctness_metric.single_turn_ascore(sample)
+        return float(faithfulness), float(answer_correctness)
 
     @experiment(E2EScoredRow)
     async def score_row(row: E2EGeneratedRow) -> E2EScoredRow:
@@ -163,8 +167,7 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
         aggregate_scores[metric] = round(sum(vals) / len(vals), 4) if vals else None
 
     output = {
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        #carry-through: file điểm phải tự nói được nó chấm model nào, trên context nào
+        "created_at": datetime.now(UTC).isoformat(),
         "model": generation_model,
         "temperature": generation_temperature,
         "generated_results_path": generated_results_path,
@@ -185,12 +188,12 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Score generated responses with Ragas (llama judge)")
+    parser = argparse.ArgumentParser(description="Score generated responses with Ragas (qwen3 judge)")
     parser.add_argument("--generated-results", type=str, default=DEFAULT_GENERATED_RESULTS)
     parser.add_argument(
         "--output",
         type=str,
-        default=f"evals/v2/results/eval_e2e_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+        default=f"evals/v2/results/eval_e2e_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",  # noqa: DTZ005
     )
     return parser.parse_args()
 
