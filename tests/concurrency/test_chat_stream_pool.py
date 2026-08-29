@@ -1,17 +1,22 @@
 """Probe pool-hold + concurrency cho POST /conversations/{id}/messages/stream.
 
-Ba dịch chuyển hành vi được đo:
+Hai dịch chuyển hành vi được đo (sau de-wrap - memory tách khỏi wrapper nên
+astream KHÔNG giữ conn nữa):
 
-- Arm A: conn-hold bám theo TOÀN BỘ thời lượng stream - conn vẫn bị giữ trong
-  lúc token đang chảy (sync endpoint không bao giờ có overlap này: không byte
-  nào về trước khi invoke xong).
-- Arm B: N=45 stream trên pool 45 KHÔNG tranh chấp -> peak số generator nhập
-  đồng thời > 40: chứng minh không còn anyio 40-token gate trên đường stream.
-- Arm C: pool(10) + timeout synthetic -> PoolTimeout giờ CHẠM ĐƯỢC trên đường
-  streaming (JSON path: PoolTimeout unreachable, đếm = 0). PoolTimeout có thể
-  nổ ở HAI chỗ: borrow-1 (pre-stream, raw exception = 500 trong prod, ASGI
-  transport re-raise lên test) hoặc borrow-2 (trong generator sau khi 200
-  commit -> error event). Arm C đo CẢ HAI hiện tượng.
+- Arm B: pool 15 KHÔNG tranh chấp, N=15 stream đồng thời -> peak generator
+  nhập đồng thời = 15 và 15/15 stream trọn vẹn: chứng minh không có cơ chế
+  serialize nào trên đường stream.
+- Arm D (payoff của de-wrap): pool(1) + N=3 stream, stub ngủ giữa các token -
+  astream KHÔNG giữ conn nên 3 stream chồng lên nhau, tổng thời gian < 2x một
+  lượt (thời conn-pin: 3 stream tuần tự, tổng ~3x). Borrow ngắn vẫn tranh
+  chấp chốc lát trên pool 1 conn -> saw_contention > 0.
+
+ĐÃ XOÁ cùng đợt de-wrap (đo hành vi conn-pin không còn tồn tại):
+- Arm A (conn-hold bám toàn bộ stream) - overlap giữa conn-hold và token
+  window giờ là rỗng, đó chính là kết quả de-wrap phải đạt được.
+- Arm C (PoolTimeout chạm được nhờ conn bị giữ ~1.2s) - borrow giờ ngắn
+  vài RTT nên PoolTimeout chỉ nổ khi pool bão hoà thật, không còn nằm trong
+  thiết kế của đường stream.
 """
 
 from __future__ import annotations
@@ -60,10 +65,9 @@ class HandlerCounter:
         self.cur -= 1
 
 
-def make_stub_stream_chain(n_chunks: int, per_chunk: float, counter: HandlerCounter | None = None, stamps: dict | None = None):
+def make_stub_stream_chain(n_chunks: int, per_chunk: float, counter: HandlerCounter | None = None):
     """Stub astream: n_chunks delta {"answer"}, mỗi delta cách nhau per_chunk giây
-    (asyncio.sleep trên loop - mô phỏng token pacing của LLM thật). stamps ghi
-    mốc server-side của chunk đầu/cuối để Arm A khớp với timeline của PoolProbe
+    (asyncio.sleep trên loop - mô phỏng token pacing của LLM thật)
     """
 
     async def _gen(inputs: dict):
@@ -72,10 +76,6 @@ def make_stub_stream_chain(n_chunks: int, per_chunk: float, counter: HandlerCoun
         try:
             for i in range(n_chunks):
                 await asyncio.sleep(per_chunk)
-                if stamps is not None:
-                    if stamps.get("first") is None:
-                        stamps["first"] = time.monotonic()
-                    stamps["last"] = time.monotonic()
                 yield {"answer": f"tok{i} "}
         finally:
             if counter is not None:
@@ -163,62 +163,6 @@ def _pool_summary(pool) -> str:
         f"lost={s.get('connections_lost', '?')} errors={s.get('connections_error', '?')}"
     )
 
-
-@pytest.mark.anyio
-async def test_a_conn_hold_spans_whole_token_stream(make_stream_probe_client, test_database_url):
-    """Arm A: conn bị giữ suốt lúc token đang chảy - overlap giữa borrow window
-    (pool_available < max theo PoolProbe) và token window server-side
-    [stamps.first, stamps.last]; sau khi stream xong, conn phải trả đủ về pool
-    """
-    n_chunks, per_chunk = 6, 0.15
-    stamps: dict = {}
-
-    client, pool = await make_stream_probe_client(2, 5.0, make_stub_stream_chain(n_chunks, per_chunk, stamps=stamps))
-    probe = PoolProbe(pool, interval=0.005).start()
-    try:
-        names, tokens, error = await _stream_events(client)
-        await asyncio.sleep(0.05)  #nhường sample cuối của probe sau khi conn trả
-    finally:
-        probe.stop()
-
-    stats = probe.get_stats()
-    assert stats["n_samples"] > 0, (
-        "probe không lấy được mẫu nào - timeline rỗng, mọi assertion pool bên dưới "
-        "vô nghĩa (nghi get_stats() lỗi, xem log pool-probe)"
-    )
-    hold_samples = list(zip(stats["t"], stats["pool_available"]["timeline"]))
-
-    assert error is None
-    assert tokens == "".join(f"tok{i} " for i in range(n_chunks))
-    assert names[-1] == "done"
-
-    first, last = stamps["first"], stamps["last"]
-    stream_dur = last - first
-
-    #overlap: tồn tại sample conn-đang-giữ nằm TRONG token window server-side
-    overlap = [(t, a) for t, a in hold_samples if a < 2 and first <= t <= last]
-    assert overlap, (
-        f"không sample nào thấy conn bị giữ trong lúc token chảy "
-        f"(window {first:.3f}..{last:.3f}s)"
-    )
-
-    #hold window bám sát toàn bộ thời lượng stream (direction, không phải số magic)
-    held = [t for t, a in hold_samples if a < 2]
-    hold_window = (max(held) - min(held)) if held else 0.0
-
-    #conn trả đủ về pool sau khi stream kết thúc - không leak
-    assert hold_samples[-1][1] == 2, f"pool chưa hồi đầy sau stream: {hold_samples[-5:]}"
-
-    print(
-        f"\n[Arm A] target={_target_host(test_database_url)} "
-        f"stream_dur(server)={stream_dur:.3f}s hold_window={hold_window:.3f}s "
-        f"overlap_samples={len(overlap)} | {_pool_summary(pool)}"
-    )
-    assert hold_window >= 0.8 * stream_dur, (
-        f"conn-hold {hold_window:.3f}s không bám stream {stream_dur:.3f}s"
-    )
-
-
 @pytest.mark.anyio
 async def test_b_peak_handlers_not_capped_at_40(make_stream_probe_client, test_database_url):
     """Arm B: pool 15 KHÔNG tranh chấp, N=15 stream đồng thời -> peak generator
@@ -270,56 +214,57 @@ async def test_b_peak_handlers_not_capped_at_40(make_stream_probe_client, test_d
 
 
 @pytest.mark.anyio
-async def test_c_pool_timeout_reachable_under_pinned_conns(make_stream_probe_client, test_database_url):
-    """Arm C: pool(10) timeout synthetic 1.0s, N=20 stream giữ conn ~1.2s
-    (history RTT + pacing 6x0.15s) -> waiters chờ > timeout -> PoolTimeout
-    CHẠM ĐƯỢC. JSON path (tracker): PoolTimeout unreachable, đếm = 0.
-
-    Nạn nhân có 2 dạng, CẢ HAI đều là bằng chứng và được đếm riêng:
-    - exception PoolTimeout qua gather (borrow-1, pre-stream -> 500 trong prod)
-    - error event trên wire (borrow-2, trong generator sau khi 200 commit)
-    Kỳ vọng định lượng: nạn nhân > 0, người sống sót > 0 (không phải sập toàn bộ)
+async def test_d_astream_holds_no_conn_so_streams_overlap(make_stream_probe_client, test_database_url):
+    """Arm D: astream giữ KHÔNG conn - conn chỉ được mượn trong 2 cửa sổ ngắn
+    (đọc history + ghi turn), khoảng ngủ giữa các token (mô phỏng LLM chậm)
+    không chiếm conn. Kết quả: N=3 stream trên pool 1 conn chồng lên nhau,
+    tổng wall-clock < 2x một lượt. Trước de-wrap: conn-pin bám suốt astream ->
+    3 stream tuần tự, tổng ~3x một lượt - phép đo này FAIL. Rule tracker: chỉ
+    assert saw_contention (> 0), KHÔNG dùng peak requests_waiting làm depth
     """
-    n, n_chunks, per_chunk = 20, 6, 0.15
-    pool_timeout = 1.0
+    # Ngủ dài so với RTT borrow: phần không-conn (sleep) phải lấn át phần
+    # overhead RTT tuần tự, nếu không phép đo thành "đo RTT Supabase"
+    n_streams, n_chunks, per_chunk = 3, 6, 0.6
+    turn_duration = n_chunks * per_chunk  # một lượt ~ pacing của stub + RTT borrow
 
-    client, pool = await make_stream_probe_client(10, pool_timeout, make_stub_stream_chain(n_chunks, per_chunk))
+    client, pool = await make_stream_probe_client(
+        1, 5.0, make_stub_stream_chain(n_chunks, per_chunk)
+    )
     probe = PoolProbe(pool, interval=0.005).start()
     try:
+        start = time.monotonic()
         results = await asyncio.gather(
-            *[_stream_events(client) for _ in range(n)], return_exceptions=True
+            *[_stream_events(client) for _ in range(n_streams)]
         )
+        elapsed = time.monotonic() - start
     finally:
         probe.stop()
 
     stats = probe.get_stats()
     assert stats["n_samples"] > 0, (
-        "probe không lấy được mẫu nào - timeline rỗng, saw_contention bên dưới "
+        "probe không lấy được mẫu nào - timeline rỗng, mọi assertion pool bên dưới "
         "vô nghĩa (nghi get_stats() lỗi, xem log pool-probe)"
     )
-    raw_exceptions = [r for r in results if isinstance(r, BaseException)]
-    error_event_victims = [
-        r for r in results
-        if not isinstance(r, BaseException) and r[2] is not None
-    ]
-    survivors = [
-        r for r in results
-        if not isinstance(r, BaseException) and r[2] is None
-    ]
+
+    for names, tokens, error in results:
+        assert error is None, f"stream lỗi giữa đường: {error}"
+        assert names[-1] == "done", f"stream không trọn vẹn: {names}"
+        assert tokens == "".join(f"tok{i} " for i in range(n_chunks))
 
     print(
-        f"\n[Arm C] target={_target_host(test_database_url)} n={n} pool=10 "
-        f"timeout={pool_timeout}s saw_contention={stats['saw_contention']} "
-        f"raw_exception(borrow-1)={len(raw_exceptions)} "
-        f"error_event(borrow-2)={len(error_event_victims)} "
-        f"survivors={len(survivors)} | {_pool_summary(pool)}"
+        f"\n[Arm D] target={_target_host(test_database_url)} n={n_streams} pool=1 "
+        f"turn~{turn_duration:.2f}s elapsed={elapsed:.3f}s "
+        f"serial_would_be~{n_streams * turn_duration:.2f}s "
+        f"saw_contention={stats['saw_contention']} | {_pool_summary(pool)}"
     )
-    for r in raw_exceptions[:3]:
-        print(f"  raw exception: {type(r).__name__}: {r}")
 
-    assert stats["saw_contention"], "không thấy contention - phép đo sai lệch"
-    assert raw_exceptions or error_event_victims, (
-        "PoolTimeout không chạm được trên đường streaming - phủ nhận dịch chuyển "
-        "cốt lõi mà Task 3 tồn tại để đo"
+    # 3 stream chồng lên nhau: tổng < 2x một lượt (tuần tự sẽ là ~3x)
+    assert elapsed < 2 * turn_duration, (
+        f"{n_streams} stream mất {elapsed:.3f}s >= 2x một lượt ({2 * turn_duration:.2f}s) "
+        f"- nghi astream vẫn đang giữ conn (conn-pin chưa chết)"
     )
-    assert survivors, "tất cả đều timeout - cấu hình sai, không phải contention"
+
+    # Borrow ngắn trên pool 1 conn vẫn tranh chấp chốc lát giữa các stream
+    assert stats["saw_contention"], (
+        "không thấy contention - 3 stream không hề chồng lên nhau, phép đo sai lệch"
+    )
