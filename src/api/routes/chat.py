@@ -11,14 +11,15 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
-
 from psycopg_pool import ConnectionPool
 
 from src.api.dependencies import get_current_user_id, get_rag_chain, get_sync_db_pool
 from src.api.schemas.chat import ChatRequest, ChatResponse, serialize_sources
-from src.database.conversation_queries import claim_conversation, fetch_conversation_owner
-from src.database.history_manager import MemoryStatus
-from src.rag.qa_chain import bind_history
+from src.database.conversation_queries import (
+    claim_conversation,
+    fetch_conversation_owner,
+)
+from src.database.history_manager import persist_turn, read_history
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ def post_message(
     pool: Annotated[ConnectionPool, Depends(get_sync_db_pool)],
     core_chain: Annotated[object, Depends(get_rag_chain)],
 ) -> ChatResponse:
-    #Borrow 1 (ngắn): ownership + eager-create, trả connection ngay,
+    #Borrow 1 (ngắn): ownership + eager-create + read history, trả connection ngay,
     #không giữ conn xuyên suốt LLM call
     with pool.connection() as conn:
         owner = fetch_conversation_owner(conn, conversation_id)
@@ -44,36 +45,26 @@ def post_message(
 
         if owner is None:
             claim_conversation(conn, conversation_id, user_id)
-            conn.commit()
 
-    #Borrow 2 (dài): memory đọc/ghi trong suốt lượt chain
-    #build wrapper sau khi mượn conn per-request
-    #memory sẽ lưu trong suốt thời gian invoke
-    #sau khi xong 1 chain, trả lại conn cho pool sync
-    #Hộp thư MemoryStatus mới mỗi request — dùng lại giữa các request sẽ rò
-    #trạng thái turn trước vào turn sau. Handler không với tới object history
-    #(RunnableWithMessageHistory gọi factory ngầm), nên cờ phải đi qua hộp thư
-    status = MemoryStatus()
-    with pool.connection() as conn:
-        chain = bind_history(core_chain, conn, status=status)
-        result = chain.invoke(
-            {"question": payload.question},
-            config={"configurable": {"session_id": conversation_id}},
-        )
+        conversation_history = read_history(conn, conversation_id)
 
-    #Cú ghi bị CallbackManager nuốt (raise_error=False), nên lỗi không tự
-    #surface — log error kèm lý do là nửa còn lại của mục tiêu quan sát được.
-    if status.persisted is False:
-        logger.error(
-            "memory persist thất bại cho conversation %s (vẫn trả 200 kèm answer): %s",
-            conversation_id,
-            status.error,
-        )
+    # Không giữ conn trong suốt thời gian invoke
+    result = core_chain.invoke(
+        {"question": payload.question, "chat_history": conversation_history},
+        config={"configurable": {"session_id": conversation_id}},
+    )
+
+    memory_persisted = True # Thành công lưu messages vào DB
+    try:
+        with pool.connection() as conn: # Borrow-write history: with tự commit khi thoát chain
+            persist_turn(conn, conversation_id, payload.question, result["answer"])
+
+    except Exception as exc: # noqa: BLE001
+        memory_persisted = False
+        logger.error("Memory persist fail for %s: %r", conversation_id, exc)
 
     return ChatResponse(
         answer=result["answer"],
         sources=serialize_sources(result.get("context")),
-        #persisted is True -> true; False hoặc None (chưa từng tới bước ghi)
-        #-> false — đối với client, None cũng nghĩa là "chưa lưu"
-        memory_persisted=status.persisted is True,
+        memory_persisted=memory_persisted,
     )

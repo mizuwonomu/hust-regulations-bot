@@ -1,5 +1,5 @@
 """
-    Tạo sync connection pool cho memory path (RunnableWithMessageHistory).
+    Tạo sync connection pool cho memory path.
 
     Bản sync song song của async_connection.py. Sync pool phục vụ memory
     (chain chạy trong threadpool), async pool phục vụ title + SQL đọc.
@@ -12,7 +12,7 @@ import os
 
 from psycopg_pool import ConnectionPool
 
-from .pool_config import SYNC_MIN_POOL, SYNC_MAX_POOL, POOL_TIMEOUT_SECONDS
+from .pool_config import POOL_TIMEOUT_SECONDS, SYNC_MAX_POOL, SYNC_MIN_POOL
 
 
 def create_sync_pool() -> ConnectionPool:

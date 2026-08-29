@@ -22,9 +22,8 @@ from src.database.conversation_queries import (
     claim_conversation,
     fetch_conversation_owner,
 )
-from src.database.history_manager import MemoryStatus
+from src.database.history_manager import persist_turn, read_history
 from src.database.pool_config import CONN_POLL_INTERVAL, CONN_POLL_RETRY_DELAY
-from src.rag.qa_chain import bind_history
 
 logger = logging.getLogger(__name__)
 
@@ -73,23 +72,24 @@ async def post_message_stream(
         if owner is None:
             await run_in_threadpool(claim_conversation, conn, conversation_id, user_id)
             await run_in_threadpool(conn.commit)
+
+        conversation_history = await run_in_threadpool(read_history, conn, conversation_id) # Borrow-read ngắn
+
+    except Exception:
+        await run_in_threadpool(conn.rollback) # Nếu có bất kì lỗi, rollback conn trong threadpool
+        raise
+
     finally:
         await run_in_threadpool(pool.putconn, conn)
 
     async def event_stream() -> AsyncIterator[dict]:
-        # Hộp thư MemoryStatus mới mỗi request - tái dùng sẽ rò trạng thái
-        # turn trước vào turn sau (same mailbox rule của JSON endpoint)
-        status_box = MemoryStatus()
-        conn = None
+        answer_parts: list[str] = []
+
         try:
-            # Borrow-2 (dài): conn giữ xuyên suốt astream - memory đọc ở đầu và
-            # ghi ở cuối stream. astream qua wrapper: bước sync của LangChain bị
-            # đẩy xuống executor nên conn chỉ dùng tuần tự
-            conn = await _acquire_conn(pool)
-            chain = bind_history(core_chain, conn, status=status_box)
+            # Generator không giữ conn trong suốt thời gian đợi I/O Groq
             sources_sent = False
-            async for chunk in chain.astream(
-                {"question": payload.question},
+            async for chunk in core_chain.astream(
+                {"question": payload.question, "chat_history": conversation_history},
                 config={"configurable": {"session_id": conversation_id}},
             ):
                 # Emit frame: context đến sớm (retrieval xong trước gen) -> sources là frame
@@ -101,40 +101,52 @@ async def post_message_stream(
                         "data": SourcesEvent.from_docs(chunk["context"]).to_json(),
                     }
                 if "answer" in chunk:
+                    answer_parts.append(chunk["answer"]) # Append full string messages -> lưu vào DB
+
                     yield {
                         "event": TokenEvent.event,
                         "data": TokenEvent(text=chunk["answer"]).to_json(),
                     }
-            # Cú ghi bị CallbackManager nuốt (raise_error=False), lỗi chỉ nằm
-            # trong hộp thư - log phía server, KHÔNG lên wire (parity JSON path)
-            if status_box.persisted is False:
-                logger.error(
-                    "memory persist thất bại cho conversation %s (stream vẫn đã emit answer): %s",
-                    conversation_id,
-                    status_box.error,
-                )
-            # persisted is True -> true; False hoặc None (chưa tới bước ghi) -> false
-            yield {
-                "event": DoneEvent.event,
-                "data": DoneEvent(memory_persisted=status_box.persisted is True).to_json(),
-            }
+            
         except Exception:
             # Stream đã mở (status khoá 200) - exception không còn đường raise
-            # thành HTTP status. Rollback transaction dang dở trước khi trả conn
-            # - mirror ngữ nghĩa `with conn:` của JSON endpoint
-            if conn is not None:
-                await run_in_threadpool(conn.rollback)
+            # thành HTTP status
             logger.exception(
-                "SSE stream lỗi giữa đường cho conversation %s", conversation_id
+                "SSE stream lỗi giữa đường cho conversation: %s", conversation_id
             )
             yield {
                 "event": ErrorEvent.event,
                 "data": ErrorEvent(message=STREAM_ERROR_MESSAGE).to_json(),
             }
-        else:
+
+            return # Nếu gặp lỗi read, bỏ qua bước write
+    
+        # Borrow-write ngắn
+        memory_persisted = True
+        conn = None
+        try:
+            conn = await _acquire_conn(pool)
+            await run_in_threadpool(persist_turn, conn, conversation_id, 
+                                    payload.question, "".join(answer_parts))
             await run_in_threadpool(conn.commit)
+
+        except Exception as exc:  # noqa: BLE001
+            memory_persisted = False
+            if conn is not None:
+                await run_in_threadpool(conn.rollback)
+            logger.error(
+                "Memory persist fail for conversation %s (stream vẫn emit answer): %r", 
+                conversation_id, 
+                exc,
+            )
+
         finally:
             if conn is not None:
                 await run_in_threadpool(pool.putconn, conn)
+
+        yield {
+            "event": DoneEvent.event, 
+            "data": DoneEvent(memory_persisted=memory_persisted).to_json(),
+        }
 
     return EventSourceResponse(event_stream())

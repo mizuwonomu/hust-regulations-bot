@@ -1,11 +1,15 @@
 """Route tests cho POST /conversations/{id}/messages/stream.
 
-Ba biên của contract "error = exception trước stream, event sau stream":
-- happy: sequence sources (đúng 1) -> token*N -> done, memory_persisted đọc từ
-  hộp thư sau khi loop drain (ghi history thật vào test DB qua bind_history).
-- owner mismatch: 404 thật + KHÔNG event nào (stream chưa mở).
-- chain nổ giữa astream: các token trước đó giữ nguyên, stream kết thúc bằng
-  error event chứ không 500 (200 đã commit, raise nữa là vỡ wire).
+Các biên của contract:
+
+- B1 history: route đọc history từ DB và inject vào input của astream.
+- B2 happy: sequence sources (đúng 1) -> token*N -> done(true), answer ghép
+  từ delta phải nằm trong DB (1 cặp question/answer).
+- B3 write fail: persist_turn nổ -> vẫn emit đủ token, frame cuối done(false),
+  KHÔNG row nào trong DB.
+- B4 chain nổ giữa astream: token trước đó giữ nguyên, frame cuối là error
+  event (không 500, không done), bước write không bao giờ chạy -> KHÔNG row.
+- B5 owner mismatch: 404 thật + KHÔNG event nào (stream chưa mở).
 
 Lưu ý: user_id trên cột conversations là varchar(15) - constant phải <= 15 ký tự.
 """
@@ -21,6 +25,7 @@ import pytest
 from fastapi import FastAPI
 from langchain_core.runnables import RunnableLambda
 
+import src.api.routes.chat_stream as chat_stream_module
 from src.api.dependencies import get_rag_chain, get_sync_db_pool
 from src.api.routes.chat_stream import router as chat_stream_router
 
@@ -32,22 +37,22 @@ def _cid() -> str:
     return str(uuid.uuid4())
 
 
-def make_fake_stream_chain(chunks: list[dict], fail_after: int | None = None):
+def make_fake_stream_chain(chunks: list[dict], fail_after: int | None = None, record: dict | None = None):
     """Stub stream: async generator nhả chunk canned, bọc trong RunnableLambda.
 
-    BẮT BUỘC đi qua RunnableLambda (hoặc composite thật): nó tự tạo callback
-    runs nên on_end listener (_aexit_history) của RunnableWithMessageHistory
-    chạy và hộp thư được ghi cờ. Custom Runnable override astream thủ công
-    KHÔNG có callback machinery - listener bị nuốt, memory_persisted luôn
-    false. Đây là bài học của spike, không phải bug route
+    Memory không còn chạy qua callback của wrapper nên stub không cần callback
+    machinery nữa - nó chỉ cần nhận đúng input mà route đẩy vào (question +
+    chat_history) để test chứng minh route tự đọc và inject history. record
+    (nếu có) bắt lại input đó để test khẳng định ở ngoài
     """
 
     async def _gen(inputs: dict):
-        
+        if record is not None:
+            record["chat_history"] = inputs.get("chat_history")
+
         for emitted, chunk in enumerate(chunks):
             if fail_after is not None and emitted >= fail_after:
                 raise RuntimeError("Stub lỗi giữa astream.")
-            emitted += 1
             yield chunk
 
     return RunnableLambda(_gen)
@@ -65,15 +70,15 @@ DOC_KEYS = ["title", "content", "doc_id"]
 @pytest.fixture
 async def make_stream_client(test_pool):
     """Factory dựng app hermetic chỉ mount chat_stream router, override pool
-    (test DB thật - history read/write qua bind_history chạy thật) + fake chain"""
+    (test DB thật - read_history/persist_turn chạy thật) + fake chain"""
 
     clients: list[httpx.AsyncClient] = []
 
-    async def _make(chunks: list[dict], fail_after: int | None = None):
+    async def _make(chunks: list[dict], fail_after: int | None = None, record: dict | None = None):
         app = FastAPI()
         app.include_router(chat_stream_router)
         app.dependency_overrides[get_sync_db_pool] = lambda: test_pool
-        app.dependency_overrides[get_rag_chain] = lambda: make_fake_stream_chain(chunks, fail_after)
+        app.dependency_overrides[get_rag_chain] = lambda: make_fake_stream_chain(chunks, fail_after, record)
         client = httpx.AsyncClient(
             transport=httpx.ASGITransport(app=app), base_url="http://testserver"
         )
@@ -113,9 +118,33 @@ async def _read_sse(response: httpx.Response) -> list[tuple[str | None, dict | N
 
 
 @pytest.mark.anyio
-async def test_happy_path_sources_once_then_tokens_then_done(make_stream_client):
-    """Sequence đúng contract: 1 sources -> token*2 -> done(true); sources
-    đến TRƯỚC token (retrieval xong trước gen) chứ không dồn về cuối"""
+async def test_history_is_read_and_injected_into_astream(make_stream_client, seed_conversation):
+    """B1: route đọc history từ DB (không qua wrapper) và đưa vào input của
+    astream - stub nhận chat_history là list BaseMessage từ seed"""
+    cid = _cid()
+    seed_conversation(cid, USER, n_pairs=1)
+    record: dict = {}
+    client = await make_stream_client(HAPPY_CHUNKS, record=record)
+
+    async with client.stream(
+        "POST",
+        f"/conversations/{cid}/messages/stream",
+        headers={"X-User-Id": USER},
+        json={"question": "câu mới"},
+    ) as response:
+        assert response.status_code == 200
+        await _read_sse(response)
+
+    assert len(record["chat_history"]) == 2
+    assert [m.content for m in record["chat_history"]] == ["câu hỏi 0", "trả lời 0"]
+
+
+@pytest.mark.anyio
+async def test_happy_path_sources_once_then_tokens_then_done(
+    make_stream_client, fetch_messages
+):
+    """B2: sequence đúng contract - 1 sources -> token*2 -> done(true); answer
+    ghép từ delta ("Xin " + "chào") phải là row thật trong DB"""
     cid = _cid()
     client = await make_stream_client(HAPPY_CHUNKS)
 
@@ -140,30 +169,51 @@ async def test_happy_path_sources_once_then_tokens_then_done(make_stream_client)
 
     assert events[-1][1] == {"memory_persisted": True}
 
+    assert await fetch_messages(cid) == [
+        {"role": "user", "content": "điều kiện tốt nghiệp?"},
+        {"role": "ai", "content": "Xin chào"},
+    ]
+
 
 @pytest.mark.anyio
-async def test_owner_mismatch_is_404_with_no_events(make_stream_client, seed_conversation):
-    """Conversation của user khác -> 404 thật (stream chưa mở, lỗi vẫn là
-    exception) và wire không có event nào bị lộ"""
+async def test_persist_failure_still_done_false_and_no_row(
+    make_stream_client, monkeypatch, fetch_messages
+):
+    """B3: persist_turn nổ -> mọi token vẫn emit, frame cuối là done(false)
+    (lỗi memory không vứt answer, không lên wire), DB không có row"""
     cid = _cid()
-    seed_conversation(cid, OTHER)
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("DB sập lúc ghi")
+
+    monkeypatch.setattr(chat_stream_module, "persist_turn", _boom)
     client = await make_stream_client(HAPPY_CHUNKS)
 
-    response = await client.post(
+    async with client.stream(
+        "POST",
         f"/conversations/{cid}/messages/stream",
         headers={"X-User-Id": USER},
-        json={"question": "xin chào"},
-    )
+        json={"question": "câu hỏi"},
+    ) as response:
+        assert response.status_code == 200
+        events = await _read_sse(response)
 
-    assert response.status_code == 404
-    assert cid not in response.text
-    assert "text/event-stream" not in response.headers.get("content-type", "")
+    names = [name for name, _ in events]
+    assert names == ["sources", "token", "token", "done"]
+    assert events[-1][1] == {"memory_persisted": False}
+
+    joined = "".join(data["text"] for name, data in events if name == "token")
+    assert joined == "Xin chào"
+
+    assert await fetch_messages(cid) == []
 
 
 @pytest.mark.anyio
-async def test_chain_failure_mid_stream_ends_with_error_event(make_stream_client):
-    """Nổ giữa astream: token trước đó vẫn đã đến client, frame cuối là
-    error event, KHÔNG có done và KHÔNG 500"""
+async def test_chain_failure_mid_stream_ends_with_error_event_and_no_row(
+    make_stream_client, fetch_messages
+):
+    """B4: nổ giữa astream - token trước đó vẫn đã đến client, frame cuối là
+    error event, KHÔNG done và KHÔNG 500; bước write không bao giờ chạy"""
     cid = _cid()
     client = await make_stream_client(HAPPY_CHUNKS, fail_after=2)
 
@@ -181,3 +231,24 @@ async def test_chain_failure_mid_stream_ends_with_error_event(make_stream_client
     assert names[-1] == "error"
     assert "done" not in names
     assert isinstance(events[-1][1]["message"], str) and events[-1][1]["message"]
+
+    assert await fetch_messages(cid) == []
+
+
+@pytest.mark.anyio
+async def test_owner_mismatch_is_404_with_no_events(make_stream_client, seed_conversation):
+    """B5: conversation của user khác -> 404 thật (stream chưa mở, lỗi vẫn là
+    exception) và wire không có event nào bị lộ"""
+    cid = _cid()
+    seed_conversation(cid, OTHER)
+    client = await make_stream_client(HAPPY_CHUNKS)
+
+    response = await client.post(
+        f"/conversations/{cid}/messages/stream",
+        headers={"X-User-Id": USER},
+        json={"question": "xin chào"},
+    )
+
+    assert response.status_code == 404
+    assert cid not in response.text
+    assert "text/event-stream" not in response.headers.get("content-type", "")

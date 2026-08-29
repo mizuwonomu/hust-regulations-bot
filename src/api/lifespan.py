@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
 
     app.state.embedding_model = embedding_model
     app.state.reranker_model = reranker_model
-    app.state.rag_chain = rag_chain #core chain, G3 wrap history per-request bằng bind_history
+    app.state.rag_chain = rag_chain
 
     
     async_pool = create_async_pool() # Async pool: title + SQL đọc
