@@ -59,3 +59,27 @@ Discovered while testing G3: Groq retired **both** `llama-3.1-8b-instant` and `l
 - **Eval scripts deferred deliberately** (job 3). They stay on dead ids and will fail if run until migrated; the judge≠generator choice and the baseline-epoch break travel with that later work. `JUDGE_MODEL` sits in config as a waiting constant with no live consumer yet.
 - **Eval baseline is now a dead epoch.** The judge that scored every prior baseline (`llama-3.3-70b`) is gone, so no old run can be re-judged with the same judge; every cross-run comparison against pre-2026-08-17 baselines is invalid.
 - **Migration verified in-process, without the backend.** LangSmith showed router 260 tok / rewrite 546 tok with no reasoning blocks, and gpt-oss still producing inference — confirming `reasoning_effort="none"` takes effect and the generator is intact. Answer + chitchat run inside Streamlit (`get_chain`) with its cached sync connection, so only title generation needs uvicorn to verify.
+
+---
+
+## 2026-08-29 — Job 3: eval revival (branch fix/evals)
+
+Migrated the live-path eval scripts (`run_evals_retrieval.py`, `run_evals_e2e.py`) off the dead llama ids. `run_generate_e2e_responses.py` needed no real work — the generator (`gpt-oss-120b`) is alive and its `_gen_` output files already exist — so job 3's substance was the **judge**, not an id swap.
+
+**Chosen approach + why.** The judge uses `LangchainLLMWrapper(ChatGroq(model=JUDGE_MODEL, reasoning_format="parsed"))` on the **legacy** `ragas.metrics`, not `llm_factory` on `ragas.metrics.collections`. Rewrite is `ChatGroq(QUERY_REWRITE_MODEL, reasoning_effort="none")`. Both read ids from `src/rag/config.py`. `ragas` pinned `==0.4.3` in `pyproject.toml` + `uv.lock`.
+
+**The deciding constraint (verified against ragas 0.4.3 source).** A qwen3 judge must keep reasoning ON to score, so its `<think>` must be kept out of the field RAGAS parses. Two facts settle the design:
+- `llm_factory` requires a native SDK client + Instructor and has **no** `reasoning_format` — the OpenAI-compat path cannot separate reasoning, so qwen3 would leak `<think>` into `content` and break parsing. This is the constraint that originally forced the openai-client path.
+- `ragas.metrics.collections` (the non-deprecated API) explicitly **rejects** `LangchainLLMWrapper` (`llm: InstructorBaseRagasLLM`, "legacy wrappers are rejected"). So the only way to use `ChatGroq(reasoning_format="parsed")` — which does split reasoning cleanly — is the **legacy** `ragas.metrics`, whose `Faithfulness`/`AnswerCorrectness`/`ContextPrecision`/`ContextRecall` accept any `BaseRagasLLM` and take `cache` on the wrapper too (no loss of the DiskCache).
+
+So migrating the API *forward* to collections would **reopen** the `<think>` problem. The reproducibility fix for "legacy gets removed at v1.0" is therefore a **version pin (`==0.4.3`), not an API migration** — pinning makes the removal a non-event until we deliberately cross it. A future collections migration is its own task and must solve judge-reasoning-on-Instructor then (extra_body `reasoning_format`, or a groq-native instructor client).
+
+**Verified.** 1-item retrieval probe: `context_recall=1.0`, `context_precision=0.7499999999625` — finite, so RAGAS parsed the per-statement verdicts and no `<think>` reached `content`. The tracker's UNVERIFIED note is closed.
+
+**Nuances agreed with the user.**
+- **Legacy metric API differs from collections**: call is `single_turn_ascore(SingleTurnSample(...))` returning a float, not `ascore(**kwargs)` returning an object with `.value`. One `SingleTurnSample` carrying all fields feeds both metrics; each picks what it needs.
+- **Two stacked epoch breaks now.** Judge (llama→qwen3) AND metric impl (collections→legacy) both shift scores, so results from this branch are a fresh baseline — never plotted on the same axis as any pre-2026-08-17 run. Doing both at once means a delta cannot be attributed to one; the README must present each number self-describing (judge / metric / ragas version / date), the same discipline the result files already follow.
+- **Old scored files are archived, not deleted** (planned): `_gen_` files survive the epoch break (generation is judge-independent, reusable as judge input); `_scored_` files are llama-epoch and go to `results/archive/`. Nothing hard-deleted — git keeps history anyway, `archive/` is for human discoverability.
+- **Deliberately still deferred**: `run_ratio_sweep.py` and `run_rewrite_rerank_calibration.py` keep dead ids (frozen snapshots reproducing committed result files — migrating them breaks that reproducibility).
+
+**Still open at time of writing.** The full run (`corpus.json` 25 + `corpus_cross_references.json` 8) has not been executed; only the 1-item probe. Archive + README refresh follow the full run.
