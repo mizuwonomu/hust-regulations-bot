@@ -3,7 +3,6 @@ import sys
 
 sys.path.append(os.path.abspath('.'))
 import pickle
-from functools import partial
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
@@ -18,14 +17,12 @@ from langchain_core.runnables import (
     RunnableParallel,
     RunnablePassthrough,
 )
-from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_groq import ChatGroq
 from langsmith import traceable
 from pydantic import BaseModel, Field
 
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
-from src.database.history_manager import get_postgres_history
 from src.rag.config import (
     CHITCHAT_MODEL,
     CHITCHAT_TEMPERATURE,
@@ -54,22 +51,6 @@ def format_docs(docs):
         formatted.append(f"Source [{i+1}] ({source_title}):\n{content}")
 
     return "\n\n".join(formatted)
-
-#chỉ nhận conn; status là hộp thư MemoryStatus do caller sở hữu, để
-#TrackedPostgresHistory ghi cờ kết quả cú ghi (mặc định None: không ghi cờ)
-def get_session_history(conn, session_id: str, status=None):
-    return get_postgres_history(conn, session_id, status=status)
-
-
-def bind_history(core_chain, conn, status=None):
-    #bọc RunnableWithMessageHistory per-run, conn do caller (frontend hoặc G3) đưa vào
-    return RunnableWithMessageHistory(
-        core_chain,
-        partial(get_session_history, conn, status=status),
-        input_messages_key="question",
-        history_messages_key="chat_history",
-        output_messages_key="answer",
-    )
 
 
 #base model pydantic output for query rephrasing (multi-query expansion)
