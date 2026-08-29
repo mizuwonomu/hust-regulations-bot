@@ -1,42 +1,46 @@
 import os
 import sys
+
 sys.path.append(os.path.abspath('.'))
 import pickle
 from functools import partial
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain_classic.storage import LocalFileStore, EncoderBackedStore
-from langchain_groq import ChatGroq
+
+from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_community.retrievers import BM25Retriever
 from langchain_classic.retrievers import EnsembleRetriever
-from pydantic import BaseModel, Field
-from typing import List
+from langchain_classic.storage import EncoderBackedStore, LocalFileStore
+from langchain_community.retrievers import BM25Retriever
 from langchain_core.output_parsers import PydanticOutputParser, StrOutputParser
-from langchain_core.runnables import RunnableParallel, RunnableLambda, RunnablePassthrough, RunnableBranch
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.runnables import (
+    RunnableBranch,
+    RunnableLambda,
+    RunnableParallel,
+    RunnablePassthrough,
+)
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_groq import ChatGroq
+from langsmith import traceable
+from pydantic import BaseModel, Field
+
 #parallel: chạy nhiều nhánh xử lý cùng 1 lúc, lambda: định nghĩa lambda nhưng thiết kế theo 
 #dạng trigger on time. Passthrough: truyền type on time
 from src.database.history_manager import get_postgres_history
 from src.rag.config import (
-    LLM_TEMPERATURE,
-    RETRIEVER_TOP_K,
-    RERANK_RATIO,
-    RERANK_MAX_CHILDREN,
-    ROUTER_MODEL,
-    QUERY_REWRITE_MODEL,
     CHITCHAT_MODEL,
-    INFERENCE_MODEL,
-    ROUTER_TEMPERATURE,
-    QUERY_REWRITE_TEMPERATURE,
     CHITCHAT_TEMPERATURE,
-    CHROMA_PATH,
     CHROMA_COLLECTION,
+    CHROMA_PATH,
     DOC_STORE_PATH,
+    INFERENCE_MODEL,
+    QUERY_REWRITE_MODEL,
+    QUERY_REWRITE_TEMPERATURE,
+    RERANK_MAX_CHILDREN,
+    RERANK_RATIO,
+    ROUTER_MODEL,
+    ROUTER_TEMPERATURE,
 )
 
-from langsmith import traceable
-
-from dotenv import load_dotenv
 load_dotenv()
 
 
@@ -72,11 +76,11 @@ def bind_history(core_chain, conn, status=None):
 #Aka query decomposition
 class QueryExpansion(BaseModel):
     reasoning: str = Field(description="Phân tích ngắn gọn ý định của câu hỏi gốc") #Field: chú thích rõ key để làm gì
-    queries: List[str] = Field(description="Danh sách tối đa 3 câu hỏi đơn lẻ bằng tiếng Việt để tìm kiếm")
+    queries: list[str] = Field(description="Danh sách tối đa 3 câu hỏi đơn lẻ bằng tiếng Việt để tìm kiếm")
 
 @traceable(run_type='chain')
 def get_chain(k, temperature, embedding_model, reranker_model):
-    embedding_model = embedding_model
+    embedding_model = embedding_model  # noqa: PLW0127
     #load vector store
     vector_store = Chroma(
         collection_name= CHROMA_COLLECTION,
