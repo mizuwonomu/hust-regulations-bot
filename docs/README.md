@@ -39,7 +39,7 @@ Transitioned from a monolithic LLM approach to a multi-stage specialized model o
 - **Noise Cancellation & Token Optimization:** By applying a **0.5 relevance threshold** on reranker scores, the reranker model effectively "cancel" semantic gap and false positive before they reach the LLM. This has **reduced token usage by 50%**, bringing the average down to **800 - 2k tokens** while improving answer quality.
 - **Complex Table Preservation:** Leveraging LlamaParse, V2 preserves the complex format of **Markdown tables**. This is crucial for university regulations where critical data - such as credit limits, grade conversion formulas, and graduation criteria - is often stored in tabular form.
 
-### Evaluation Metrics
+### Evaluation Metrics (archived results)
 The transition from V1 to V2 shows a clear trade-off between recall and precision, with V2 drastically reducing noise.
 
 | Metric | V1 (Baseline) | V2 (Optimized) | Impact |
@@ -48,6 +48,8 @@ The transition from V1 to V2 shows a clear trade-off between recall and precisio
 | **Context Precision** | 0.84 | **0.9756** | **+13.5%** improvement; validates the Reranker's ability to eliminate noise. |
 | **Faithfulness** | Baseline focus on retrieval | 0.7753 | High level of adherence to the retrieved context. |
 | **Answer Correctness**| Baseline focus on retrieval | 0.6315 | Solid baseline for end-to-end response accuracy. |
+
+*note: these results based on older LLm judge, now archived.*
 
 ## How It Works
 ### V1: Baseline Architecture
