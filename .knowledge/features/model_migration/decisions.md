@@ -83,3 +83,19 @@ So migrating the API *forward* to collections would **reopen** the `<think>` pro
 - **Deliberately still deferred**: `run_ratio_sweep.py` and `run_rewrite_rerank_calibration.py` keep dead ids (frozen snapshots reproducing committed result files — migrating them breaks that reproducibility).
 
 **Still open at time of writing.** The full run (`corpus.json` 25 + `corpus_cross_references.json` 8) has not been executed; only the 1-item probe. Archive + README refresh follow the full run.
+
+---
+
+## 2026-08-30 — Job 3 full run: two runtime bugs, and the epoch-new baseline
+
+The migrated scripts ran end-to-end on `corpus.json` (25) — retrieval → generate (gpt-oss-120b) → e2e score — producing the first qwen3-judge baseline (fix commit 578a235, readme 696702f, on master). `corpus_cross_references.json` was skipped (it lives on an abandoned branch). Two bugs surfaced only at full scale, invisible in the 1-item probe:
+
+**Bug 1 — judge truncation, hidden by the DiskCache.** The qwen3 judge raised `LLMDidNotFinishException` on heavy prompts. Cause: reasoning tokens count toward `max_tokens`, and with no explicit cap Groq's default truncated the verdict (`finish_reason="length"`), which RAGAS's `is_finished` rejects — its allowed set is only `stop`/`STOP`/`MAX_TOKENS`/`eos_token`, and OpenAI/Groq's `"length"` is NOT in it. Fix: `max_tokens=10000` on both judges. The trap that cost two failed runs: RAGAS caches the raw LLM response *before* the is_finished check, so run 1 (small cap) cached a truncated response and later runs read that cached truncation and failed identically — the new `max_tokens` never fired until the cache was cleared. **Lesson (cross-cutting for any cached-LLM work): changing an LLM param while a DiskCache is warm tests new code on old answers — clear the cache.** A heavy 4-context precision prompt measured ~2189 reasoning tokens, so 10000 is generous; the real driver is variance (rewrite runs at `temperature=0.2`, so per-run context length — hence judge reasoning length — differs), which is exactly why the 1-item probe passed and the full run failed.
+
+**Bug 2 — AnswerCorrectness sub-metric never initialised.** Legacy `AnswerCorrectness` builds its `AnswerSimilarity` (the semantic half) inside `.init(run_config)`, which RAGAS's `evaluate()` calls but a direct `single_turn_ascore()` does not — so it asserted "AnswerSimilarity must be set". Fix: construct `AnswerSimilarity(embeddings=...)` explicitly and pass it in. Faithfulness / ContextPrecision / ContextRecall have no sub-metric, so only AnswerCorrectness needed this.
+
+**Baseline (epoch: qwen3 judge, legacy metrics, ragas 0.4.3, gpt-oss-120b generator, ratio 0.45, 2026-08-30):** context_recall 0.9567, context_precision 0.8933, faithfulness 0.8515, answer_correctness 0.8446 (n=25, no NaN).
+
+**Nuance — is qwen3-27b judging differently from the retired llama-70b?** Directly unmeasurable (the old judge is dead; old files used different retrieval — the epoch break). What IS checkable is *defensibility*: on id=22 (precision 0.25) every per-doc verdict was inspected and correct — the judge rejected three wrong-degree registration articles and accepted the one gold (Điều 19), so the low precision is a retrieval-ranking failure (gold ranked last), not judge harshness. `context_precision` also penalises rank, so a perfect judge still returns 0.25 when the single relevant doc sits at position 4. Where 27b-vs-80b divergence could hide is *borderline* docs, not clear-cut ones — that stays unmeasured. Cheap proxy if it ever matters: A/B the same contexts against gpt-oss-20b (alive, different family).
+
+**README deliberately NOT given the new numbers.** The v1/v2 table in `docs/README.md` was marked "(archived results)" with an italic "older LLM judge, now archived" note rather than replacing its figures — the new baseline is a fresh epoch that confirms nothing against the old, so showing a delta would be dishonest.
