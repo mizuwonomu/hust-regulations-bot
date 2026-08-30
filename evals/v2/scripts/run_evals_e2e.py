@@ -21,6 +21,7 @@ from ragas.dataset_schema import SingleTurnSample
 from ragas.embeddings import HuggingFaceEmbeddings
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import AnswerCorrectness, Faithfulness
+from ragas.metrics._answer_similarity import AnswerSimilarity
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
 
 from src.rag.config import JUDGE_MODEL
@@ -106,6 +107,8 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
             temperature=0.0,
             max_retries=0,
             reasoning_format="parsed",
+            # Reasoning token của qwen3 đếm vào max_tokens: phải đủ chứa cả think lẫn verdict
+            max_tokens=10000,
         ),
         cache=cacher,
     )
@@ -116,7 +119,13 @@ async def run_scoring(generated_results_path: str, output_path: str) -> None:
         device="cuda" if torch.cuda.is_available() else "cpu",
         normalize_embeddings=True,
     )
-    answer_correctness_metric = AnswerCorrectness(llm=judge_llm, embeddings=ragas_embeddings)
+    # Gọi metric trực tiếp (không qua evaluate) nên .init() không chạy: phải dựng
+    # answer_similarity tường minh, nếu không AnswerCorrectness assert None ở phần semantic
+    answer_correctness_metric = AnswerCorrectness(
+        llm=judge_llm,
+        embeddings=ragas_embeddings,
+        answer_similarity=AnswerSimilarity(embeddings=ragas_embeddings),
+    )
 
     @retry(
         stop=stop_after_attempt(5),

@@ -329,6 +329,8 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
             temperature=0,
             max_retries=0,
             reasoning_format="parsed",
+            # Reasoning token của qwen3 đếm vào max_tokens: phải đủ chứa cả think lẫn verdict
+            max_tokens=10000,
         ),
         cache=cacher,
     )
