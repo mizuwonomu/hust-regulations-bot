@@ -1,15 +1,18 @@
 import torch
 from langchain_huggingface import HuggingFaceEmbeddings
 
+from src.rag.config import EMBEDDING_MODEL
+
+
 def get_device():
     if torch.cuda.is_available():
         return "cuda"
 
 def get_embedding_model():
     device = get_device()
-    print(f"Đang load embedding model 'BAAI/bg3-m3'.... {device.upper()}")
+    print(f"Đang load embedding model '{EMBEDDING_MODEL}'.... {device.upper()}")
 
-    model_name = "BAAI/bge-m3"
+    model_name = EMBEDDING_MODEL
 
     model_kwargs = {'device': device}
     encode_kwargs = {'normalize_embeddings': True}

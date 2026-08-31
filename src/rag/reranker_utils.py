@@ -1,9 +1,11 @@
 try:
-    from sentence_transformers import CrossEncoder
     import torch
-    import torch.nn as nn
+    from sentence_transformers import CrossEncoder
+    from torch import nn
 
-except Exception as e:
+    from src.rag.config import RERANKER_MODEL
+
+except Exception as e:  # noqa: BLE001
     CrossEncoder = None
     _IMPORT_ERROR = e
 else:
@@ -16,7 +18,7 @@ def get_device():
 def load_reranker():
     """Lazily load and return a CrossEncoder reranker"""
     device = get_device()
-    print(f"Đang load reranker model 'BAAI/bge-reranker-v2-m3'..... ")
+    print(f"Đang load reranker model '{RERANKER_MODEL}'..... ")
     if CrossEncoder is None:
         raise ImportError(
             "sentence-transformers is required for the reranker"
@@ -24,7 +26,7 @@ def load_reranker():
             "uv add sentence-transformers\n"
         ) from _IMPORT_ERROR
 
-    model_name = "BAAI/bge-reranker-v2-m3"
+    model_name = RERANKER_MODEL
     max_length = 512
     model_kwargs = {"dtype": "bfloat16"}
 

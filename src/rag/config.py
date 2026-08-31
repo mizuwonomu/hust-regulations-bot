@@ -7,11 +7,15 @@ RERANK_RATIO = 0.45
 RERANK_MAX_CHILDREN = 5 #số lượng rerank docs tối đa để xét
 
 #Model identifiers
+EMBEDDING_MODEL = "BAAI/bge-m3"
+RERANKER_MODEL = "BAAI/bge-reranker-v2-m3"
+
 ROUTER_MODEL = "qwen/qwen3.6-27b"
 QUERY_REWRITE_MODEL = "qwen/qwen3.6-27b"
 CHITCHAT_MODEL = "qwen/qwen3.6-27b"
 INFERENCE_MODEL = "openai/gpt-oss-120b"
 TITLE_GENERATOR_MODEL = "qwen/qwen3.6-27b"
+
 JUDGE_MODEL = "qwen/qwen3.6-27b"
 
 #Temperatures
