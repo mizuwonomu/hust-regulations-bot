@@ -1,9 +1,17 @@
+"""Eval retrieval-only của chain single-pass, đo context recall/precision (RAGAS) và hop-recall cho tập multi-hop.
+
+Hop-recall là metric deterministic (không đụng judge): đo xem chain có kéo được
+cả Điều thứ hai (second hop) từ cột `link` vào trong tập parent đã retrieve hay
+không, slice theo `group` thay vì trung bình toàn tập
+"""
+
 import argparse
 import asyncio
 import json
 import os
 import pickle
 import random
+import re
 import sys
 import time
 from datetime import UTC, datetime
@@ -58,16 +66,76 @@ class RateLimitError(RuntimeError):
     pass
 
 
+_DIEU_PATTERN = re.compile(r"Điều\s+(\d+)")
+
+
+def parse_link(link: str) -> tuple[set[int], int]:
+    """Tách link dạng 'A -> B' thành (gold_dieu, second_hop).
+
+    A là Điều nguồn, B là Điều thứ hai (second hop - phần khó).
+    Raise nếu format sai, không nuốt lỗi im lặng
+    """
+    parts = [p.strip() for p in link.split("->")]
+    if len(parts) != 2:
+        raise ValueError(f"link không đúng định dạng 'A -> B': {link!r}")
+    try:
+        source, second = int(parts[0]), int(parts[1])
+    except ValueError as exc:
+        raise ValueError(f"link chứa số không hợp lệ: {link!r}") from exc
+    return {source, second}, second
+
+
+def compute_hop_recall(gold_dieu: set[int], second_hop: int, retrieved_dieu: set[int]) -> tuple[float, bool]:
+    """Metric thuần, không cần API call.
+
+    Trả về (full_recall, second_hop_hit):
+    - full_recall: tỉ lệ gold Điều xuất hiện trong retrieved_dieu (0..1)
+    - second_hop_hit: Điều thứ hai B có nằm trong retrieved_dieu (con số quyết định)
+    """
+    if not gold_dieu:
+        raise ValueError("gold_dieu rỗng")
+    full_recall = len(gold_dieu & retrieved_dieu) / len(gold_dieu)
+    return full_recall, second_hop in retrieved_dieu
+
+
+def _extract_dieu_number(doc: Document) -> int | None:
+    """Lấy số Điều của parent, ưu tiên metadata 'Điều' rồi fallback về title.
+
+    Cả hai nguồn đều do splitter sinh ra ở format cố định 'Điều <số>. ...' -
+    đã probe doc_store_pdr: parent metadata giữ key 'Điều' (giá trị là chuỗi
+    tên Điều), chỉ doc preamble có None nên cần fallback title
+    """
+    candidates = [doc.metadata.get("Điều"), doc.metadata.get("title", "")]
+    for source in candidates:
+        if source:
+            match = _DIEU_PATTERN.search(source)
+            if match:
+                return int(match.group(1))
+    return None
+
+
 class EvalInputRow(BaseModel):
     id: Any
     user_input: str
     response: str
     retrieved_contexts: list[str] | str = Field(default_factory=list)
+    # Các field dưới chỉ tồn tại trong corpus_cross_references.json, default None để corpus.json vẫn parse được
+    link: str | None = None
+    group: str | None = None
+    type: str | None = None
 
 
 class EvalScores(BaseModel):
     context_recall: float
     context_precision: float
+
+
+class HopScores(BaseModel):
+    gold_dieu: set[int]
+    retrieved_dieu: set[int]
+    second_hop: int
+    full_recall: float
+    second_hop_hit: bool
 
 
 class ExperimentResultRow(BaseModel):
@@ -77,6 +145,8 @@ class ExperimentResultRow(BaseModel):
     reference: str
     retrieved_contexts: list[str]
     scores: EvalScores
+    group: str | None = None
+    hop_scores: HopScores | None = None
 
 
 def _random_offset_sleep(label: str, min_seconds: int = 1, max_seconds: int = 3) -> None:
@@ -225,7 +295,7 @@ def retrieve_parent_contexts(
     ensemble_retriever: EnsembleRetriever,
     reranker: Any,
     doc_store: EncoderBackedStore,
-) -> list[str]:
+) -> tuple[list[str], set[int]]:
     # Required offset before each retrieval-only invoke (query rewrite uses qwen3)
     _random_offset_sleep(label="retrieval_invoke")
 
@@ -259,11 +329,19 @@ def retrieve_parent_contexts(
     if len(parent_docs) > max_parents:
         parent_docs = parent_docs[:max_parents]
 
+    #Expose số Điều ra ngoài trước khi stringify - hop-recall cần set này
+    retrieved_dieu: set[int] = set()
+    for doc in parent_docs:
+        number = _extract_dieu_number(doc)
+        if number is not None:
+            retrieved_dieu.add(number)
+
     #Ghép title vào context để mirror production
-    return [
+    contexts = [
         f"{doc.metadata.get('title', '')}\n{doc.page_content}".strip()
         for doc in parent_docs
     ]
+    return contexts, retrieved_dieu
 
 
 def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]:
@@ -340,13 +418,26 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
 
     @experiment(ExperimentResultRow)
     async def run_retrieval_eval(row: EvalInputRow) -> ExperimentResultRow:
-        retrieved_contexts = retrieve_parent_contexts(
+        retrieved_contexts, retrieved_dieu = retrieve_parent_contexts(
             query=row.user_input,
             rewrite_chain=rewrite_chain,
             ensemble_retriever=ensemble_retriever,
             reranker=reranker,
             doc_store=doc_store,
         )
+
+        #Hop-recall chạy song song với RAGAS, chỉ tính khi row có link (multi-hop)
+        hop_scores: HopScores | None = None
+        if row.link:
+            gold_dieu, second_hop = parse_link(row.link)
+            full_recall, second_hop_hit = compute_hop_recall(gold_dieu, second_hop, retrieved_dieu)
+            hop_scores = HopScores(
+                gold_dieu=gold_dieu,
+                retrieved_dieu=retrieved_dieu,
+                second_hop=second_hop,
+                full_recall=full_recall,
+                second_hop_hit=second_hop_hit,
+            )
 
         # Metric legacy nhận SingleTurnSample thay vì kwargs như collections
         sample = SingleTurnSample(
@@ -361,6 +452,13 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
             f"id={row.id} precision={precision:.4f} "
             f"recall={recall:.4f} contexts={len(retrieved_contexts)}"
         )
+        if hop_scores is not None:
+            print(
+                f"id={row.id} group={row.group} gold={sorted(hop_scores.gold_dieu)} "
+                f"retrieved={sorted(hop_scores.retrieved_dieu)} "
+                f"full_recall={hop_scores.full_recall:.2f} "
+                f"second_hop_hit={hop_scores.second_hop_hit}"
+            )
 
         return ExperimentResultRow(
             id=row.id,
@@ -372,13 +470,16 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
                 context_recall=recall,
                 context_precision=precision,
             ),
+            group=row.group,
+            hop_scores=hop_scores,
         )
 
     all_results: list[dict[str, Any]] = []
     for i, row in enumerate(dataset):
         exp_result = await run_retrieval_eval(row)
         parsed_rows = _normalize_experiment_results(exp_result)
-        all_results.extend([parsed.model_dump() for parsed in parsed_rows])
+        #mode="json" để set trong HopScores serialize được ra JSON
+        all_results.extend([parsed.model_dump(mode="json") for parsed in parsed_rows])
 
         # Required delay between each sample evaluation
         if i < len(dataset) - 1:
@@ -397,9 +498,23 @@ async def run_eval(dataset_path: str, output_path: str, ratio: float | None = No
         ]
         aggregate_scores[metric] = round(sum(values) / len(values), 4) if values else None
 
+    #Aggregate hop-recall slice theo group, không trung bình toàn tập
+    hop_by_group: dict[str, dict[str, Any]] = {}
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for item in all_results:
+        if isinstance(item, dict) and item.get("hop_scores") is not None:
+            grouped.setdefault(item.get("group") or "unknown", []).append(item["hop_scores"])
+    for group_name, hops in grouped.items():
+        hop_by_group[group_name] = {
+            "second_hop_hit_rate": round(sum(h["second_hop_hit"] for h in hops) / len(hops), 4),
+            "mean_full_recall": round(sum(h["full_recall"] for h in hops) / len(hops), 4),
+            "n": len(hops),
+        }
+
     output = {
         "created_at": datetime.now(UTC).isoformat(),
         "aggregate_scores": aggregate_scores,
+        "hop_recall_by_group": hop_by_group or None,
         "dataset_path": dataset_path,
         #Kết quả phải tự mô tả: hai run chỉ khác nhau ở ratio thì filename không đủ
         "config": {
