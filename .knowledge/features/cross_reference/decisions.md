@@ -40,3 +40,41 @@
 - **A child carrying no degree flags is treated as matching every degree.** Exactly 1 of 170 children is in this state (the document preamble, before the first Chương header). Treating a metadata gap as an exclusion would turn an ingestion hole into a silent retrieval bug.
 - **Intake year is a second fragmentation dimension** with the same shape as degree — Điều 48 scopes khoản by intake cohort, the citation edge carries no year, and nothing knows the asker's cohort. This is a missing input, not a retrieval defect.
 - **Two errors were found in the user's hand-built citation analysis**: Điều 17 never cites Điều 8, and the Chương VI count differs only because one citation names three khoản of Điều 17.
+
+### decisions.md  (why — the expensive part)
+
+Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross-reference, 2026-09-07):
+
+**Chosen approach + why**
+
+- Keep citation traversal outside the production answer chain while establishing a measurable retrieval baseline. This makes recall recovery inspectable without conflating it with generator behavior or changing live chat retrieval. Committing the experiment is a checkpoint, not proof that it should replace production retrieval.
+- Keep seed retrieval, article fetch, citation extraction and gate decisions injected. The loop owns traversal state; the model chooses only the next action. This permits deterministic tests of control flow without treating model judgment as a CI invariant.
+- Use one insertion-ordered collected mapping for full texts and membership. Unknown or duplicate seed strings must survive independently; unmatched positive metadata IDs remain membership-only entries. Never zip an unordered ID set to texts. This preserves the retrieval seam without inventing source identities.
+- Rebuild the forward frontier from all collected texts because unselected siblings must survive alongside citations discovered in newly fetched articles. This does not repeat seed retrieval. The successful-follow cap bounds extra article fetches, not graph depth, gate calls or total seed-plus-follow context count.
+- Give the gate identity/title and citation-bearing lines, retaining full articles for downstream consumers. Compact observations focus attention on edges and reduce repeated input, but cannot establish global answer sufficiency. The graph is derived from collected text rather than a second runtime citation index.
+- Keep physical GGUF selection in the shell and expose a stable citation-agent API alias to Python. Request-scoped grammar must preserve existing client extra_body settings. Grammar constrains syntax and candidate membership, not relevance or stop quality.
+
+**Assumptions it rests on**
+
+- A missing target must be reachable through forward references in collected text to be recoverable. A missing source is not recoverable merely because its target was retrieved. Article lookup IDs must represent the same corpus and parent identities as seed retrieval.
+- Texts use the corpus heading convention and article IDs are meaningful within one regulation. The whitelist is numeric: an external reference with a colliding internal number can still be mistaken for an internal edge. Do not infer document identity from the number alone when expanding to multiple regulations.
+- Compact excerpts are lines, not reconstructed semantic paragraphs; page breaks can split a condition from its citation. Increasing few-shot count cannot restore evidence absent from the observation.
+- Set metrics assume the labeled gold set defines the required internal articles. The user confirmed gold {22,13} for id 2 and {42,40} for id 8; external presentation guidance is outside the internal corpus gold. Outside-gold articles are not automatically false statements or useless to every answer.
+
+**Failed approaches**
+
+- Tried: interpreting LangSmith Input assistant messages as executed decisions -> Failed because: those messages include fixed few-shot examples, including stop followed by an unrelated example -> Avoid when: diagnosing a loop that allegedly follows after stop; inspect Output and the same query run's gate/fetch events instead.
+- Tried: diagnosing ratio failure from ensemble rank 1 -> Failed because: child scores are recomputed against the original question after subquery merge; ensemble order is not reranker order -> Avoid when: a source article appears early in ensemble but is absent from final parents; inspect score, cutoff, child cap and parent fetch in sequence.
+- Tried: using stubbed stop tests as proof of model selectivity -> Failed because: these tests only prove the loop obeys a supplied decision -> Avoid when: citing a green mechanical suite as evidence the LLM knows when to stop.
+- Tried: running nominally offline agent tests through the shared test configuration -> Failed because: parent conftest loads dotenv and has an autouse database cleanup fixture, causing DB dependency or skips -> Avoid when: running this suite without its confcutdir boundary. This is a cross-cutting test-isolation constraint.
+- Tried: leaving system directories on fake-server PATH -> Failed because: the missing-server case could discover a real installation -> Avoid when: testing executable discovery; expose only controlled dependencies and invoke bash by absolute path.
+- Tried: asserting grammar RHS strings and selecting the first few-shot with a context ID -> Failed because: harmless formatting or example reordering could break tests, while an unused candidate rule could pass -> Avoid when: testing prompt refactors; check paired example meaning and the root-to-candidate rule relationship.
+
+**Nuances agreed with the user**
+
+- stop means no current candidate edge is needed. no_candidates is a mechanical result, not an error or completeness claim. gate_stop breaks the loop immediately. Only the follow-limit path recomputes a final frontier for logging; this does not request another model decision.
+- A follow_limit_reached reason alone says nothing about remaining candidates. Log their final list/count independently; cap 0 must work without referencing an observation that was never built.
+- Distinguish gold_article_recall, gold_article_precision and gold_article_f1 from answer correctness. Recall measures required-ID coverage; precision penalizes extra IDs irrespective of rank; F1 balances the two. all_gold_hit is complete coverage, not exact set equality. Recovery applies only to gold missing from the comparison baseline, while added articles must be measured against the agent's actual seed.
+- The older statement above that counting non-gold documents is a wrong precision proxy applies to predicting RAGAS precision, not to the separately defined set precision. RAGAS context precision is rank-sensitive and can leave trailing noise unpenalized; its context recall measures supported reference claims rather than rank-weighted article coverage.
+- Freeze a baseline before tuning prompt, reasoning settings or ratio. Choosing candidates[0] mechanically is a proposed same-seed control for the LLM's incremental value, not a chosen replacement design or an experiment already performed. The old forward/reverse-expansion failures above belong to their own corpus and setup, not a universal impossibility claim.
+- Heading-negative fixtures were robustness cases, not observed malformed corpus headings. The committed matcher now requires a dot after the article number and a constrained chapter prefix; retain this distinction when explaining why old tests failed.
