@@ -44,3 +44,32 @@ Recovery applied to six incomplete baseline rows and recovered all missing gold 
 The trajectory contains 12 gate calls and 12 successful follows, zero stop decisions, six no_candidates terminations and two follow_limit_reached terminations. Four added articles were new gold and eight were outside the labeled gold sets. Eleven decisions selected the first candidate; the exception was id 5 call 3 choosing 8 from [40,8,43]. Seven fetches occurred after gold was already complete: id 1 (three), id 3 (one), id 5 (one), id 6 (two). The local handoff comparison omitted id 3 in its explanatory enumeration and called the id 5 choice index 3; the JSON shows the second candidate, zero-based index 1. Its approximate +54% character estimate is also superseded here: the saved full texts give +77.5%. This corrects the disposable report without treating it as authoritative over the artifacts.
 
 The measured outcome is improved complete-gold retrieval with reduced set precision and a small F1 change. It demonstrates that citation fetches can recover required internal articles in this sample. It does not establish that the LLM adds value over deterministic expansion or that generated answers improve. The reproducibility and validation gaps discovered at the committed checkpoint are tracked in tracker.md rather than silently treating the stored results as a reproducible end-to-end release.
+
+
+## 2026-09-09: Three initial-selection implementations reviewed
+
+Reviewed working files in `/home/coronny/rag-project` (feat/exp-harness-citation), its `codex-initial-selection` child (codex/initial-selection), and its `initial-selection` child (initial-selection). The v2 harness exists and the user reports reproduced results; the previous checkpoint's missing-harness debt is historical, not a current instruction to rebuild v2.
+
+All three use baseline JSON import, frozen seeds, existing frontier/observation helpers, first/LLM policies, separate result artifacts, and deterministic metrics. Compared loop/tools/gate/prompt/client/config file hashes were identical across the three checkouts. No implementation changes or live LLM calls were made during review.
+
+Fresh isolated suites passed: main 91, codex child 33, initial-selection child 27. Command per worktree: `PYTHONDONTWRITEBYTECODE=1 /home/coronny/rag-project/.venv/bin/python -m pytest evals/agent-exp/tests -q --confcutdir=evals/agent-exp/tests -p no:cacheprovider`. Synthetic probes additionally reproduced:
+
+- initial-selection: STOP on a follow label raises ResultRecord ValidationError rather than saving an incorrect decision (contracts.py:459; metrics.py:129)
+- codex/initial-selection: different_trial_ids uses symmetric difference of result keys, so a valid pair choosing different articles reports agreement 0 but an empty disagreement list (metrics.py:202)
+- codex/initial-selection: interruption on trial two leaves one persisted row but summary valid=0/missing=2 because results are merged only after an entire policy finishes (run_experiments.py:357)
+- main and codex child: changing persisted correctness flags to true for an incorrect decision is accepted and yields accuracy 1; summary does not revalidate those flags against the decision
+- main and codex child: a case with nonempty candidates can be relabeled no_candidates and excluded without rejection
+- main and initial-selection child: duplicating the same question under another case_id is accepted as a second eligible case
+- main: policy-error run reports completed_with_errors but exits 0 (run_experiments.py:392)
+
+Additional source findings: main/codex save seed_order=[] while initial-selection records actual context indices; main cost aggregation excludes error latency; codex by_position includes single-candidate follows and excludes STOP, while initial-selection uses valid multi-candidate outputs including STOP. These supplementary distributions are not directly comparable. Initial-selection reloads persisted results before finalizing; codex buffers the current policy; main tracks each result in memory. Codex has the strongest complete case-roster checks; initial-selection has stronger result invariants but the STOP invariant is defective.
+
+Recommendation delivered: initial-selection is a reasonable foundation after fixing its STOP and duplicate-question defects, borrowing codex's case-roster validation. No merge or branch choice has been authorized. All findings remain unfixed at this review snapshot. Detailed ephemeral resume evidence is in `.knowledge/handoffs/2026-09-09-agent-exp-three-worktree-review.md`.
+
+### features/cross_reference/log.md  (feature narrative, durable)
+
+The initial-selection milestone turned the earlier traversal concern into a paired decision experiment. The user finished labels against frozen seed-derived cases, ran the original-order comparison, and committed the experiment in five groups ending at 2dfa92c on feat/exp-harness-citation (2026-09-10). The checkpoint includes the harness, isolated tests, frozen inputs, measured results and setup guide. Its purpose was to establish a baseline for explaining gate behavior before changing the prompt or measuring a full retrieval trajectory.
+
+The artifact reviewed was `evals/agent-exp/results/20260910T040325Z_initial-selection_0fcb68f9912f/`, retained in result commit 2484b78. Each policy produced six valid decisions, with no errors or missing trials; questions 2 and 8 were mechanically excluded for empty frontiers. The policies agreed on all six decisions: correct follows for questions 3, 4, 5 and 7, and incorrect follows on stop-labeled questions 1 and 6. Both therefore scored Selection Accuracy 4/4 and Decision Accuracy 4/6; first-position selection was 4/4 among multi-candidate trials. The LLM added no measured decision advantage in this run. These paired outcomes motivated the next ordering experiment rather than a prompt change.
+
+Source review at the checkpoint confirmed that the two missing policy-error summary assertions identified in the remaining-refinements review are now present. This extraction checked the committed anchor, source and saved measurement artifacts; it did not execute pytest or rerun the model. The historical 89-pass consolidation result is prior offline evidence, not a fresh test result for this checkpoint. Initial-selection reached the limited measurement objective: human-labeled, paired gate decisions can be examined independently of downstream retrieval outcomes.

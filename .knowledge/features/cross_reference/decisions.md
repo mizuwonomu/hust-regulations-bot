@@ -78,3 +78,52 @@ Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross
 - The older statement above that counting non-gold documents is a wrong precision proxy applies to predicting RAGAS precision, not to the separately defined set precision. RAGAS context precision is rank-sensitive and can leave trailing noise unpenalized; its context recall measures supported reference claims rather than rank-weighted article coverage.
 - Freeze a baseline before tuning prompt, reasoning settings or ratio. Choosing candidates[0] mechanically is a proposed same-seed control for the LLM's incremental value, not a chosen replacement design or an experiment already performed. The old forward/reverse-expansion failures above belong to their own corpus and setup, not a universal impossibility claim.
 - Heading-negative fixtures were robustness cases, not observed malformed corpus headings. The committed matcher now requires a dot after the article number and a constrained chapter prefix; retain this distinction when explaining why old tests failed.
+
+
+## 2026-09-09: Agent experiment contracts and review lessons
+
+- Keep the new decision experiments in `evals/agent-exp/`, independent of v2 and RAGAS. Reuse the existing eight questions; derive seed snapshots and gate cases from reproduced single-pass baseline output. User approval adds action/acceptable-candidate labels, not a replacement question corpus
+- Specs and plans are English documents under `docs/superpowers/specs/` and `docs/superpowers/plans/`. Initial-selection is implemented and reviewed first; permutation and stop-policy follow later. Source-loss/reranking work stays deferred
+- Freeze full parent text, order, and separate ID membership after parent selection/fetching. Whitelist is a JSON array of unique positive internal article IDs, supplied as data; do not derive it from gold or seed membership
+- First-position Selection Rate and consistency are behavioral metrics that do not require gold labels. Selection/Decision Accuracy require reviewed state-specific labels. Consistency is agreement of observable actions/article IDs, not proof of consistent internal reasoning
+- Preserve STOP as a valid output even on follow-required cases: selection_correct=False there, but null on stop-labeled cases. A schema that forbids false selection correctness for all STOP outputs breaks evaluation of false stops
+- Persist policy-specific compact results and summaries; keep verbose decisions, trajectories, and logs local/ignored. Independent state replay is not a new trajectory
+- Finalization should account for persisted results after interruption. A per-policy in-memory batch that is merged only after the whole policy completes can disagree with rows already written to disk
+- Recomputing summary must validate or derive correctness from actual decisions and approved labels, not merely trust serialized correctness flags. Mechanical no_candidates must agree with the frontier, and hop-0 cases must not duplicate a question under different case IDs
+- Existing green harness suites do not prove gate semantics or coverage of reporting failure paths. Record source-review observations, synthetic reproductions, offline suites, and live model evaluations separately
+
+## 2026-09-09: Consolidating review tests into the initial-selection harness
+
+- A passing replacement suite does not establish coverage equivalence with the original suite. Map source scenarios to actual assertions, distinguishing input validation, replay validation, artifact loading, and summary validation
+- The user limited consolidation to scenarios in review/feat-harness-original/tests and review/remaining-refinements.patch, preserving existing eval tests. Do not introduce new test scenarios merely to broaden coverage. New explanatory comments were specified verbatim by the coordinating agent
+- Preserve real loop/gate boundaries with injected synthetic dependencies: capture hop-0 input before fetching, and fake the external client while retaining the real gate parser. These checks do not validate live LLM judgment
+- Test actual repository ignore behavior, not a test-created literal; test debug independence by deleting fixture debug and comparing summaries; compare recorded source hashes to source bytes rather than a hash to itself
+- Transport classification must recognize concrete HTTP exception types rather than depend solely on message text. Seed import can avoid loading store-related modules by importing the existing loop/tools helpers only when constructing cases
+- The old optional num_samples consistency assertion was not adopted: actual baseline/dataset roster alignment remains required. Old approved-unresolved/no_candidates rejection expectations were adapted to the current exclusion contract
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Retained initial-selection as an independent hop-0 measurement milestone (checkpoint 2dfa92c, branch feat/exp-harness-citation, 2026-09-10) because the question was whether the LLM adds decision value over always following the first candidate. A full loop would mix this question with fetching, later states and retrieval coverage; success meant a trustworthy comparison, not an LLM win
+- Kept scripts separate from data and results because the user found code at the experiment root ambiguous. Kept snapshots and labeled datasets together as the frozen input checkpoint because cases refer to the snapshot and later seed-order experiments need its full texts and order, not only hashes
+- Preserved the original run manifest after the later commits and directory move because its revision and dirty-tree flag describe execution time. Replacing them with the new HEAD would falsify provenance; stored code hashes remain the evidence for the executed source
+- Preferred permutation on the fixed v1 cases before adding a v2 corpus because changing question content and ordering simultaneously would obscure the original position hypothesis. This was the recommended next experiment, not an authorization to run or tune it during extraction
+
+**Assumptions it rests on**
+
+- Seeds are a genuine single-pass baseline from the same corpus, and the whitelist describes internal articles independently of the answer gold set. Revisit seed preparation when corpus identity or the retrieval baseline changes
+- Labels judge the next useful citation edge from the actual gate input. An acceptable intermediate article need not equal the final answer's complete gold set; a stop means no remaining edge is needed, not proof that the entire answer is already supported
+- Candidate-order comparisons preserve question, observation, candidate membership and model settings. Because candidate order also determines grammar alternatives, their conclusions concern the current list-plus-grammar path rather than an isolated prompt-list effect
+
+**Failed approaches**
+
+- Tried: diagnosing position bias from complete first/LLM agreement on original-order inputs -> Failed because: candidate identity and position were never separated, so semantic selection and first-position selection could yield the same outputs -> Avoid when: interpreting one original-order replay as causal evidence
+- Tried: treating the absence of a reasoning trace as evidence that the model merely copied the first candidate -> Failed because: thinking was disabled, the prompt requested JSON without explanation, and debug stored parsed decisions rather than the full raw response -> Avoid when: inferring internal reasoning from this logger's output
+
+**Nuances agreed with the user**
+
+- Observation comes from collected seed titles and citation excerpts, not from the text of candidates[0]. Candidate IDs describe possible next fetches; their full article text has not yet been fetched in this replay
+- Retain single-candidate cases for action decisions, but report them separately from position analysis. Repeating or rotating a case adds trials, not independent semantic questions
+- Keep the first run and its approved labels fixed when progressing to another experiment. If labels change, create a new case version and comparison rather than silently changing the meaning of old results
+- In the remaining-refinements patch review, grouped help/invalid-command tests and the renamed repeat-schedule test preserved the original checks. Error-record persistence alone did not cover summary counts, so the requested refinement was to restore errors=1 and valid=0 assertions in the existing CLI failure test rather than expand unrelated coverage
