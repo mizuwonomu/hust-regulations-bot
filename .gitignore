@@ -35,3 +35,7 @@ cache/
 
 #harness packages
 packages/
+
+# Evals debug
+evals/agent-exp/results/**/debug/
+*.log
