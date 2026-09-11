@@ -1,11 +1,19 @@
-"""Strict records shared by the initial citation-gate experiment."""
+"""Contract nghiêm ngặt dùng chung cho citation-gate experiment."""
 
 from __future__ import annotations
 
 import math
 from typing import Any, Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 
 from src.rag.agent.schema import Decision
 
@@ -14,12 +22,31 @@ ArticleId: TypeAlias = int
 PolicyName: TypeAlias = Literal["first", "llm"]
 ExpectedAction: TypeAlias = Literal["follow", "stop", "unresolved", "no_candidates"]
 LabelStatus: TypeAlias = Literal["draft", "approved"]
+PermutationCondition: TypeAlias = Literal["repeat", "candidate-order", "seed-order", "combined"]
+PermutationSchedule: TypeAlias = Literal["original", "rotate"]
+TrialCondition: TypeAlias = Literal[
+    "original", "repeat", "candidate-order", "seed-order", "combined"
+]
+ExclusionReason: TypeAlias = Literal[
+    "draft",
+    "unresolved",
+    "no_candidates",
+    "later_hop_seed_order",
+    "empty_seed_contexts",
+]
 JsonValue: TypeAlias = Any
 Metadata: TypeAlias = dict[str, JsonValue]
 
+INITIAL_SELECTION_SCHEMA_VERSION = 1
+PERMUTATION_SCHEMA_VERSION = 2
+SUPPORTED_MANIFEST_SCHEMA_VERSIONS = frozenset(
+    {INITIAL_SELECTION_SCHEMA_VERSION, PERMUTATION_SCHEMA_VERSION}
+)
+# Contract giữ boundary label-free giữa case, trial, policy và metric
+
 
 class ContractModel(BaseModel):
-    """Base model that rejects undeclared fields and implicit scalar coercion."""
+    """Model gốc từ chối field chưa khai báo và coercion ngầm."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -93,7 +120,7 @@ def _validate_nonblank(value: Any, *, field_name: str) -> Any:
 
 
 class SourceFile(ContractModel):
-    """Identify a source file and its content hash."""
+    """Định danh file nguồn và content hash của nó."""
 
     path: str
     sha256: str
@@ -105,7 +132,7 @@ class SourceFile(ContractModel):
 
 
 class SeedRow(ContractModel):
-    """Freeze one baseline retrieval seed without pairing IDs to contexts."""
+    """Đóng băng một seed retrieval mà không ghép ID với context."""
 
     id: QuestionId
     question: str
@@ -138,7 +165,7 @@ class SeedRow(ContractModel):
 
 
 class SeedSnapshot(ContractModel):
-    """Freeze baseline seeds, provenance, and the independent corpus whitelist."""
+    """Đóng băng seed baseline, provenance và whitelist corpus độc lập."""
 
     schema_version: int = Field(ge=1)
     snapshot_id: str
@@ -192,7 +219,7 @@ class SeedSnapshot(ContractModel):
 
 
 class GateInput(ContractModel):
-    """Project a case to the label-free input accepted by either policy."""
+    """Chiếu case thành input không chứa nhãn cho cả hai policy."""
 
     question: str
     observation: str
@@ -212,7 +239,7 @@ class GateInput(ContractModel):
 
 
 class GateCase(ContractModel):
-    """Freeze one initial-gate decision state and its human-review boundary."""
+    """Đóng băng state initial-gate và boundary review của người."""
 
     case_id: str
     dataset_id: str
@@ -303,21 +330,21 @@ class GateCase(ContractModel):
 
 
 class Exclusion(ContractModel):
-    """Explain why a case is absent from semantic policy scheduling."""
+    """Giải thích vì sao case bị loại khỏi semantic policy schedule."""
 
     case_id: str
-    reason: Literal["draft", "unresolved", "no_candidates"]
+    reason: ExclusionReason
 
 
 class ReplaySelection(ContractModel):
-    """Separate approved executable cases from explicit exclusions."""
+    """Tách case đã duyệt được chạy khỏi các exclusion rõ ràng."""
 
     eligible_cases: list[GateCase]
     exclusions: list[Exclusion]
 
 
 class Usage(ContractModel):
-    """Record optional token usage exposed by a policy client."""
+    """Ghi usage token tùy chọn mà policy client cung cấp."""
 
     input_tokens: int | None
     output_tokens: int | None
@@ -332,7 +359,7 @@ class Usage(ContractModel):
 
 
 class TrialError(ContractModel):
-    """Classify one policy execution failure without storing a traceback."""
+    """Phân loại lỗi chạy policy mà không lưu traceback."""
 
     category: Literal["timeout", "transport", "schema", "invalid_candidate", "unexpected"]
     message: str
@@ -344,7 +371,7 @@ class TrialError(ContractModel):
 
 
 class DecisionOutcome(ContractModel):
-    """Represent one valid decision or one classified execution failure."""
+    """Biểu diễn decision hợp lệ hoặc một lỗi đã phân loại."""
 
     status: Literal["ok", "error"]
     decision: Decision | None
@@ -372,12 +399,12 @@ class DecisionOutcome(ContractModel):
 
 
 class Trial(ContractModel):
-    """Identify one shared original-order replay input."""
+    """Định danh một cấu hình input replay chung, độc lập policy và nhãn."""
 
     trial_id: str
     case_id: str
     repeat_id: int = Field(ge=0)
-    condition: Literal["original"]
+    condition: TrialCondition
     permutation_id: str
     seed_order: list[int]
     candidate_order: list[ArticleId]
@@ -411,7 +438,7 @@ class Trial(ContractModel):
 
 
 class ResultRecord(ContractModel):
-    """Persist the compact scored outcome for one policy trial."""
+    """Lưu outcome compact đã chấm điểm của một policy trial."""
 
     run_id: str
     policy: PolicyName
@@ -491,7 +518,7 @@ class ResultRecord(ContractModel):
 
 
 class RatioMetric(ContractModel):
-    """Store a metric numerator, denominator, and nullable ratio."""
+    """Lưu tử số, mẫu số và ratio có thể null của metric."""
 
     numerator: int = Field(ge=0)
     denominator: int = Field(ge=0)
@@ -526,7 +553,7 @@ class RatioMetric(ContractModel):
 
 
 class PolicySummary(ContractModel):
-    """Aggregate coverage, accuracy, behavioral rate, and telemetry by policy."""
+    """Tổng hợp coverage, accuracy, behavioral rate và telemetry theo policy."""
 
     scheduled: int = Field(ge=0)
     valid: int = Field(ge=0)
@@ -557,7 +584,7 @@ class PolicySummary(ContractModel):
 
 
 class PairedSummary(ContractModel):
-    """Aggregate paired policy coverage, agreement, and correctness outcomes."""
+    """Tổng hợp coverage, agreement và correctness của policy pair."""
 
     scheduled_pairs: int = Field(ge=0)
     valid_pairs: int = Field(ge=0)
@@ -580,7 +607,7 @@ class PairedSummary(ContractModel):
 
 
 class Summary(ContractModel):
-    """Persist deterministic aggregates and explicit exclusions for one run."""
+    """Lưu aggregate deterministic và exclusion rõ ràng của một run."""
 
     by_policy: dict[PolicyName, PolicySummary]
     by_candidate_group: dict[str, dict[PolicyName, PolicySummary]]
@@ -589,12 +616,431 @@ class Summary(ContractModel):
     exclusions: list[Exclusion]
 
 
+class PermutationConfig(ContractModel):
+    """Cấu hình một permutation condition và lịch repeat của nó."""
+
+    condition: PermutationCondition
+    schedule: PermutationSchedule
+    repeats: int
+
+    @field_validator("repeats", mode="before")
+    @classmethod
+    def _repeats(cls, value: Any) -> Any:
+        if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+            raise ValueError("repeats must be a positive integer excluding booleans")
+        return value
+
+    @model_validator(mode="after")
+    def _schedule_invariant(self) -> PermutationConfig:
+        if self.condition == "repeat" and self.schedule != "original":
+            raise ValueError("repeat requires the original schedule")
+        if self.condition != "repeat" and self.schedule != "rotate":
+            raise ValueError(f"{self.condition} requires the rotate schedule")
+        return self
+
+
+class PermutationPlan(ContractModel):
+    """Lưu schedule order đã validate trước khi chạy policy."""
+
+    config: PermutationConfig
+    trials: list[Trial]
+    exclusions: list[Exclusion]
+    expected_trial_count: int
+    expected_policy_result_count: int
+
+    @field_validator("expected_trial_count", "expected_policy_result_count")
+    @classmethod
+    def _counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{info.field_name} must be a non-negative integer")
+        return value
+
+    @model_validator(mode="after")
+    def _schedule_invariant(self) -> PermutationPlan:
+        trial_ids = [trial.trial_id for trial in self.trials]
+        if len(set(trial_ids)) != len(trial_ids):
+            raise ValueError("plan trials must have unique trial_id values")
+        if self.expected_trial_count != len(self.trials):
+            raise ValueError("expected_trial_count must match the planned schedule")
+        if any(trial.condition != self.config.condition for trial in self.trials):
+            raise ValueError("plan trials must match the configured condition")
+        if not self.trials:
+            if self.expected_policy_result_count != 0:
+                raise ValueError("an empty plan cannot expect policy results")
+            return self
+        if self.expected_policy_result_count % self.expected_trial_count != 0:
+            raise ValueError("expected policy results must be a whole multiple of the trials")
+        return self
+
+
+class QuestionKey(ContractModel):
+    """Định danh question gốc trong dataset mà không gộp kiểu ID."""
+
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+    dataset_id: str
+    question_id: QuestionId
+
+    @field_validator("dataset_id")
+    @classmethod
+    def _dataset_id(cls, value: str) -> str:
+        return _validate_nonblank(value, field_name="dataset_id")
+
+    @field_validator("question_id", mode="before")
+    @classmethod
+    def _question_id(cls, value: Any) -> Any:
+        return _validate_question_id(value)
+
+
+class ActionKey(ContractModel):
+    """Định danh STOP hoặc FOLLOW để so sánh, không dùng vị trí."""
+
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+
+    action: Literal["stop", "follow"]
+    dieu: ArticleId | None
+
+    @model_validator(mode="after")
+    def _action_invariant(self) -> ActionKey:
+        if self.action == "stop" and self.dieu is not None:
+            raise ValueError("STOP action keys cannot carry an article id")
+        if self.action == "follow" and (self.dieu is None or self.dieu <= 0):
+            raise ValueError("FOLLOW action keys require a positive article id")
+        return self
+
+
+class MeanMetric(ContractModel):
+    """Lưu hierarchical mean cùng số defined, eligible và excluded."""
+
+    total: float
+    defined: int
+    eligible: int
+    excluded: int
+    value: float | None
+
+    @field_validator("total", mode="before")
+    @classmethod
+    def _finite_total(cls, value: float) -> float:
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("mean total must be numeric")
+        value = float(value)
+        if not math.isfinite(value):
+            raise ValueError("mean total must be finite")
+        return value
+
+    @field_validator("defined", "eligible", "excluded")
+    @classmethod
+    def _component_counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{info.field_name} must be a non-negative integer")
+        return value
+
+    @field_validator("value", mode="before")
+    @classmethod
+    def _finite_value(cls, value: float | None) -> float | None:
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError("mean value must be numeric or null")
+        value = float(value)
+        if not math.isfinite(value):
+            raise ValueError("mean value must be finite or null")
+        return value
+
+    @model_validator(mode="after")
+    def _mean_invariant(self) -> MeanMetric:
+        if self.defined + self.excluded != self.eligible:
+            raise ValueError("defined and excluded components must partition eligible ones")
+        if self.defined == 0:
+            if self.value is not None or self.total != 0.0:
+                raise ValueError("a mean without defined components must have null value and zero total")
+            return self
+        if self.value is None or not math.isclose(
+            self.value, self.total / self.defined, rel_tol=1e-12, abs_tol=0.0
+        ):
+            raise ValueError("mean value does not match its total and defined count")
+        return self
+
+
+class ConsistencySummary(ContractModel):
+    """Báo pair agreement pooled cùng case mean và coverage phân cấp."""
+
+    matching_pairs: int
+    scheduled_pairs: int
+    valid_pairs: int
+    pooled: RatioMetric
+    eligible_groups: int
+    excluded_groups: int
+    eligible_cases: int
+    excluded_cases: int
+    case_mean: MeanMetric
+
+    @field_validator(
+        "matching_pairs", "scheduled_pairs", "valid_pairs", "eligible_groups",
+        "excluded_groups", "eligible_cases", "excluded_cases",
+    )
+    @classmethod
+    def _counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{info.field_name} must be a non-negative integer")
+        return value
+
+    @model_validator(mode="after")
+    def _pair_invariant(self) -> ConsistencySummary:
+        if self.matching_pairs > self.valid_pairs or self.valid_pairs > self.scheduled_pairs:
+            raise ValueError("pair counts must not exceed their coverage")
+        if self.pooled.numerator != self.matching_pairs or self.pooled.denominator != self.valid_pairs:
+            raise ValueError("pooled ratio must describe the matching and valid pairs")
+        return self
+
+
+class CaseMetrics(ContractModel):
+    """Tổng hợp một case trong một policy và điều kiện permutation."""
+
+    case_id: str
+    source_hop: int = Field(ge=0)
+    scheduled: int
+    valid: int
+    errors: int
+    missing: int
+    selection_accuracy: RatioMetric
+    decision_accuracy: RatioMetric
+    first_position_selection_rate: RatioMetric
+    permutation_consistency: MeanMetric
+    repeat_consistency: MeanMetric
+
+    @field_validator("scheduled", "valid", "errors", "missing")
+    @classmethod
+    def _counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{info.field_name} must be a non-negative integer")
+        return value
+
+    @model_validator(mode="after")
+    def _coverage_invariant(self) -> CaseMetrics:
+        if self.valid + self.errors + self.missing != self.scheduled:
+            raise ValueError("valid, errors, and missing must partition scheduled trials")
+        return self
+
+
+class QuestionHopMetrics(ContractModel):
+    """Giữ mean của case theo một question và source hop."""
+
+    question_key: QuestionKey
+    source_hop: int = Field(ge=0)
+    scheduled_cases: int
+    defined_cases: int
+    selection_accuracy: MeanMetric
+    decision_accuracy: MeanMetric
+    permutation_consistency: MeanMetric
+    repeat_consistency: MeanMetric
+
+    @field_validator("scheduled_cases", "defined_cases")
+    @classmethod
+    def _counts(cls, value: int, info) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{info.field_name} must be a non-negative integer")
+        return value
+
+
+class QuestionMacroSummary(ContractModel):
+    """Lấy mean case trong từng question rồi lấy mean giữa các question."""
+
+    question_count: int
+    selection_accuracy: MeanMetric
+    decision_accuracy: MeanMetric
+    permutation_consistency: MeanMetric
+    repeat_consistency: MeanMetric
+    hops: list[QuestionHopMetrics]
+
+    @field_validator("question_count")
+    @classmethod
+    def _count(cls, value: int) -> int:
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError("question_count must be a non-negative integer")
+        return value
+
+
+class GoldPositionCase(ContractModel):
+    """Báo accuracy của một case trong một strata gold-position."""
+
+    case_id: str
+    correct: int
+    scheduled: int
+    accuracy: RatioMetric
+
+
+class GoldPositionGroup(ContractModel):
+    """Tách accuracy single-gold theo vị trí và nhóm multi-gold riêng."""
+
+    view: Literal["single_gold", "multi_gold"]
+    candidate_count: int
+    gold_positions: list[int]
+    correct: int
+    scheduled: int
+    accuracy: RatioMetric
+    case_ids: list[str]
+    cases: list[GoldPositionCase]
+    case_macro: MeanMetric
+
+
+class PositionCohort(ContractModel):
+    """Cho biết tập case được schedule ở mọi candidate position so sánh."""
+
+    candidate_count: int
+    positions: list[int]
+    case_ids: list[str]
+    scheduled_per_position: int
+
+
+class PositionDistribution(ContractModel):
+    """Đếm output hợp lệ theo vị trí và STOP, kèm coverage trên lịch đã chạy."""
+
+    condition: PermutationCondition
+    candidate_count: int | None
+    scheduled: int
+    valid: int
+    coverage: RatioMetric
+    positions: dict[str, RatioMetric]
+    stop: RatioMetric
+
+
+class IdenticalInputGroup(ContractModel):
+    """Nhóm các order khác nhau nhưng tạo cùng full input cho policy."""
+
+    case_id: str
+    condition: PermutationCondition
+    observation_hash: str
+    candidate_order: list[ArticleId]
+    permutation_ids: list[str]
+
+
+class ConditionSummary(ContractModel):
+    """Tổng hợp một policy trong một permutation condition."""
+
+    scheduled: int
+    valid: int
+    errors: int
+    missing: int
+    selection_accuracy: RatioMetric
+    decision_accuracy: RatioMetric
+    first_position_selection_rate: RatioMetric
+    selection_case_macro: MeanMetric
+    decision_case_macro: MeanMetric
+    question_macro: QuestionMacroSummary
+    cases: list[CaseMetrics]
+    permutation_consistency: ConsistencySummary
+    repeat_consistency: ConsistencySummary
+    gold_positions: list[GoldPositionGroup]
+    position_cohorts: list[PositionCohort]
+    position_distributions: list[PositionDistribution]
+    identical_inputs: list[IdenticalInputGroup]
+
+    @model_validator(mode="after")
+    def _coverage_invariant(self) -> ConditionSummary:
+        if self.valid + self.errors + self.missing != self.scheduled:
+            raise ValueError("valid, errors, and missing must partition scheduled trials")
+        return self
+
+
+class PolicyPermutationSummary(ContractModel):
+    """Tổng hợp một policy qua mọi permutation condition đã chạy."""
+
+    scheduled: int
+    valid: int
+    errors: int
+    missing: int
+    telemetry: Metadata
+    by_condition: dict[PermutationCondition, ConditionSummary]
+
+    @field_validator("telemetry")
+    @classmethod
+    def _telemetry(cls, value: Metadata) -> Metadata:
+        return _validate_metadata(value)
+
+    @model_validator(mode="after")
+    def _coverage_invariant(self) -> PolicyPermutationSummary:
+        if self.valid + self.errors + self.missing != self.scheduled:
+            raise ValueError("valid, errors, and missing must partition scheduled trials")
+        return self
+
+
+class PairedConditionSummary(ContractModel):
+    """So sánh hai policy trên trial ID chung trong một condition."""
+
+    condition: PermutationCondition
+    scheduled_pairs: int
+    valid_pairs: int
+    coverage: RatioMetric
+    agreement: RatioMetric
+    a_wins: int
+    b_wins: int
+    ties: int
+
+    @model_validator(mode="after")
+    def _pair_invariant(self) -> PairedConditionSummary:
+        if self.valid_pairs > self.scheduled_pairs:
+            raise ValueError("valid pairs must not exceed scheduled pairs")
+        if self.a_wins + self.b_wins + self.ties != self.valid_pairs:
+            raise ValueError("paired correctness counts must partition valid pairs")
+        return self
+
+
+class PairedPolicySummary(ContractModel):
+    """Tổng hợp agreement và correctness của policy pair qua các condition."""
+
+    policies: list[PolicyName]
+    scheduled_pairs: int
+    valid_pairs: int
+    coverage: RatioMetric
+    agreement: RatioMetric
+    a_wins: int
+    b_wins: int
+    ties: int
+    by_condition: list[PairedConditionSummary]
+
+    @model_validator(mode="after")
+    def _pair_invariant(self) -> PairedPolicySummary:
+        if len(self.policies) != 2 or len(set(self.policies)) != 2:
+            raise ValueError("paired policy summaries require two distinct policies")
+        if self.valid_pairs > self.scheduled_pairs:
+            raise ValueError("valid pairs must not exceed scheduled pairs")
+        if self.a_wins + self.b_wins + self.ties != self.valid_pairs:
+            raise ValueError("paired correctness counts must partition valid pairs")
+        return self
+
+
+class PermutationSummary(ContractModel):
+    """Lưu aggregate permutation deterministic của một run đã validate."""
+
+    schema_version: int = Field(ge=1)
+    experiment: Literal["permutation"]
+    run_id: str
+    by_policy: dict[PolicyName, PolicyPermutationSummary]
+    paired: list[PairedPolicySummary]
+    exclusions: list[Exclusion]
+    schedule: Metadata
+
+    @field_validator("schedule")
+    @classmethod
+    def _schedule(cls, value: Metadata) -> Metadata:
+        return _validate_metadata(value)
+
+    @model_validator(mode="after")
+    def _policy_invariant(self) -> PermutationSummary:
+        for policy, summary in self.by_policy.items():
+            condition_scheduled = sum(item.scheduled for item in summary.by_condition.values())
+            if condition_scheduled != summary.scheduled:
+                raise ValueError(f"condition counts do not partition policy {policy}")
+        return self
+
+
 class RunManifest(ContractModel):
-    """Persist the complete schedule and provenance needed to audit a run."""
+    """Lưu schedule đầy đủ và provenance cần để audit một run."""
 
     schema_version: int = Field(ge=1)
     run_id: str
-    experiment: Literal["initial-selection"]
+    experiment: Literal["initial-selection", "permutation"]
     started_at: str
     ended_at: str | None
     status: Literal["running", "complete", "completed_with_errors", "incomplete"]
@@ -605,6 +1051,13 @@ class RunManifest(ContractModel):
     exclusions: list[Exclusion]
     provenance: Metadata
     policy_config: dict[PolicyName, Metadata]
+    permutation: PermutationConfig | None = Field(
+        default=None,
+        validation_alias=AliasChoices("permutation", "permutation_config"),
+    )
+    expected_trial_count: int | None = None
+    expected_policy_result_count: int | None = None
+    spec_source: SourceFile | None = None
 
     @field_validator("run_id", "started_at")
     @classmethod
@@ -632,6 +1085,13 @@ class RunManifest(ContractModel):
             _validate_metadata(config)
         return value
 
+    @field_validator("expected_trial_count", "expected_policy_result_count")
+    @classmethod
+    def _expected_counts(cls, value: int | None, info) -> int | None:
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value < 0):
+            raise ValueError(f"{info.field_name} must be a non-negative integer or null")
+        return value
+
     @model_validator(mode="after")
     def _trial_invariant(self) -> RunManifest:
         trial_ids = [trial.trial_id for trial in self.trials]
@@ -641,23 +1101,78 @@ class RunManifest(ContractModel):
             raise ValueError("manifest contains an unsupported policy")
         if set(self.policy_config) != set(self.policies):
             raise ValueError("policy_config keys must match policies")
+        if self.schema_version not in SUPPORTED_MANIFEST_SCHEMA_VERSIONS:
+            raise ValueError(
+                f"unsupported manifest schema version: {self.schema_version}, "
+                f"supported versions are {sorted(SUPPORTED_MANIFEST_SCHEMA_VERSIONS)}"
+            )
+        if self.experiment == "permutation":
+            if self.permutation is None:
+                raise ValueError("permutation manifests require an effective permutation config")
+            if self.schema_version != PERMUTATION_SCHEMA_VERSION:
+                raise ValueError("permutation manifests require the permutation schema version")
+            if any(trial.condition != self.permutation.condition for trial in self.trials):
+                raise ValueError("permutation trials must match the configured condition")
+            if self.expected_trial_count != len(self.trials):
+                raise ValueError("expected_trial_count must match the saved schedule")
+            expected_results = len(self.trials) * len(self.policies)
+            if self.expected_policy_result_count != expected_results:
+                raise ValueError("expected_policy_result_count must match policies and trials")
+            return self
+        if self.permutation is not None:
+            raise ValueError("initial-selection manifests cannot carry a permutation config")
+        if self.schema_version != INITIAL_SELECTION_SCHEMA_VERSION:
+            raise ValueError("initial-selection manifests require the initial-selection schema version")
+        if any(trial.condition != "original" for trial in self.trials):
+            raise ValueError("initial-selection trials must stay in the original condition")
+        if self.expected_trial_count is not None or self.expected_policy_result_count is not None:
+            raise ValueError("initial-selection manifests cannot carry permutation expected counts")
         return self
+
+    @property
+    def permutation_config(self) -> PermutationConfig | None:
+        """Cung cấp cấu hình permutation hiệu lực qua tên tương thích dễ hiểu."""
+        return self.permutation
 
 
 __all__ = [
+    "ActionKey",
     "ArticleId",
+    "CaseMetrics",
+    "ConditionSummary",
+    "ConsistencySummary",
     "DecisionOutcome",
     "ExpectedAction",
     "Exclusion",
+    "ExclusionReason",
     "GateCase",
     "GateInput",
+    "GoldPositionCase",
+    "GoldPositionGroup",
+    "IdenticalInputGroup",
+    "INITIAL_SELECTION_SCHEMA_VERSION",
     "JsonValue",
     "LabelStatus",
+    "MeanMetric",
     "Metadata",
+    "PairedConditionSummary",
+    "PairedPolicySummary",
     "PairedSummary",
+    "PERMUTATION_SCHEMA_VERSION",
+    "PermutationCondition",
+    "PermutationConfig",
+    "PermutationPlan",
+    "PermutationSchedule",
+    "PermutationSummary",
     "PolicyName",
+    "PolicyPermutationSummary",
     "PolicySummary",
+    "PositionCohort",
+    "PositionDistribution",
+    "QuestionHopMetrics",
     "QuestionId",
+    "QuestionKey",
+    "QuestionMacroSummary",
     "RatioMetric",
     "ReplaySelection",
     "ResultRecord",
@@ -667,6 +1182,8 @@ __all__ = [
     "SourceFile",
     "Summary",
     "Trial",
+    "TrialCondition",
     "TrialError",
     "Usage",
+    "SUPPORTED_MANIFEST_SCHEMA_VERSIONS",
 ]

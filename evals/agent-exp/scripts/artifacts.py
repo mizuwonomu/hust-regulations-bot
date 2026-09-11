@@ -1,4 +1,4 @@
-"""Persist experiment inputs, manifests, results, debug records, and reloads."""
+"""Lưu input, manifest, result, debug record và reload của experiment."""
 
 from __future__ import annotations
 
@@ -12,33 +12,37 @@ from typing import Any
 try:
     from contracts import (
         GateCase,
+        PermutationSummary,
         ResultRecord,
         RunManifest,
         SeedSnapshot,
         Summary,
     )
+    from permutation import plan_permutation_run, reconstruct_trial_input
     from seed_cases import read_cases, validate_replay
 except ModuleNotFoundError:
-    from .contracts import GateCase, ResultRecord, RunManifest, SeedSnapshot, Summary
+    from .contracts import GateCase, PermutationSummary, ResultRecord, RunManifest, SeedSnapshot, Summary
+    from .permutation import plan_permutation_run, reconstruct_trial_input
     from .seed_cases import read_cases, validate_replay
 
 
+# Artifact được ghi tăng dần để run bị ngắt vẫn có thể kiểm tra
 class ArtifactCorruptionError(ValueError):
-    """Signal a malformed persisted JSON or JSONL artifact."""
+    """Báo artifact JSON hoặc JSONL đã lưu bị hỏng."""
 
 
 def sha256_bytes(value: bytes) -> str:
-    """Hash bytes with SHA-256."""
+    """Băm bytes bằng SHA-256."""
     return hashlib.sha256(value).hexdigest()
 
 
 def sha256_text(value: str) -> str:
-    """Hash UTF-8 text with SHA-256."""
+    """Băm text UTF-8 bằng SHA-256."""
     return sha256_bytes(value.encode("utf-8"))
 
 
 def sha256_file(path: Path) -> str:
-    """Hash a file's bytes with SHA-256."""
+    """Băm bytes của file bằng SHA-256."""
     digest = hashlib.sha256()
     with Path(path).open("rb") as source:
         for block in iter(lambda: source.read(1024 * 1024), b""):
@@ -59,12 +63,12 @@ def _atomic_write_json(path: Path, payload: Any) -> None:
 
 
 def write_snapshot(snapshot: SeedSnapshot, output_path: Path) -> None:
-    """Write one validated seed snapshot as JSON."""
+    """Ghi một seed snapshot đã validate thành JSON."""
     _atomic_write_json(output_path, snapshot.model_dump(mode="json"))
 
 
 def read_snapshot(path: Path) -> SeedSnapshot:
-    """Read and validate one seed snapshot JSON file."""
+    """Đọc và validate một file seed snapshot JSON."""
     path = Path(path)
     try:
         with path.open("r", encoding="utf-8") as source:
@@ -82,7 +86,7 @@ def _repo_root() -> Path:
 
 
 def resolve_source_path(path: str, *, run_dir: Path | None = None) -> Path:
-    """Resolve a committed relative input path without silently replacing it."""
+    """Tìm input path tương đối đã ghi mà không âm thầm thay thế nó."""
     candidate = Path(path)
     if candidate.is_absolute():
         return candidate
@@ -108,7 +112,7 @@ def _manifest_payload(manifest: RunManifest) -> dict[str, Any]:
 
 
 def write_manifest(run_dir: Path, manifest: RunManifest) -> None:
-    """Atomically update a run manifest."""
+    """Cập nhật manifest của run theo cách atomic."""
     _atomic_write_json(Path(run_dir) / "manifest.json", _manifest_payload(manifest))
 
 
@@ -119,7 +123,7 @@ def _run_directory_name(manifest: RunManifest) -> str:
 
 
 def create_run(output_root: Path, manifest: RunManifest) -> Path:
-    """Create a non-overwriting run directory and save its running manifest."""
+    """Tạo thư mục run không ghi đè và lưu manifest đang chạy."""
     output_root = Path(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
     run_dir = output_root / _run_directory_name(manifest)
@@ -133,7 +137,7 @@ def _result_path(run_dir: Path, policy: str) -> Path:
 
 
 def append_result(run_dir: Path, result: ResultRecord) -> None:
-    """Append one compact policy result and flush it to disk."""
+    """Thêm một policy result compact rồi flush xuống đĩa."""
     path = _result_path(run_dir, result.policy)
     path.parent.mkdir(parents=True, exist_ok=True)
     line = json.dumps(result.model_dump(mode="json"), ensure_ascii=False)
@@ -145,7 +149,7 @@ def append_result(run_dir: Path, result: ResultRecord) -> None:
 
 
 def append_debug_record(run_dir: Path, policy: str, payload: dict[str, Any]) -> None:
-    """Append a verbose local decision record for one policy."""
+    """Thêm decision record verbose cục bộ cho một policy."""
     debug_dir = Path(run_dir) / "debug"
     debug_dir.mkdir(parents=True, exist_ok=True)
     path = debug_dir / f"decisions_{policy}.jsonl"
@@ -157,7 +161,7 @@ def append_debug_record(run_dir: Path, policy: str, payload: dict[str, Any]) -> 
 
 
 def append_policy_log(run_dir: Path, policy: str, message: str) -> None:
-    """Append a local human-readable policy log line."""
+    """Thêm một dòng log policy dễ đọc ở cục bộ."""
     debug_dir = Path(run_dir) / "debug"
     debug_dir.mkdir(parents=True, exist_ok=True)
     path = debug_dir / f"run_{policy}.log"
@@ -241,23 +245,13 @@ def _verify_source(source_path: str, expected_hash: str, *, run_dir: Path) -> Pa
     return path
 
 
-def load_run(run_dir: Path) -> tuple[RunManifest, list[GateCase], list[ResultRecord]]:
-    """Reload a run and verify its committed inputs and result schedule."""
-    run_dir = Path(run_dir)
-    manifest = _read_manifest(run_dir)
-    snapshot_path = _verify_source(
-        manifest.snapshot_source.path,
-        manifest.snapshot_source.sha256,
-        run_dir=run_dir,
-    )
-    cases_path = _verify_source(
-        manifest.cases_source.path,
-        manifest.cases_source.sha256,
-        run_dir=run_dir,
-    )
-    snapshot = read_snapshot(snapshot_path)
-    cases = read_cases(cases_path)
-    snapshot_hash = sha256_file(snapshot_path)
+def _verify_initial_selection_schedule(
+    manifest: RunManifest,
+    snapshot: SeedSnapshot,
+    cases: list[GateCase],
+    snapshot_hash: str,
+) -> set[str]:
+    """Kiểm tra lại schedule initial-selection và trả về ID case đủ điều kiện."""
     replay = validate_replay(snapshot, cases, snapshot_hash=snapshot_hash)
     if [item.model_dump(mode="json") for item in replay.exclusions] != [
         item.model_dump(mode="json") for item in manifest.exclusions
@@ -281,6 +275,92 @@ def load_run(run_dir: Path) -> tuple[RunManifest, list[GateCase], list[ResultRec
             raise ArtifactCorruptionError(
                 f"manifest trial {trial.trial_id} changes candidate order"
             )
+    return {case.case_id for case in replay.eligible_cases}
+
+
+def _verify_permutation_schedule(
+    manifest: RunManifest,
+    snapshot: SeedSnapshot,
+    cases: list[GateCase],
+    snapshot_hash: str,
+) -> set[str]:
+    """Tính lại schedule permutation, dựng từng trial và trả về các case."""
+    config = manifest.permutation
+    if config is None:
+        raise ArtifactCorruptionError("permutation manifest is missing its effective config")
+    try:
+        plan = plan_permutation_run(
+            snapshot,
+            cases,
+            snapshot_hash=snapshot_hash,
+            config=config,
+            policy_count=len(manifest.policies),
+        )
+    except ValueError as exc:
+        raise ArtifactCorruptionError(
+            f"permutation schedule cannot be reproduced: {exc}"
+        ) from exc
+
+    if [trial.model_dump(mode="json") for trial in plan.trials] != [
+        trial.model_dump(mode="json") for trial in manifest.trials
+    ]:
+        raise ArtifactCorruptionError(
+            "manifest trials differ from the recomputed permutation schedule"
+        )
+    if [item.model_dump(mode="json") for item in plan.exclusions] != [
+        item.model_dump(mode="json") for item in manifest.exclusions
+    ]:
+        raise ArtifactCorruptionError(
+            "manifest exclusions differ from recomputed case exclusions"
+        )
+    if manifest.expected_trial_count != plan.expected_trial_count:
+        raise ArtifactCorruptionError("manifest expected trial count differs from schedule")
+    if manifest.expected_policy_result_count != plan.expected_policy_result_count:
+        raise ArtifactCorruptionError("manifest expected policy result count differs from schedule")
+
+    case_by_id = {case.case_id: case for case in cases}
+    if len(case_by_id) != len(cases):
+        raise ArtifactCorruptionError("cases source contains duplicate case_id values")
+    for trial in manifest.trials:
+        case = case_by_id.get(trial.case_id)
+        if case is None:
+            raise ArtifactCorruptionError(
+                f"manifest trial {trial.trial_id} references an unknown case"
+            )
+        try:
+            reconstruct_trial_input(case, snapshot, trial)
+        except ValueError as exc:
+            raise ArtifactCorruptionError(
+                f"manifest trial {trial.trial_id} is not reconstructible: {exc}"
+            ) from exc
+    return {trial.case_id for trial in plan.trials}
+
+
+def load_run(run_dir: Path) -> tuple[RunManifest, list[GateCase], list[ResultRecord]]:
+    """Reload run và kiểm tra input cùng schedule result đã ghi."""
+    run_dir = Path(run_dir)
+    manifest = _read_manifest(run_dir)
+    snapshot_path = _verify_source(
+        manifest.snapshot_source.path,
+        manifest.snapshot_source.sha256,
+        run_dir=run_dir,
+    )
+    cases_path = _verify_source(
+        manifest.cases_source.path,
+        manifest.cases_source.sha256,
+        run_dir=run_dir,
+    )
+    snapshot = read_snapshot(snapshot_path)
+    cases = read_cases(cases_path)
+    snapshot_hash = sha256_file(snapshot_path)
+    if manifest.experiment == "permutation":
+        eligible_case_ids = _verify_permutation_schedule(
+            manifest, snapshot, cases, snapshot_hash
+        )
+    else:
+        eligible_case_ids = _verify_initial_selection_schedule(
+            manifest, snapshot, cases, snapshot_hash
+        )
 
     results: list[ResultRecord] = []
     for policy in manifest.policies:
@@ -292,14 +372,17 @@ def load_run(run_dir: Path) -> tuple[RunManifest, list[GateCase], list[ResultRec
             )
         )
 
-    eligible_case_ids = {case.case_id for case in replay.eligible_cases}
     if any(trial.case_id not in eligible_case_ids for trial in manifest.trials):
         raise ArtifactCorruptionError("manifest contains an ineligible trial")
     return manifest, cases, results
 
 
-def finalize_run(run_dir: Path, manifest: RunManifest, summary: Summary) -> None:
-    """Atomically save a summary and the final manifest state."""
+def finalize_run(
+    run_dir: Path,
+    manifest: RunManifest,
+    summary: Summary | PermutationSummary,
+) -> None:
+    """Lưu summary và trạng thái manifest cuối theo cách atomic."""
     _atomic_write_json(Path(run_dir) / "summary.json", summary.model_dump(mode="json"))
     write_manifest(run_dir, manifest)
 
