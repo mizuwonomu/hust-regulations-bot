@@ -127,3 +127,44 @@ Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross
 - Retain single-candidate cases for action decisions, but report them separately from position analysis. Repeating or rotating a case adds trials, not independent semantic questions
 - Keep the first run and its approved labels fixed when progressing to another experiment. If labels change, create a new case version and comparison rather than silently changing the meaning of old results
 - In the remaining-refinements patch review, grouped help/invalid-command tests and the renamed repeat-schedule test preserved the original checks. Error-record persistence alone did not cover summary counts, so the requested refinement was to restore errors=1 and valid=0 assertions in the existing CLI failure test rather than expand unrelated coverage
+
+## 2026-09-10: Permutation review interpretation and aggregation boundaries
+
+- Gold-position accuracy must group by the gold position in each trial's candidate_order, not its position in the original case. Otherwise rotation effects disappear into the original-position bucket even while overall accuracy remains plausible
+- Position distributions include valid decisions only. selected_position=None also occurs for errors; it is not sufficient evidence of STOP. Scheduled accuracy still counts errors/missing trials as incorrect
+- Consistency group identity must include case_id alongside repeat_id or permutation_id. Flattening case-local groups by their local key overwrites earlier cases and corrupts pooled pair coverage
+- Identical full inputs require both observation identity and ordered candidates. In combined experiments, equal observation hashes with different candidate orders are distinct policy inputs
+- Candidate-order isolates the current candidate-list/grammar path; seed-order fixes the candidate list while changing context order. Decision changes alone show order sensitivity; claiming preference for the first/last context requires relating chosen citations to their source positions, which can be ambiguous when several seeds cite the same article
+- High article-based permutation consistency with low accuracy means stable wrong decisions, not position bias by itself. Repeat consistency measures identical-input stability separately. Full-loop usefulness and internal reasoning cannot be inferred from either
+- A no-overwrite test using wall-clock-derived directory names can be flaky across a second boundary. Distinguish path collision protection from the stronger contract that the same manifest always maps to the same directory; this inherited issue must not be blamed on one permutation implementation
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Closed the fixed-v1 ordering comparison before changing questions or prompts (archive checkpoint fd7696d, branch feat/exp-harness-citation, 2026-09-11) because a stable dataset separates the effect of input ordering from a changed evaluation target. This is an experiment checkpoint, not completion of the broader citation-agent feature
+- Used the Codex foundation with selected DeepSeek integration scenarios and compatible per-case reporting inspired by GLM because one authoritative schedule/reconstruction/scoring path is easier to validate than merging three competing implementations. Independent metric counterexamples, rather than donor test counts, determined which formulas to retain
+- Used three repetitions per exact input as a small diagnostic budget because one repetition cannot measure stability and two provide only one comparison pair. Three provide three dependent pairs; this was never a statistical sufficiency threshold. Repeat control includes the LLM under the same recorded settings as both ordering treatments
+- Kept compact manifests, per-policy decisions and summaries in Git because these three complementary runs form a useful baseline and together added only about 307 KiB of non-debug data at review. Verbose debug remains local; repository growth should be controlled by retaining decision-relevant runs rather than discarding the evidence needed to rescore them
+- Kept specifications private at the user's request because implementation and results should be publishable without exposing design documents. Future runner metadata explicitly reports unavailable private-spec provenance instead of requiring a public spec path; setup guides remain the public operating contract. Historical path/hash metadata does not contain spec text and must not be silently rewritten to pretend it was recorded differently
+
+**Assumptions it rests on**
+
+- Ordering comparisons require the same frozen snapshot, labels, prompt and runtime configuration, with candidate membership unchanged. Revisit comparability whenever any of those changes; alias equality alone does not verify the served model weights
+- Larger candidate lists must arise from the real retrieval/rerank/fetch-to-frontier path. A source article containing many references is insufficient if deduplication, collected membership or whitelist filtering leaves fewer gate candidates
+- The next corpus measures gate selection conditional on usable retrieval states. Rejecting cases whose source is not retrieved is legitimate for this conditional question only if exclusions are retained; it cannot establish end-to-end retrieval quality
+
+**Failed approaches**
+
+- Tried: inferring a fixed-position rule from agreement with first on original-order inputs → Failed because: gold and the selected article were initially first, and candidate rotations later separated article choice from list position → Avoid when: an unpermuted dataset aligns correct targets with candidates[0]
+- Tried: interpreting stable choices after seed rotation as proof the model ignores observation → Failed because: seed rotation preserves semantic content, so a content-sensitive policy can correctly remain invariant → Avoid when: only order, not evidence or question meaning, changes
+- Tried: treating more candidates alone as a harder semantic test → Failed because: unrelated distractors can leave one obvious answer and repeated questions add no independent coverage → Avoid when: expanding a corpus to meet a numeric quota without reviewing competing citations
+
+**Nuances agreed with the user**
+
+- The accepted conclusion is resistance to a fixed candidate-list position on these observed cases, not proof of internal reasoning or absence of every position effect. Seed-order invariance is also limited to the rotations actually tested; candidate-order includes the current grammar/list coupling
+- FOLLOW/STOP causes were explicitly left to the separate stop-policy specification because this experiment does not distinguish corpus bias, prompt few-shot bias and observation/label mismatch. Do not tune the prompt solely to explain these v1 outcomes
+- Proposed a practical first expansion of at most 30 candidate questions to retain about 15-20 reviewed questions: roughly 8-10 with three candidates, 5-7 with four or five, and 2-3 with six or more if naturally available. These are provisional curation targets, not requirements or a statistical guarantee; quality and review effort take precedence over filling quotas
+- Preserve v1 and create a separate v2. Prefer unfamiliar questions, same-topic distractors and a clear required target; vary source articles and spread useful citations across multiple seeds for seed-order tests. Approve labels before seeing LLM outputs, and require the target to remain outside the frozen collected set
+- Questions 2/8 were not diagnosed as internal_dieu bugs. Trace missing source retrieval, reranker/cap removal, extraction, already-collected targets and whitelist filtering before naming a cause; retain the exclusion stage alongside rejected question candidates
+- The user chose to run while reviewing uncommitted code, then archive afterward, and accepted loss of uncommitted donor variants to simplify the workspace. A source checkpoint was advice for provenance, not a runtime prerequisite; the integrated root harness had no donor-worktree dependency
