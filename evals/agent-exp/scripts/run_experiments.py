@@ -1,4 +1,4 @@
-"""CLI for preparing and replaying the initial citation-gate experiment."""
+"""CLI chuẩn bị và replay citation-gate experiment."""
 
 from __future__ import annotations
 
@@ -43,12 +43,18 @@ from artifacts import (
 from contracts import (
     DecisionOutcome,
     GateCase,
+    GateInput,
+    INITIAL_SELECTION_SCHEMA_VERSION,
+    PERMUTATION_SCHEMA_VERSION,
+    PermutationConfig,
     RunManifest,
     SourceFile,
     Trial,
     TrialError,
 )
 from metrics import score_result, summarize
+from permutation import plan_permutation_run, reconstruct_trial_input
+from permutation_metrics import summarize_permutation
 from seed_cases import (
     import_seeds,
     policy_input,
@@ -62,7 +68,7 @@ from src.rag.agent.schema import Decision
 
 
 class PolicyInputError(ValueError):
-    """Signal an invalid policy decision that must not become STOP."""
+    """Báo decision policy không hợp lệ và không được chuyển thành STOP."""
 
 
 def _utc_now() -> str:
@@ -89,17 +95,17 @@ def _git_value(arguments: list[str]) -> str | None:
 def _git_dirty() -> bool | None:
     try:
         completed = subprocess.run(
-            ["git", "diff", "--quiet"],
+            ["git", "status", "--porcelain", "--untracked-files=all"],
             cwd=REPO_ROOT,
             check=False,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
         )
     except OSError:
         return None
-    if completed.returncode not in {0, 1}:
+    if completed.returncode != 0:
         return None
-    return completed.returncode == 1
+    return bool(completed.stdout.strip())
 
 
 def _relative_path(path: Path) -> str:
@@ -113,6 +119,8 @@ def _code_hashes() -> dict[str, str]:
     paths = [
         SCRIPT_DIR / "contracts.py",
         SCRIPT_DIR / "seed_cases.py",
+        SCRIPT_DIR / "permutation.py",
+        SCRIPT_DIR / "permutation_metrics.py",
         SCRIPT_DIR / "policies" / "first.py",
         SCRIPT_DIR / "policies" / "llm.py",
         SCRIPT_DIR / "artifacts.py",
@@ -126,6 +134,15 @@ def _code_hashes() -> dict[str, str]:
         _relative_path(path): sha256_file(path)
         for path in paths
         if path.exists()
+    }
+
+
+def _spec_provenance(experiment: str) -> tuple[SourceFile | None, dict[str, Any]]:
+    return None, {
+        "path": None,
+        "sha256": None,
+        "available": False,
+        "reason": "specification is local and intentionally not recorded",
     }
 
 
@@ -173,7 +190,7 @@ def plan_trials(
     repeats: int,
     seed_order_by_case: dict[str, list[int]] | None = None,
 ) -> list[Trial]:
-    """Create shared original-order trials for approved semantic cases."""
+    """Tạo trial order gốc dùng chung cho case semantic đã duyệt."""
     if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats <= 0:
         raise ValueError("repeats must be a positive integer")
 
@@ -268,10 +285,12 @@ def _execute_trial(
     trial: Trial,
     policy: str,
     decide: Callable[..., Decision],
+    input_record: GateInput | None = None,
     client: Any | None = None,
 ) -> Any:
     started = time.perf_counter()
-    input_record = policy_input(case)
+    if input_record is None:
+        input_record = policy_input(case)
     raw_decision: Decision | None = None
     try:
         if policy == "llm":
@@ -310,6 +329,7 @@ def _execute_trial(
             "run_id": manifest.run_id,
             "trial_id": trial.trial_id,
             "case_id": case.case_id,
+            "trial": trial.model_dump(mode="json"),
             "question": input_record.question,
             "observation": input_record.observation,
             "candidate_order": input_record.candidates,
@@ -327,16 +347,27 @@ def _execute_trial(
 
 def _build_manifest(
     *,
+    experiment: str = "initial-selection",
     policies: list[str],
     trials: list[Trial],
     exclusions: list[Any],
     snapshot_path: Path,
     cases_path: Path,
+    permutation: PermutationConfig | None = None,
+    expected_trial_count: int | None = None,
+    expected_policy_result_count: int | None = None,
 ) -> RunManifest:
+    spec_source, spec_info = _spec_provenance(experiment)
+    provenance = _provenance()
+    provenance["specification"] = spec_info
     return RunManifest(
-        schema_version=1,
+        schema_version=(
+            PERMUTATION_SCHEMA_VERSION
+            if experiment == "permutation"
+            else INITIAL_SELECTION_SCHEMA_VERSION
+        ),
         run_id=uuid.uuid4().hex[:12],
-        experiment="initial-selection",
+        experiment=experiment,
         started_at=_utc_now(),
         ended_at=None,
         status="running",
@@ -345,8 +376,12 @@ def _build_manifest(
         cases_source=SourceFile(path=str(cases_path), sha256=sha256_file(cases_path)),
         snapshot_source=SourceFile(path=str(snapshot_path), sha256=sha256_file(snapshot_path)),
         exclusions=exclusions,
-        provenance=_provenance(),
+        provenance=provenance,
         policy_config=_initial_policy_config(policies),
+        permutation=permutation,
+        expected_trial_count=expected_trial_count,
+        expected_policy_result_count=expected_policy_result_count,
+        spec_source=spec_source,
     )
 
 
@@ -360,7 +395,96 @@ def _manifest_status(manifest: RunManifest, results: list[Any]) -> str:
     return "complete"
 
 
+def _resolve_repeats(value: int | None, *, experiment: str) -> int:
+    """Chọn repeat count với default rõ ràng theo từng experiment."""
+    if value is None:
+        return 1 if experiment == "initial-selection" else 3
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError("repeats must be a positive integer")
+    return value
+
+
+def _execute_schedule(
+    run_dir: Path,
+    manifest: RunManifest,
+    trials: list[Trial],
+    case_by_id: dict[str, GateCase],
+    input_by_trial_id: dict[str, GateInput],
+) -> None:
+    """Chạy từng policy và trial bằng input reconstructed dùng chung."""
+    for policy in manifest.policies:
+        client = None
+        if policy == "first":
+            from policies.first import decide
+        else:
+            from policies.llm import client_config, create_client, decide
+
+            client = create_client()
+            policy_config = dict(manifest.policy_config)
+            policy_config["llm"] = {
+                **client_config(client),
+                "prompt_file_hash": sha256_file(REPO_ROOT / "src/rag/agent/prompt.py"),
+                "grammar_source_hash": sha256_file(REPO_ROOT / "src/rag/agent/gate.py"),
+                "gate_file_hash": sha256_file(REPO_ROOT / "src/rag/agent/gate.py"),
+            }
+            manifest = manifest.model_copy(update={"policy_config": policy_config})
+            write_manifest(run_dir, manifest)
+
+        for trial in trials:
+            _execute_trial(
+                run_dir,
+                manifest,
+                case_by_id[trial.case_id],
+                trial,
+                policy,
+                decide,
+                input_by_trial_id[trial.trial_id],
+                client=client,
+            )
+
+
+def _close_run(
+    run_dir: Path,
+    *,
+    summarize_fn: Callable[..., Any],
+    runner_failure: Exception | None,
+    interrupted: bool,
+) -> int:
+    """Tính lại trạng thái hoàn tất từ artifact và lưu summary cuối."""
+    final_status: str | None = None
+    try:
+        saved_manifest, saved_cases, saved_results = load_run(run_dir)
+        if interrupted or runner_failure is not None:
+            final_status = "incomplete"
+        else:
+            final_status = _manifest_status(saved_manifest, saved_results)
+        final_manifest = saved_manifest.model_copy(
+            update={"status": final_status, "ended_at": _utc_now()}
+        )
+        summary = summarize_fn(final_manifest, saved_cases, saved_results)
+        finalize_run(run_dir, final_manifest, summary)
+    except Exception as exc:  # noqa: BLE001
+        final_status = None
+        print(f"Could not finalize run: {_sanitize_error(exc)}", file=sys.stderr)
+
+    if final_status is None:
+        return 1
+    if interrupted:
+        return 130
+    if runner_failure is not None:
+        return 1
+    return 0 if final_status == "complete" else 1
+
+
 def _run_command(args: argparse.Namespace) -> int:
+    if args.experiment == "permutation":
+        return _run_permutation_command(args)
+    if args.condition is not None or args.schedule is not None:
+        raise ValueError("initial-selection runs do not accept --condition or --schedule")
+    return _run_initial_selection_command(args)
+
+
+def _run_initial_selection_command(args: argparse.Namespace) -> int:
     snapshot_path = Path(args.seeds)
     cases_path = Path(args.cases)
     snapshot = read_snapshot(snapshot_path)
@@ -383,7 +507,7 @@ def _run_command(args: argparse.Namespace) -> int:
     }
     trials = plan_trials(
         selection.eligible_cases,
-        repeats=args.repeats,
+        repeats=_resolve_repeats(args.repeats, experiment="initial-selection"),
         seed_order_by_case=seed_order_by_case,
     )
     if not trials:
@@ -391,6 +515,7 @@ def _run_command(args: argparse.Namespace) -> int:
         return 2
 
     manifest = _build_manifest(
+        experiment="initial-selection",
         policies=policies,
         trials=trials,
         exclusions=selection.exclusions,
@@ -402,67 +527,108 @@ def _run_command(args: argparse.Namespace) -> int:
     case_by_id = {case.case_id: case for case in selection.eligible_cases}
     runner_failure: Exception | None = None
     interrupted = False
-    final_status: str | None = None
-
+    input_by_trial_id = {
+        trial.trial_id: policy_input(case_by_id[trial.case_id]) for trial in trials
+    }
     try:
-        for policy in policies:
-            client = None
-            if policy == "first":
-                from policies.first import decide
-            else:
-                from policies.llm import client_config, create_client, decide
-
-                client = create_client()
-                policy_config = dict(manifest.policy_config)
-                policy_config["llm"] = {
-                    **client_config(client),
-                    "prompt_file_hash": sha256_file(REPO_ROOT / "src/rag/agent/prompt.py"),
-                    "grammar_source_hash": sha256_file(REPO_ROOT / "src/rag/agent/gate.py"),
-                    "gate_file_hash": sha256_file(REPO_ROOT / "src/rag/agent/gate.py"),
-                }
-                manifest = manifest.model_copy(update={"policy_config": policy_config})
-                write_manifest(run_dir, manifest)
-
-            for trial in trials:
-                _execute_trial(
-                    run_dir,
-                    manifest,
-                    case_by_id[trial.case_id],
-                    trial,
-                    policy,
-                    decide,
-                    client=client,
-                )
+        _execute_schedule(run_dir, manifest, trials, case_by_id, input_by_trial_id)
     except KeyboardInterrupt:
         interrupted = True
         print("Run interrupted", file=sys.stderr)
     except Exception as exc:  # noqa: BLE001
         runner_failure = exc
         print(f"Run failed before scheduling all trials: {_sanitize_error(exc)}", file=sys.stderr)
-    finally:
-        # Recompute completion from persisted artifacts, not from in-memory results
-        try:
-            saved_manifest, saved_cases, saved_results = load_run(run_dir)
-            if interrupted or runner_failure is not None:
-                final_status = "incomplete"
-            else:
-                final_status = _manifest_status(saved_manifest, saved_results)
-            final_manifest = saved_manifest.model_copy(
-                update={"status": final_status, "ended_at": _utc_now()}
-            )
-            summary = summarize(final_manifest, saved_cases, saved_results)
-            finalize_run(run_dir, final_manifest, summary)
-        except Exception as exc:  # noqa: BLE001
-            final_status = None
-            print(f"Could not finalize run: {_sanitize_error(exc)}", file=sys.stderr)
+    return _close_run(
+        run_dir,
+        summarize_fn=summarize,
+        runner_failure=runner_failure,
+        interrupted=interrupted,
+    )
 
-    if final_status is None:
-        return 1
-    if interrupted:
-        return 130
-    if runner_failure is not None:
-        return 1
-    return 0 if final_status == "complete" else 1
+
+def _run_permutation_command(args: argparse.Namespace) -> int:
+    """Kiểm tra, materialize, chạy và đóng một permutation schedule."""
+    snapshot_path = Path(args.seeds)
+    cases_path = Path(args.cases)
+    snapshot = read_snapshot(snapshot_path)
+    snapshot_hash = sha256_file(snapshot_path)
+    cases = read_cases(cases_path)
+    policies = list(args.policies)
+    if len(set(policies)) != len(policies):
+        raise ValueError("policies must not contain duplicates")
+    if args.condition is None:
+        raise ValueError("permutation runs require --condition")
+    schedule = args.schedule
+    if schedule is None:
+        if args.condition == "repeat":
+            schedule = "original"
+        else:
+            raise ValueError("ordering conditions require --schedule rotate")
+    config = PermutationConfig(
+        condition=args.condition,
+        schedule=schedule,
+        repeats=_resolve_repeats(args.repeats, experiment="permutation"),
+    )
+    plan = plan_permutation_run(
+        snapshot,
+        cases,
+        snapshot_hash=snapshot_hash,
+        config=config,
+        policy_count=len(policies),
+    )
+    if not plan.trials:
+        print(
+            "No runnable permutation cases remain after validation and condition eligibility",
+            file=sys.stderr,
+        )
+        return 2
+
+    case_by_id = {case.case_id: case for case in cases}
+    input_cache: dict[tuple[str, tuple[int, ...], tuple[int, ...], str], GateInput] = {}
+    input_by_trial_id: dict[str, GateInput] = {}
+    for trial in plan.trials:
+        identity = (
+            trial.case_id,
+            tuple(trial.seed_order),
+            tuple(trial.candidate_order),
+            trial.observation_hash,
+        )
+        if identity not in input_cache:
+            input_cache[identity] = reconstruct_trial_input(
+                case_by_id[trial.case_id], snapshot, trial
+            )
+        input_by_trial_id[trial.trial_id] = input_cache[identity]
+
+    manifest = _build_manifest(
+        experiment="permutation",
+        policies=policies,
+        trials=plan.trials,
+        exclusions=plan.exclusions,
+        snapshot_path=snapshot_path,
+        cases_path=cases_path,
+        permutation=config,
+        expected_trial_count=plan.expected_trial_count,
+        expected_policy_result_count=plan.expected_policy_result_count,
+    )
+    run_dir = create_run(Path(args.output_root), manifest)
+    print(f"Run directory: {run_dir}")
+
+    runner_failure: Exception | None = None
+    interrupted = False
+    try:
+        _execute_schedule(run_dir, manifest, plan.trials, case_by_id, input_by_trial_id)
+    except KeyboardInterrupt:
+        interrupted = True
+        print("Run interrupted", file=sys.stderr)
+    except Exception as exc:  # noqa: BLE001
+        runner_failure = exc
+        print(f"Run failed before scheduling all trials: {_sanitize_error(exc)}", file=sys.stderr)
+    return _close_run(
+        run_dir,
+        summarize_fn=summarize_permutation,
+        runner_failure=runner_failure,
+        interrupted=interrupted,
+    )
 
 
 def _summarize_command(args: argparse.Namespace) -> int:
@@ -472,14 +638,15 @@ def _summarize_command(args: argparse.Namespace) -> int:
     updated_manifest = manifest.model_copy(
         update={"status": status, "ended_at": manifest.ended_at or _utc_now()}
     )
-    summary = summarize(updated_manifest, cases, results)
+    summarize_fn = summarize_permutation if manifest.experiment == "permutation" else summarize
+    summary = summarize_fn(updated_manifest, cases, results)
     finalize_run(run_dir, updated_manifest, summary)
     print(f"Summary written to {run_dir / 'summary.json'}")
     return 0 if status == "complete" else 1
 
 
 def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Initial citation-gate experiment")
+    parser = argparse.ArgumentParser(description="Citation-gate experiments")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     import_parser = subparsers.add_parser("import-seeds", help="import a single-pass baseline")
@@ -492,12 +659,26 @@ def _build_parser() -> argparse.ArgumentParser:
     prepare_parser.add_argument("--seeds", type=Path, required=True)
     prepare_parser.add_argument("--output", type=Path, required=True)
 
-    run_parser = subparsers.add_parser("run", help="execute initial-selection policies")
-    run_parser.add_argument("--experiment", choices=["initial-selection"], required=True)
+    run_parser = subparsers.add_parser("run", help="execute a replay experiment")
+    run_parser.add_argument(
+        "--experiment",
+        choices=["initial-selection", "permutation"],
+        required=True,
+    )
+    run_parser.add_argument(
+        "--condition",
+        choices=["repeat", "candidate-order", "seed-order", "combined"],
+        default=None,
+    )
+    run_parser.add_argument(
+        "--schedule",
+        choices=["original", "rotate"],
+        default=None,
+    )
     run_parser.add_argument("--seeds", type=Path, required=True)
     run_parser.add_argument("--cases", type=Path, required=True)
     run_parser.add_argument("--policies", nargs="+", choices=["first", "llm"], required=True)
-    run_parser.add_argument("--repeats", type=int, default=1)
+    run_parser.add_argument("--repeats", type=int, default=None)
     run_parser.add_argument("--output-root", type=Path, required=True)
 
     summarize_parser = subparsers.add_parser("summarize", help="recompute a saved run")
@@ -506,7 +687,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Dispatch one CLI command and return its documented exit code."""
+    """Điều phối một CLI command và trả mã exit đã quy ước."""
     parser = _build_parser()
     args = parser.parse_args(argv)
     try:
@@ -523,8 +704,6 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Cases written to {args.output}")
             return 0
         if args.command == "run":
-            if args.repeats <= 0:
-                raise ValueError("repeats must be a positive integer")
             return _run_command(args)
         if args.command == "summarize":
             return _summarize_command(args)
