@@ -1,4 +1,4 @@
-"""Offline CLI checks for import, preparation, first-only execution, and summary."""
+"""Kiểm tra CLI offline cho import, chuẩn bị case, chạy policy và summary."""
 
 from __future__ import annotations
 
@@ -402,7 +402,7 @@ def test_cli_help_lists_all_commands(capsys):
 
 
 class _FakeGateClient:
-    """Provide a complete invoke surface for the real gate parser."""
+    """Cung cấp bề mặt invoke đầy đủ cho parser gate thật."""
 
     def __init__(self, content: str):
         self.content = content
@@ -524,6 +524,531 @@ def test_cli_fresh_process_preparation_does_not_initialize_llm(tmp_path):
     # Chặn model và tracing trong process mới để kiểm tra đường CLI offline độc lập
     completed = subprocess.run(
         [str(Path(sys.executable)), "-c", code, str(baseline), str(dataset), str(whitelist), str(output)],
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        timeout=60,
+    )
+    assert completed.returncode == 0, completed.stderr
+    report = json.loads(completed.stdout.strip().splitlines()[-1])
+    assert report == {"rc": 0, "llm": False, "langchain_openai": False}
+
+
+def _approved_permutation_inputs(tmp_path: Path):
+    baseline, dataset, whitelist = _input_files(tmp_path)
+    baseline_payload = json.loads(baseline.read_text(encoding="utf-8"))
+    baseline_payload["results"][0]["retrieved_contexts"] = [
+        "Điều 10. A\nTheo Điều 20, Điều 30 và Điều 40"
+    ]
+    baseline.write_text(json.dumps(baseline_payload, ensure_ascii=False), encoding="utf-8")
+    whitelist.write_text("[10, 20, 30, 40]", encoding="utf-8")
+    snapshot_path = tmp_path / "snapshot.json"
+    cases_path = tmp_path / "cases.jsonl"
+    assert main(
+        [
+            "import-seeds",
+            "--baseline",
+            str(baseline),
+            "--dataset",
+            str(dataset),
+            "--internal-dieu",
+            str(whitelist),
+            "--output",
+            str(snapshot_path),
+        ]
+    ) == 0
+    assert main(
+        ["prepare-cases", "--seeds", str(snapshot_path), "--output", str(cases_path)]
+    ) == 0
+    from contracts import GateCase
+
+    draft = read_cases(cases_path)[0]
+    approved = GateCase.model_validate(
+        {
+            **draft.model_dump(mode="python"),
+            "expected_action": "follow",
+            "acceptable_dieu": [20],
+            "label_reason": "Điều 20 cần cho câu hỏi",
+            "label_status": "approved",
+        }
+    )
+    write_cases([approved], cases_path)
+    return snapshot_path, cases_path
+
+
+def test_cli_permutation_capture_matches_saved_trials(tmp_path, monkeypatch):
+    # Đối chiếu input thật đi vào policy với toàn bộ trial đã lưu
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    import policies.first as first_policy
+    from src.rag.agent.schema import Decision
+    from permutation import reconstruct_trial_input
+
+    captured = []
+
+    def capture(question, observation, candidates):
+        captured.append((question, observation, list(candidates)))
+        return Decision(stop=False, dieu=candidates[0])
+
+    monkeypatch.setattr(first_policy, "decide", capture)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "candidate-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--repeats",
+            "2",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 0
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, cases, results = load_run(run_dir)
+    snapshot = read_snapshot(snapshot_path)
+    case_by_id = {case.case_id: case for case in cases}
+    expected = [
+        reconstruct_trial_input(case_by_id[trial.case_id], snapshot, trial)
+        for trial in manifest.trials
+    ]
+    assert manifest.experiment == "permutation"
+    assert manifest.permutation is not None
+    assert [trial.candidate_order for trial in manifest.trials] == [
+        [20, 30, 40],
+        [30, 40, 20],
+        [40, 20, 30],
+        [20, 30, 40],
+        [30, 40, 20],
+        [40, 20, 30],
+    ]
+    assert captured == [
+        (item.question, item.observation, item.candidates) for item in expected
+    ]
+    assert len(results) == len(manifest.trials) == 6
+    assert manifest.expected_policy_result_count == 6
+    assert cases[0].case_id == results[0].trial.case_id
+
+
+def test_cli_permutation_paired_policies_share_inputs_and_keep_files_separate(
+    tmp_path, monkeypatch
+):
+    # Hai policy phải nhận cùng input nhưng vẫn giữ kết quả và file riêng
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    import policies.first as first_policy
+    import policies.llm as llm_policy
+    from src.rag.agent.schema import Decision
+
+    first_inputs = []
+    llm_inputs = []
+
+    def capture_first(question, observation, candidates):
+        first_inputs.append((question, observation, list(candidates)))
+        return Decision(stop=False, dieu=candidates[0])
+
+    def capture_llm(question, observation, candidates, *, client):
+        llm_inputs.append((question, observation, list(candidates)))
+        return Decision(stop=False, dieu=candidates[-1])
+
+    monkeypatch.setattr(first_policy, "decide", capture_first)
+    monkeypatch.setattr(llm_policy, "create_client", lambda: object())
+    monkeypatch.setattr(llm_policy, "decide", capture_llm)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "candidate-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "llm",
+            "--repeats",
+            "1",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 0
+    assert first_inputs == llm_inputs
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert {record.policy for record in results} == {"first", "llm"}
+    first_ids = {record.trial.trial_id for record in results if record.policy == "first"}
+    llm_ids = {record.trial.trial_id for record in results if record.policy == "llm"}
+    assert first_ids == llm_ids == {trial.trial_id for trial in manifest.trials}
+    assert (run_dir / "results_first.jsonl").exists()
+    assert (run_dir / "results_llm.jsonl").exists()
+    payload = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert payload["paired"][0]["valid_pairs"] == 3
+    assert manifest.expected_policy_result_count == 6
+
+
+def _approved_seed_permutation_inputs(tmp_path: Path):
+    baseline, dataset, whitelist = _input_files(tmp_path)
+    baseline_payload = json.loads(baseline.read_text(encoding="utf-8"))
+    baseline_payload["results"][0]["retrieved_contexts"] = [
+        "Điều 10. A\nTheo Điều 20",
+        "Điều 11. B\nTheo Điều 30",
+    ]
+    baseline.write_text(json.dumps(baseline_payload, ensure_ascii=False), encoding="utf-8")
+    whitelist.write_text("[10, 11, 20, 30]", encoding="utf-8")
+    snapshot_path = tmp_path / "snapshot.json"
+    cases_path = tmp_path / "cases.jsonl"
+    assert main(
+        [
+            "import-seeds",
+            "--baseline",
+            str(baseline),
+            "--dataset",
+            str(dataset),
+            "--internal-dieu",
+            str(whitelist),
+            "--output",
+            str(snapshot_path),
+        ]
+    ) == 0
+    assert main(
+        ["prepare-cases", "--seeds", str(snapshot_path), "--output", str(cases_path)]
+    ) == 0
+    from contracts import GateCase
+
+    draft = read_cases(cases_path)[0]
+    approved = GateCase.model_validate(
+        {
+            **draft.model_dump(mode="python"),
+            "expected_action": "follow",
+            "acceptable_dieu": [20],
+            "label_reason": "Điều 20 cần cho câu hỏi",
+            "label_status": "approved",
+        }
+    )
+    write_cases([approved], cases_path)
+    return snapshot_path, cases_path
+
+
+def test_cli_permutation_seed_order_delivers_rebuilt_observations(tmp_path, monkeypatch):
+    # Seed order được rebuild từ snapshot, còn candidate order phải giữ nguyên
+    import policies.first as first_policy
+    from src.rag.agent.schema import Decision
+
+    captured = []
+
+    def capture(question, observation, candidates):
+        captured.append((question, observation, list(candidates)))
+        return Decision(stop=False, dieu=candidates[0])
+
+    monkeypatch.setattr(first_policy, "decide", capture)
+    snapshot_path, cases_path = _approved_seed_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "seed-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--repeats",
+            "1",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 0
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert len(manifest.trials) == 2
+    assert len({trial.observation_hash for trial in manifest.trials}) == 2
+    assert [item[2] for item in captured] == [[20, 30], [20, 30]]
+    assert len(captured) == len(manifest.trials)
+    assert all(trial.candidate_order == [20, 30] for trial in manifest.trials)
+    assert len(results) == 2
+
+
+def test_cli_permutation_interrupt_persists_completed_trials(tmp_path, monkeypatch):
+    # Ngắt ở trial thứ hai nhưng vẫn giữ trial đầu trong artifact
+    import policies.first as first_policy
+
+    real_decide = first_policy.decide
+    calls = {"count": 0}
+
+    def interrupt_on_second(*arguments, **keywords):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise KeyboardInterrupt
+        return real_decide(*arguments, **keywords)
+
+    monkeypatch.setattr(first_policy, "decide", interrupt_on_second)
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "candidate-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--repeats",
+            "2",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 130
+
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert manifest.status == "incomplete"
+    assert len(results) == 1
+    summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    first_summary = summary["by_policy"]["first"]
+    assert first_summary["scheduled"] == 6
+    assert first_summary["valid"] == 1
+    assert first_summary["missing"] == 5
+
+
+def test_cli_permutation_summarize_recomputes_after_debug_deletion(tmp_path):
+    # Summary phải dựng lại đầy đủ từ compact results sau khi xóa debug
+    import shutil
+
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "candidate-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 0
+    run_dir = next((tmp_path / "results").iterdir())
+    saved = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    shutil.rmtree(run_dir / "debug")
+    assert main(["summarize", "--run-dir", str(run_dir)]) == 0
+    recomputed = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    assert recomputed == saved
+
+
+def test_cli_permutation_transport_failure_records_completed_with_errors(
+    tmp_path, monkeypatch
+):
+    # Lỗi transport vẫn được ghi, tính vào mẫu số scheduled và giữ run incomplete
+    import policies.first as first_policy
+
+    real_decide = first_policy.decide
+    calls = {"count": 0}
+
+    def fail_on_second(*arguments, **keywords):
+        calls["count"] += 1
+        if calls["count"] == 2:
+            raise ConnectionError("connection refused")
+        return real_decide(*arguments, **keywords)
+
+    monkeypatch.setattr(first_policy, "decide", fail_on_second)
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "candidate-order",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--repeats",
+            "1",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 1
+
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert manifest.status == "completed_with_errors"
+    assert len(results) == 3
+    assert [record.outcome.status for record in results] == ["ok", "error", "ok"]
+    assert results[1].outcome.error is not None
+    assert results[1].outcome.error.category == "transport"
+    summary = json.loads((run_dir / "summary.json").read_text(encoding="utf-8"))
+    first_summary = summary["by_policy"]["first"]
+    assert first_summary["scheduled"] == 3
+    assert first_summary["valid"] == 2
+    assert first_summary["errors"] == 1
+    assert first_summary["by_condition"]["candidate-order"]["selection_accuracy"]["denominator"] == 3
+
+
+def test_cli_permutation_combined_saves_independent_cartesian_schedule(tmp_path):
+    snapshot_path, cases_path = _approved_seed_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "combined",
+            "--schedule",
+            "rotate",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--repeats",
+            "1",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 0
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert manifest.expected_trial_count == 4
+    assert len(results) == 4
+    assert len({(tuple(trial.seed_order), tuple(trial.candidate_order)) for trial in manifest.trials}) == 4
+
+
+def test_cli_permutation_default_repeat_count_is_three(tmp_path):
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    assert main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "repeat",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "first",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    ) == 0
+    run_dir = next((tmp_path / "results").iterdir())
+    manifest, _, results = load_run(run_dir)
+    assert manifest.permutation is not None
+    assert manifest.permutation.repeats == 3
+    assert len(manifest.trials) == len(results) == 3
+
+
+def test_cli_permutation_saves_manifest_before_llm_client_initialization(tmp_path, monkeypatch):
+    import policies.llm as llm_policy
+
+    monkeypatch.setattr(
+        llm_policy,
+        "create_client",
+        lambda: (_ for _ in ()).throw(ConnectionError("connection refused")),
+    )
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    code = main(
+        [
+            "run",
+            "--experiment",
+            "permutation",
+            "--condition",
+            "repeat",
+            "--seeds",
+            str(snapshot_path),
+            "--cases",
+            str(cases_path),
+            "--policies",
+            "llm",
+            "--repeats",
+            "2",
+            "--output-root",
+            str(tmp_path / "results"),
+        ]
+    )
+    assert code == 1
+    run_dir = next((tmp_path / "results").iterdir())
+    payload = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert payload["schema_version"] == 2
+    assert payload["permutation"] == {
+        "condition": "repeat",
+        "schedule": "original",
+        "repeats": 2,
+    }
+    assert payload["expected_trial_count"] == 2
+    assert payload["expected_policy_result_count"] == 2
+    assert "evals/agent-exp/scripts/permutation.py" in payload["provenance"]["code_hashes"]
+    assert "evals/agent-exp/scripts/permutation_metrics.py" in payload["provenance"]["code_hashes"]
+    manifest, _, results = load_run(run_dir)
+    assert manifest.status == "incomplete"
+    assert results == []
+
+
+def test_cli_permutation_first_only_stays_model_free_in_a_fresh_process(tmp_path):
+    snapshot_path, cases_path = _approved_permutation_inputs(tmp_path)
+    output_root = tmp_path / "results"
+    code = (
+        "import json, sys;"
+        "sys.path.insert(0, 'evals/agent-exp/scripts'); sys.path.insert(0, '.');"
+        "import run_experiments as cli;"
+        "rc=cli.main(['run','--experiment','permutation','--condition','repeat',"
+        "'--seeds',sys.argv[1],'--cases',sys.argv[2],'--policies','first','--repeats','1',"
+        "'--output-root',sys.argv[3]]);"
+        "print(json.dumps({'rc':rc,'llm':'policies.llm' in sys.modules,"
+        "'langchain_openai':'langchain_openai' in sys.modules}))"
+    )
+    completed = subprocess.run(
+        [
+            str(Path(sys.executable)),
+            "-c",
+            code,
+            str(snapshot_path),
+            str(cases_path),
+            str(output_root),
+        ],
         capture_output=True,
         text=True,
         check=False,

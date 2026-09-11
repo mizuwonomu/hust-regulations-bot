@@ -7,8 +7,11 @@ import pytest
 from contracts import (
     DecisionOutcome,
     GateCase,
+    PermutationConfig,
+    PERMUTATION_SCHEMA_VERSION,
     RunManifest,
     SourceFile,
+    Trial,
     TrialError,
 )
 from metrics import score_result, summarize
@@ -315,3 +318,32 @@ def test_plan_trials_preserves_repeat_identity_and_schedule():
     assert len({trial.trial_id for trial in trials}) == 2
     assert all(trial.candidate_order == [1, 2] for trial in trials)
     assert all(trial.permutation_id == "original" for trial in trials)
+
+
+def test_score_result_uses_the_recorded_candidate_order_for_position_and_correctness():
+    case = make_case(
+        "rotated",
+        expected_action="follow",
+        candidates=[2, 3],
+        acceptable_dieu={3},
+    )
+    trial = Trial(
+        trial_id="rotated:candidate-order:c[3,2]:r0",
+        case_id=case.case_id,
+        repeat_id=0,
+        condition="candidate-order",
+        permutation_id="c[3,2]",
+        seed_order=[],
+        candidate_order=[3, 2],
+        observation_hash=case.observation_hash,
+    )
+    result = score_result(
+        "run",
+        "first",
+        trial,
+        case,
+        ok_outcome(3),
+    )
+    assert result.selected_position == 1
+    assert result.selection_correct is True
+    assert result.decision_correct is True

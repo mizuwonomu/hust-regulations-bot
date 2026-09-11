@@ -1,4 +1,4 @@
-"""Offline persistence and reload checks for experiment artifacts."""
+"""Kiểm tra persistence offline và reload của experiment artifacts."""
 
 from __future__ import annotations
 
@@ -20,8 +20,9 @@ from artifacts import (
     sha256_file,
     write_snapshot,
 )
-from contracts import GateCase, RunManifest, SourceFile, Trial
+from contracts import GateCase, PermutationConfig, RunManifest, SourceFile, Trial
 from metrics import score_result, summarize
+from permutation import build_permutation_plan
 from seed_cases import prepare_cases, write_cases
 from src.rag.agent.schema import Decision
 from contracts import DecisionOutcome
@@ -121,16 +122,19 @@ def test_run_artifacts_reload_without_debug_files(tmp_path):
     assert not (run_dir / "debug").exists()
 
 
-def test_run_directory_never_overwrites(tmp_path):
+def test_run_directory_never_overwrites(tmp_path, monkeypatch):
+    # Khóa path để buộc collision trong cùng test và bảo vệ manifest cũ
+    import artifacts
+
     _, _, _, _, manifest = _inputs(tmp_path)
     output_root = tmp_path / "results"
+    monkeypatch.setattr(artifacts, "_run_directory_name", lambda current: "fixed-run")
     first = create_run(output_root, manifest)
-    second_manifest = manifest.model_copy(update={"run_id": "run-2"})
-    second = create_run(output_root, second_manifest)
-    assert second != first
+    original = "manifest goc"
+    (first / "manifest.json").write_text(original, encoding="utf-8")
     with pytest.raises(FileExistsError):
-        create_run(output_root, manifest)
-    assert (first / "manifest.json").exists()
+        create_run(output_root, manifest.model_copy(update={"run_id": "run-2"}))
+    assert (first / "manifest.json").read_text(encoding="utf-8") == original
 
 
 def _two_candidate_inputs(tmp_path: Path):
@@ -426,3 +430,52 @@ def test_repository_ignore_rules_keep_debug_ignored_and_results_tracked():
     assert debug.returncode == 0
     assert log.returncode == 0
     assert compact.returncode == 1
+
+
+def _permutation_run_inputs(tmp_path: Path):
+    case, _, initial_manifest = _two_candidate_inputs(tmp_path)
+    snapshot_path = tmp_path / "snapshot.json"
+    cases_path = tmp_path / "cases.jsonl"
+    snapshot = read_snapshot(snapshot_path)
+    config = PermutationConfig(condition="candidate-order", schedule="rotate", repeats=1)
+    plan = build_permutation_plan([case], snapshot, config, policy_count=1)
+    manifest = initial_manifest.model_copy(
+        update={
+            "schema_version": 2,
+            "experiment": "permutation",
+            "trials": plan.trials,
+            "permutation": config,
+            "expected_trial_count": plan.expected_trial_count,
+            "expected_policy_result_count": plan.expected_policy_result_count,
+        }
+    )
+    return snapshot_path, cases_path, case, manifest
+
+
+def test_permutation_reload_rejects_tampered_candidate_schedule(tmp_path):
+    _, _, case, manifest = _permutation_run_inputs(tmp_path)
+    run_dir = create_run(tmp_path / "results", manifest)
+    for trial in manifest.trials:
+        append_result(
+            run_dir,
+            score_result(
+                "run",
+                "first",
+                trial,
+                case,
+                DecisionOutcome(
+                    status="ok",
+                    decision=Decision(stop=False, dieu=trial.candidate_order[0]),
+                    error=None,
+                    latency_ms=1.0,
+                    usage=None,
+                ),
+            ),
+        )
+    payload = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    payload["trials"][0]["candidate_order"] = [30, 20]
+    (run_dir / "manifest.json").write_text(
+        json.dumps(payload, ensure_ascii=False), encoding="utf-8"
+    )
+    with pytest.raises(ArtifactCorruptionError, match="schedule"):
+        load_run(run_dir)
