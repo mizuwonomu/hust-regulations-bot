@@ -7,6 +7,8 @@ This directory measures two decisions on the same frozen hop-0 observation:
 
 The experiment does not retrieve articles, run the full loop, synthesize answers, or use RAGAS
 
+For repeat, candidate-order, seed-order, and combined replays on these frozen inputs, see [PERMUTATION_SETUP.md](PERMUTATION_SETUP.md)
+
 ## Workflow
 
 1. Supply a reproduced single-pass baseline, its original question dataset, and an independent internal-article whitelist

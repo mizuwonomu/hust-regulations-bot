@@ -1,0 +1,830 @@
+{
+  "schema_version": 2,
+  "run_id": "42e5505b1055",
+  "experiment": "permutation",
+  "started_at": "2026-09-11T05:43:26.150199+00:00",
+  "ended_at": "2026-09-11T05:44:01.657419+00:00",
+  "status": "complete",
+  "policies": [
+    "first",
+    "llm"
+  ],
+  "trials": [
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "43f3f68b30e0dbee65ba3fe818f43b4308f468b7f26c8b8e14aa5302ff74c35d"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[1,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "69b64d0eb5d01a4f0a1827115efb6589eda141802270a66ba8cf5a43d4129280"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "43f3f68b30e0dbee65ba3fe818f43b4308f468b7f26c8b8e14aa5302ff74c35d"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[1,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "69b64d0eb5d01a4f0a1827115efb6589eda141802270a66ba8cf5a43d4129280"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "43f3f68b30e0dbee65ba3fe818f43b4308f468b7f26c8b8e14aa5302ff74c35d"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:seed-order:s[1,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "69b64d0eb5d01a4f0a1827115efb6589eda141802270a66ba8cf5a43d4129280"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "81befbaa6cc7be57f9da60926c7f9c2cbf0311e87c898a79fce188f18f5040de"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[1,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "6e1339cd22a6abad976c92363431e416f4d6429b3652738d4046055862a828ee"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "81befbaa6cc7be57f9da60926c7f9c2cbf0311e87c898a79fce188f18f5040de"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[1,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "6e1339cd22a6abad976c92363431e416f4d6429b3652738d4046055862a828ee"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "81befbaa6cc7be57f9da60926c7f9c2cbf0311e87c898a79fce188f18f5040de"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:seed-order:s[1,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "6e1339cd22a6abad976c92363431e416f4d6429b3652738d4046055862a828ee"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "8a9b6079a1062a97c7afd06958a7429dd868433eda8e8d1c33328059b0300d50"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[1,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "1d58a350175e112145fb4ef83f6e4b7623268d9dcf5b0e28f1d04a0b65be1f4c"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "8a9b6079a1062a97c7afd06958a7429dd868433eda8e8d1c33328059b0300d50"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[1,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "1d58a350175e112145fb4ef83f6e4b7623268d9dcf5b0e28f1d04a0b65be1f4c"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "8a9b6079a1062a97c7afd06958a7429dd868433eda8e8d1c33328059b0300d50"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:seed-order:s[1,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "1d58a350175e112145fb4ef83f6e4b7623268d9dcf5b0e28f1d04a0b65be1f4c"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[1,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "ebf4c0428411d99a5858dc9a424323b6a76832bd876c5470a5b8a7296d387c68"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[1,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "ebf4c0428411d99a5858dc9a424323b6a76832bd876c5470a5b8a7296d387c68"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1]",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:seed-order:s[1,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,0]",
+      "seed_order": [
+        1,
+        0
+      ],
+      "candidate_order": [
+        3,
+        40
+      ],
+      "observation_hash": "ebf4c0428411d99a5858dc9a424323b6a76832bd876c5470a5b8a7296d387c68"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[0,1,2,3]:r0",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2,3]",
+      "seed_order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "e68cb6dc4f2b668c723157056d89d6300ef21edf92d5c7b5752b49e48847b5b1"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[1,2,3,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,3,0]",
+      "seed_order": [
+        1,
+        2,
+        3,
+        0
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a2cfe916186055d163860faddd7ac2dc08afaa9439f93c1f88f6ec08b6391d93"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[2,3,0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[2,3,0,1]",
+      "seed_order": [
+        2,
+        3,
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "db443f5f881d1b3213549970594ad51b4a9ac43c912d85f9b1fa24f30fa6e4ac"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[3,0,1,2]:r0",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[3,0,1,2]",
+      "seed_order": [
+        3,
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a68dc650ba68779aee8a4cf907ec5a5a6e7005bfbc5b9fbf82de044e70a178db"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[0,1,2,3]:r1",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2,3]",
+      "seed_order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "e68cb6dc4f2b668c723157056d89d6300ef21edf92d5c7b5752b49e48847b5b1"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[1,2,3,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,3,0]",
+      "seed_order": [
+        1,
+        2,
+        3,
+        0
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a2cfe916186055d163860faddd7ac2dc08afaa9439f93c1f88f6ec08b6391d93"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[2,3,0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[2,3,0,1]",
+      "seed_order": [
+        2,
+        3,
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "db443f5f881d1b3213549970594ad51b4a9ac43c912d85f9b1fa24f30fa6e4ac"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[3,0,1,2]:r1",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[3,0,1,2]",
+      "seed_order": [
+        3,
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a68dc650ba68779aee8a4cf907ec5a5a6e7005bfbc5b9fbf82de044e70a178db"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[0,1,2,3]:r2",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2,3]",
+      "seed_order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "e68cb6dc4f2b668c723157056d89d6300ef21edf92d5c7b5752b49e48847b5b1"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[1,2,3,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,3,0]",
+      "seed_order": [
+        1,
+        2,
+        3,
+        0
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a2cfe916186055d163860faddd7ac2dc08afaa9439f93c1f88f6ec08b6391d93"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[2,3,0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[2,3,0,1]",
+      "seed_order": [
+        2,
+        3,
+        0,
+        1
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "db443f5f881d1b3213549970594ad51b4a9ac43c912d85f9b1fa24f30fa6e4ac"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:seed-order:s[3,0,1,2]:r2",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[3,0,1,2]",
+      "seed_order": [
+        3,
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "a68dc650ba68779aee8a4cf907ec5a5a6e7005bfbc5b9fbf82de044e70a178db"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[0,1,2]:r0",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2]",
+      "seed_order": [
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "81ce0a76fd20429b6aecadfd8e0da9a68026e7dfac989af8b1d23055571392f8"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[1,2,0]:r0",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,0]",
+      "seed_order": [
+        1,
+        2,
+        0
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "0681703513f41d17bde9c9e07f85560c0d3e0fef50c951d6d169066fe8f0adf3"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[2,0,1]:r0",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 0,
+      "condition": "seed-order",
+      "permutation_id": "s[2,0,1]",
+      "seed_order": [
+        2,
+        0,
+        1
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "aba0f1add77f6a8c4e4d12cde6ae3fbdf2ebece22877cf4b0efb4b2d0bd10ef6"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[0,1,2]:r1",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2]",
+      "seed_order": [
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "81ce0a76fd20429b6aecadfd8e0da9a68026e7dfac989af8b1d23055571392f8"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[1,2,0]:r1",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,0]",
+      "seed_order": [
+        1,
+        2,
+        0
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "0681703513f41d17bde9c9e07f85560c0d3e0fef50c951d6d169066fe8f0adf3"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[2,0,1]:r1",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 1,
+      "condition": "seed-order",
+      "permutation_id": "s[2,0,1]",
+      "seed_order": [
+        2,
+        0,
+        1
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "aba0f1add77f6a8c4e4d12cde6ae3fbdf2ebece22877cf4b0efb4b2d0bd10ef6"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[0,1,2]:r2",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[0,1,2]",
+      "seed_order": [
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "81ce0a76fd20429b6aecadfd8e0da9a68026e7dfac989af8b1d23055571392f8"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[1,2,0]:r2",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[1,2,0]",
+      "seed_order": [
+        1,
+        2,
+        0
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "0681703513f41d17bde9c9e07f85560c0d3e0fef50c951d6d169066fe8f0adf3"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:seed-order:s[2,0,1]:r2",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 2,
+      "condition": "seed-order",
+      "permutation_id": "s[2,0,1]",
+      "seed_order": [
+        2,
+        0,
+        1
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "aba0f1add77f6a8c4e4d12cde6ae3fbdf2ebece22877cf4b0efb4b2d0bd10ef6"
+    }
+  ],
+  "cases_source": {
+    "path": "evals/agent-exp/datasets/gate_cases_v1.jsonl",
+    "sha256": "5317ea0b752955d1e01f4a83945653df394b04e77130a8a637b7f9dda7f4d5b6"
+  },
+  "snapshot_source": {
+    "path": "evals/agent-exp/snapshots/seeds_v1.json",
+    "sha256": "7c92a3a85704a77c708c5175498fd9bbdcc874fdd62bf678724d50be5d9ab24f"
+  },
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "no_candidates"
+    }
+  ],
+  "provenance": {
+    "source_revision": "6f9a7db2777de1788710029c775cb577fa8b41aa",
+    "source_revision_reason": null,
+    "working_tree_modified": true,
+    "working_tree_modified_reason": null,
+    "code_hashes": {
+      "evals/agent-exp/scripts/contracts.py": "76eb99fa82fbaa031cb8dfd61ef736acae08b77dc7c4f78b0c7df2f18f8f594e",
+      "evals/agent-exp/scripts/seed_cases.py": "bf2dda4e4e11ff2d26f7f7a6a86681be81c5aabd528a74edb63801cad0a10154",
+      "evals/agent-exp/scripts/permutation.py": "e87d431bd199d53b5e3f30fad09a6c6cfe5ef0a6fff79799b9548a15e3c39e7a",
+      "evals/agent-exp/scripts/permutation_metrics.py": "f89347d29a2065c02f245d1d803840a2185b9d438ef19da82cc0bb078f4902bc",
+      "evals/agent-exp/scripts/policies/first.py": "071b8cffb0542a935a8e68ec83bcfb3908aecb2ef0cbf3c7efe5753171746b77",
+      "evals/agent-exp/scripts/policies/llm.py": "09792c1290d76dd52479e8fbcc352924056b503084364b251cfb62bc30bdd90a",
+      "evals/agent-exp/scripts/artifacts.py": "9af0b5271d914750d1ccff702a41dff9355fe9519be920bf74942e6e8744b0c8",
+      "evals/agent-exp/scripts/metrics.py": "160aff31fdd14fa4a27644b417a1a24ae75ead63fec758c20cd48b8ff0c959fd",
+      "evals/agent-exp/scripts/run_experiments.py": "901560744eb2f7a0e729fbabd326ceebe6e0531c2f460e255d07bede57ea4836",
+      "src/rag/agent/gate.py": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56",
+      "src/rag/agent/prompt.py": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+      "src/rag/agent/llm_client.py": "dde242fb784eb6cb17f4929c21d947a1879cb500eca75550ce0d640e4d458623"
+    },
+    "python_version": "3.13.5",
+    "specification": {
+      "path": "docs/superpowers/specs/2026-09-08-agent-exp-permutation.md",
+      "sha256": "5d859d7174249c2fa5d4cfb9e366f7101ef1bbbf029da4f94c510d7cc4c4cc7a",
+      "available": true,
+      "reason": null
+    }
+  },
+  "policy_config": {
+    "first": {
+      "model_calls": 0,
+      "description": "always follow candidates[0]"
+    },
+    "llm": {
+      "model_alias": "citation-agent",
+      "actual_model": null,
+      "actual_model_reason": "local server model is not exposed by the client",
+      "temperature": 0.0,
+      "sampling": {
+        "temperature": 0.0
+      },
+      "thinking": false,
+      "token_limit": null,
+      "timeout_seconds": null,
+      "retry_settings": null,
+      "prompt_file_hash": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+      "grammar_source_hash": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56",
+      "gate_file_hash": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56"
+    }
+  },
+  "permutation": {
+    "condition": "seed-order",
+    "schedule": "rotate",
+    "repeats": 3
+  },
+  "expected_trial_count": 45,
+  "expected_policy_result_count": 90,
+  "spec_source": {
+    "path": "docs/superpowers/specs/2026-09-08-agent-exp-permutation.md",
+    "sha256": "5d859d7174249c2fa5d4cfb9e366f7101ef1bbbf029da4f94c510d7cc4c4cc7a"
+  }
+}
