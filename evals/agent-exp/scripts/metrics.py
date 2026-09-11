@@ -1,4 +1,4 @@
-"""Pure scoring and aggregation for initial-gate replay artifacts."""
+"""Chấm điểm và tổng hợp thuần cho artifact replay của initial gate."""
 
 from __future__ import annotations
 
@@ -8,8 +8,10 @@ from typing import Any
 
 try:
     from contracts import (
+        ActionKey,
         DecisionOutcome,
         GateCase,
+        MeanMetric,
         PairedSummary,
         PolicyName,
         PolicySummary,
@@ -19,10 +21,13 @@ try:
         Summary,
         Trial,
     )
+    from permutation import is_cyclic_rotation
 except ModuleNotFoundError:
     from .contracts import (
+        ActionKey,
         DecisionOutcome,
         GateCase,
+        MeanMetric,
         PairedSummary,
         PolicyName,
         PolicySummary,
@@ -32,9 +37,11 @@ except ModuleNotFoundError:
         Summary,
         Trial,
     )
+    from .permutation import is_cyclic_rotation
 
 
-def _ratio(numerator: int, denominator: int) -> RatioMetric:
+# Đây là nguồn scoring chung cho initial-selection và permutation
+def ratio_metric(numerator: int, denominator: int) -> RatioMetric:
     return RatioMetric(
         numerator=numerator,
         denominator=denominator,
@@ -42,14 +49,86 @@ def _ratio(numerator: int, denominator: int) -> RatioMetric:
     )
 
 
-def _decision_key(record: ResultRecord) -> tuple[bool, int | None]:
-    decision = record.outcome.decision
-    if decision is None:
+def mean_metric(values: list[float], *, eligible: int, excluded: int) -> MeanMetric:
+    """Tạo hierarchical mean từ component đã định nghĩa và coverage rõ ràng."""
+    defined_values = [float(value) for value in values]
+    total = float(sum(defined_values))
+    return MeanMetric(
+        total=total,
+        defined=len(defined_values),
+        eligible=eligible,
+        excluded=excluded,
+        value=(total / len(defined_values) if defined_values else None),
+    )
+
+
+_ratio = ratio_metric
+
+
+def action_key_from_outcome(outcome: DecisionOutcome) -> ActionKey | None:
+    """Đổi output hợp lệ thành action key, không biến error thành action."""
+    if outcome.status != "ok" or outcome.decision is None:
+        return None
+    if outcome.decision.stop:
+        return ActionKey(action="stop", dieu=None)
+    return ActionKey(action="follow", dieu=outcome.decision.dieu)
+
+
+def selection_correctness(case: GateCase, outcome: DecisionOutcome) -> bool | None:
+    """Tính lại selection correctness từ decision và nhãn đã duyệt."""
+    if outcome.status != "ok" or outcome.decision is None or outcome.decision.stop:
+        return False if case.expected_action == "follow" else None
+    if case.expected_action != "follow":
+        return None
+    return outcome.decision.dieu in case.acceptable_dieu
+
+
+def decision_correctness(case: GateCase, outcome: DecisionOutcome) -> bool:
+    """Tính lại decision correctness từ decision và nhãn đã duyệt."""
+    if outcome.status != "ok" or outcome.decision is None:
+        return False
+    if outcome.decision.stop:
+        return case.expected_action == "stop"
+    if case.expected_action != "follow":
+        return False
+    return outcome.decision.dieu in case.acceptable_dieu
+
+
+def _decision_key(record: ResultRecord) -> ActionKey:
+    action = action_key_from_outcome(record.outcome)
+    if action is None:
         raise ValueError("a valid result must contain a decision")
-    return decision.stop, None if decision.stop else decision.dieu
+    return action
 
 
-def _validate_result_set(
+def validate_trial_against_case(trial: Trial, case: GateCase) -> None:
+    """Kiểm tra order và hash của trial theo condition so với case."""
+    if trial.case_id != case.case_id:
+        raise ValueError(f"trial {trial.trial_id} references a different case")
+    if trial.condition in {"original", "repeat"}:
+        if trial.candidate_order != case.candidates:
+            raise ValueError(f"trial changes candidate order: {trial.trial_id}")
+        if trial.observation_hash != case.observation_hash:
+            raise ValueError(f"trial changes the observation hash: {trial.trial_id}")
+        return
+    if trial.condition == "candidate-order":
+        if not is_cyclic_rotation(trial.candidate_order, case.candidates):
+            raise ValueError(f"trial changes candidate membership: {trial.trial_id}")
+        if trial.observation_hash != case.observation_hash:
+            raise ValueError(f"trial changes the observation hash: {trial.trial_id}")
+        return
+    if trial.condition == "seed-order":
+        if trial.candidate_order != case.candidates:
+            raise ValueError(f"trial changes candidate order: {trial.trial_id}")
+        return
+    if trial.condition == "combined":
+        if not is_cyclic_rotation(trial.candidate_order, case.candidates):
+            raise ValueError(f"trial changes candidate membership: {trial.trial_id}")
+        return
+    raise ValueError(f"unsupported trial condition: {trial.condition!r}")
+
+
+def validate_result_set(
     manifest: RunManifest,
     cases: list[GateCase],
     results: list[ResultRecord],
@@ -65,10 +144,7 @@ def _validate_result_set(
         case = case_by_id.get(trial.case_id)
         if case is None:
             raise ValueError(f"trial uses an unknown case: {trial.case_id}")
-        if trial.observation_hash != case.observation_hash:
-            raise ValueError(f"trial changes the observation hash: {trial.trial_id}")
-        if trial.candidate_order != case.candidates:
-            raise ValueError(f"trial changes candidate order: {trial.trial_id}")
+        validate_trial_against_case(trial, case)
 
     result_by_key: dict[tuple[str, str], ResultRecord] = {}
     for result in results:
@@ -84,6 +160,8 @@ def _validate_result_set(
             raise ValueError(f"trial uses an unknown case: {trial.case_id}")
         if result.run_id != manifest.run_id:
             raise ValueError(f"result uses a different run_id: {result.trial.trial_id}")
+        if result.source_hop != case.source_hop:
+            raise ValueError(f"result source_hop differs from case: {result.trial.trial_id}")
         if result.expected_action != case.expected_action:
             raise ValueError(f"result label differs from case: {result.trial.trial_id}")
         if result.acceptable_dieu != case.acceptable_dieu:
@@ -95,6 +173,9 @@ def _validate_result_set(
     return case_by_id, trial_by_id, result_by_key
 
 
+_validate_result_set = validate_result_set
+
+
 def score_result(
     run_id: str,
     policy: PolicyName,
@@ -102,38 +183,22 @@ def score_result(
     case: GateCase,
     outcome: DecisionOutcome,
 ) -> ResultRecord:
-    """Score one policy outcome against an approved gate label."""
+    """Chấm một output policy theo nhãn gate đã duyệt."""
     if case.expected_action not in {"follow", "stop"}:
         raise ValueError("only approved follow and stop cases can be scored")
-    if trial.case_id != case.case_id:
-        raise ValueError("trial and case identifiers do not match")
-    if trial.observation_hash != case.observation_hash:
-        raise ValueError("trial observation hash does not match case")
-    if trial.candidate_order != case.candidates:
-        raise ValueError("trial candidate order does not match case")
+    validate_trial_against_case(trial, case)
 
     selected_position: int | None = None
     selection_correct: bool | None = None
     decision_correct = False
 
-    if outcome.status == "error":
-        selection_correct = False if case.expected_action == "follow" else None
-    else:
-        if outcome.decision is None:
-            raise ValueError("ok outcome is missing a decision")
+    if outcome.status == "ok" and outcome.decision is not None and not outcome.decision.stop:
         decision = outcome.decision
-        if decision.stop:
-            if case.expected_action == "stop":
-                decision_correct = True
-            else:
-                selection_correct = False
-        else:
-            if decision.dieu is None or decision.dieu not in trial.candidate_order:
-                raise ValueError("follow decision selected an article outside candidates")
-            selected_position = trial.candidate_order.index(decision.dieu) + 1
-            if case.expected_action == "follow":
-                selection_correct = decision.dieu in case.acceptable_dieu
-                decision_correct = selection_correct
+        if decision.dieu is None or decision.dieu not in trial.candidate_order:
+            raise ValueError("follow decision selected an article outside candidates")
+        selected_position = trial.candidate_order.index(decision.dieu) + 1
+    selection_correct = selection_correctness(case, outcome)
+    decision_correct = decision_correctness(case, outcome)
 
     return ResultRecord(
         run_id=run_id,
@@ -149,7 +214,7 @@ def score_result(
     )
 
 
-def _telemetry(records: list[ResultRecord]) -> dict[str, Any]:
+def telemetry_summary(records: list[ResultRecord]) -> dict[str, Any]:
     latencies = [record.outcome.latency_ms for record in records]
     latency: dict[str, Any] = {
         "count": len(latencies),
@@ -174,6 +239,9 @@ def _telemetry(records: list[ResultRecord]) -> dict[str, Any]:
             "sum": sum(values) if values else None,
         }
     return {"latency_ms": latency, "usage": usage}
+
+
+_telemetry = telemetry_summary
 
 
 def _summarize_policy(
@@ -311,8 +379,8 @@ def summarize(
     cases: list[GateCase],
     results: list[ResultRecord],
 ) -> Summary:
-    """Recompute all initial-selection metrics from the saved schedule and rows."""
-    case_by_id, trial_by_id, result_by_key = _validate_result_set(manifest, cases, results)
+    """Tính lại mọi metric initial-selection từ schedule và result đã lưu."""
+    case_by_id, trial_by_id, result_by_key = validate_result_set(manifest, cases, results)
     trials = [trial_by_id[trial.trial_id] for trial in manifest.trials]
     by_policy = {
         policy: _summarize_policy(trials, case_by_id, result_by_key, policy)
@@ -366,4 +434,15 @@ def summarize(
     )
 
 
-__all__ = ["score_result", "summarize"]
+__all__ = [
+    "action_key_from_outcome",
+    "decision_correctness",
+    "mean_metric",
+    "ratio_metric",
+    "score_result",
+    "selection_correctness",
+    "summarize",
+    "telemetry_summary",
+    "validate_result_set",
+    "validate_trial_against_case",
+]
