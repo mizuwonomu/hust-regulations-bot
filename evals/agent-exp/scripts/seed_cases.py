@@ -1,4 +1,4 @@
-"""Import frozen seeds and prepare loop-compatible initial-gate cases."""
+"""Nhập seed đóng băng và chuẩn bị case initial-gate tương thích loop."""
 
 from __future__ import annotations
 
@@ -28,6 +28,7 @@ except ModuleNotFoundError:
 
 
 SCHEMA_VERSION = 1
+# Seed và observation luôn được dựng lại bằng helper của loop hiện tại
 
 
 def _file_hash(path: Path) -> str:
@@ -51,6 +52,9 @@ def _question_identity(value: Any) -> tuple[type[Any], Any]:
     if isinstance(value, bool) or not isinstance(value, (int, str)):
         raise ValueError(f"question id must be an integer or string: {value!r}")
     return type(value), value
+
+
+question_identity = _question_identity
 
 
 def _positive_article_list(value: Any, *, path: Path, field_name: str) -> list[int]:
@@ -225,7 +229,7 @@ def import_seeds(
     dataset_path: Path,
     whitelist_path: Path,
 ) -> SeedSnapshot:
-    """Import and validate a reproduced single-pass seed baseline."""
+    """Nhập và kiểm tra seed baseline single-pass đã tái hiện."""
     baseline_path = Path(baseline_path)
     dataset_path = Path(dataset_path)
     whitelist_path = Path(whitelist_path)
@@ -292,7 +296,7 @@ def import_seeds(
 
 
 def normalize_seed(row: SeedRow) -> dict[int, str | None]:
-    """Normalize seed contexts with the same membership semantics as the loop."""
+    """Chuẩn hóa seed context với cùng semantics membership như loop."""
     from src.rag.agent.tools import dieu_from_title
 
     collected: dict[int, str | None] = {}
@@ -318,7 +322,7 @@ def _case_id(dataset_id: str, question_id: Any) -> str:
 
 
 def prepare_cases(snapshot: SeedSnapshot, *, snapshot_hash: str) -> list[GateCase]:
-    """Derive hop-0 gate observations and draft labels from a seed snapshot."""
+    """Dựng observation gate hop-0 và nhãn draft từ seed snapshot."""
     # Nạp helper khi dựng case để import seed không kéo theo module truy cập store
     from src.rag.agent.loop import _build_frontier, _build_gate_observation
     from src.rag.agent.tools import extract_citation_mentions
@@ -360,7 +364,7 @@ def prepare_cases(snapshot: SeedSnapshot, *, snapshot_hash: str) -> list[GateCas
     return cases
 
 
-def _rebuild_case_state(
+def rebuild_case_state(
     snapshot: SeedSnapshot,
     row: SeedRow,
 ) -> tuple[str, list[int]]:
@@ -383,7 +387,7 @@ def validate_replay(
     *,
     snapshot_hash: str,
 ) -> ReplaySelection:
-    """Recompute case inputs and separate executable labels from exclusions."""
+    """Tính lại input case rồi tách nhãn chạy được khỏi exclusion."""
     if not isinstance(snapshot_hash, str) or not snapshot_hash.strip():
         raise ValueError("snapshot_hash must be a non-empty string")
 
@@ -426,7 +430,7 @@ def validate_replay(
         if case.question != row.question:
             raise ValueError(f"{case.case_id}: question does not match snapshot")
 
-        observation, candidates = _rebuild_case_state(snapshot, row)
+        observation, candidates = rebuild_case_state(snapshot, row)
         if case.observation != observation:
             raise ValueError(f"{case.case_id}: observation is stale or mismatched")
         if case.observation_hash != _observation_hash(observation):
@@ -446,8 +450,83 @@ def validate_replay(
     return ReplaySelection(eligible_cases=eligible, exclusions=exclusions)
 
 
+def validate_permutation_cases(
+    snapshot: SeedSnapshot,
+    cases: list[GateCase],
+    snapshot_hash: str,
+) -> ReplaySelection:
+    """Kiểm tra provenance permutation mà không áp roster hop-0."""
+    if not isinstance(snapshot_hash, str) or not snapshot_hash.strip():
+        raise ValueError("snapshot_hash must be a non-empty string")
+
+    rows = {_question_identity(row.id): row for row in snapshot.rows}
+    seen_case_ids: set[str] = set()
+    seen_later_states: set[tuple[tuple[type[Any], Any], int, str, str]] = set()
+    eligible: list[GateCase] = []
+    exclusions: list[Exclusion] = []
+
+    for case in cases:
+        if case.case_id in seen_case_ids:
+            raise ValueError(f"duplicate case_id: {case.case_id}")
+        seen_case_ids.add(case.case_id)
+        if case.dataset_id != snapshot.dataset_id:
+            raise ValueError(f"{case.case_id}: dataset_id does not match snapshot")
+        if case.snapshot_id != snapshot.snapshot_id:
+            raise ValueError(f"{case.case_id}: snapshot_id does not match snapshot")
+        if case.snapshot_hash != snapshot_hash:
+            raise ValueError(f"{case.case_id}: snapshot hash is stale")
+
+        identity = _question_identity(case.question_id)
+        row = rows.get(identity)
+        if row is None:
+            raise ValueError(f"{case.case_id}: question_id is absent from snapshot")
+        if case.question != row.question:
+            raise ValueError(f"{case.case_id}: question does not match snapshot")
+        if case.observation_hash != _observation_hash(case.observation):
+            raise ValueError(f"{case.case_id}: observation_hash is invalid")
+        outside = set(case.candidates) - snapshot.internal_dieu
+        if outside:
+            raise ValueError(
+                f"{case.case_id}: candidates outside the corpus whitelist: {sorted(outside)}"
+            )
+
+        if case.source_hop == 0:
+            if case.source_run_id is not None or case.source_policy is not None:
+                raise ValueError(f"{case.case_id}: hop-0 cases cannot carry later-hop provenance")
+            expected_case_id = _case_id(snapshot.dataset_id, row.id)
+            if case.case_id != expected_case_id:
+                raise ValueError(
+                    f"{case.case_id}: case_id does not match the canonical hop-0 identity {expected_case_id}"
+                )
+            observation, candidates = rebuild_case_state(snapshot, row)
+            if case.observation != observation:
+                raise ValueError(f"{case.case_id}: observation is stale or mismatched")
+            if case.candidates != candidates:
+                raise ValueError(f"{case.case_id}: candidate order is stale or mismatched")
+        else:
+            if not case.source_run_id or not case.source_run_id.strip():
+                raise ValueError(f"{case.case_id}: later-hop cases require source_run_id provenance")
+            if not case.source_policy or not case.source_policy.strip():
+                raise ValueError(f"{case.case_id}: later-hop cases require source_policy provenance")
+            state = (identity, case.source_hop, case.source_run_id, case.source_policy)
+            if state in seen_later_states:
+                raise ValueError(f"{case.case_id}: duplicate later-hop state for one question")
+            seen_later_states.add(state)
+
+        if case.expected_action == "no_candidates":
+            exclusions.append(Exclusion(case_id=case.case_id, reason="no_candidates"))
+        elif case.label_status != "approved":
+            exclusions.append(Exclusion(case_id=case.case_id, reason="draft"))
+        elif case.expected_action == "unresolved":
+            exclusions.append(Exclusion(case_id=case.case_id, reason="unresolved"))
+        else:
+            eligible.append(case)
+
+    return ReplaySelection(eligible_cases=eligible, exclusions=exclusions)
+
+
 def policy_input(case: GateCase) -> GateInput:
-    """Project a case to the identical label-free input for both policies."""
+    """Chiếu case thành cùng một input không nhãn cho hai policy."""
     if not case.candidates:
         raise ValueError(f"{case.case_id}: policy input requires non-empty candidates")
     return GateInput(
@@ -458,7 +537,7 @@ def policy_input(case: GateCase) -> GateInput:
 
 
 def write_cases(cases: list[GateCase], output_path: Path) -> None:
-    """Write ordered gate cases as one validated JSON object per line."""
+    """Ghi case gate theo order thành từng JSON object đã validate."""
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     temporary = output_path.with_name(f".{output_path.name}.tmp")
@@ -471,7 +550,7 @@ def write_cases(cases: list[GateCase], output_path: Path) -> None:
 
 
 def read_cases(path: Path) -> list[GateCase]:
-    """Read and validate an ordered JSONL case dataset."""
+    """Đọc và validate dataset case gate dạng JSONL có order."""
     path = Path(path)
     cases: list[GateCase] = []
     try:
@@ -497,7 +576,10 @@ __all__ = [
     "normalize_seed",
     "policy_input",
     "prepare_cases",
+    "question_identity",
     "read_cases",
+    "rebuild_case_state",
+    "validate_permutation_cases",
     "validate_replay",
     "write_cases",
 ]
