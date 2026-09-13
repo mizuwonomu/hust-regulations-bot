@@ -91,3 +91,38 @@ At archive checkpoint fd7696d on feat/exp-harness-citation, the reviewed v1 evid
 The candidate-order comparison distinguished selected article identity from position: Q1 retained Article 19, Q3 Article 20, and Q5/Q6 Article 3 across both list positions and all three repetitions. The two multi-candidate FOLLOW cases were correct at either gold position, 6/6 trials per position. LLM selection case macro was 100% versus first's 75%; decision case macro was 66.7% versus 50%. LLM won six paired trials, lost none and tied 24. Permutation consistency was 100% for the LLM versus 0% for first across the four two-candidate cases
 
 Repeat consistency was 100% for both policies in every run. Seed-order produced two to four distinct observation hashes per case while retaining the same selected article, and both policies had 100% seed-order consistency. In repeat and seed-order, both policies had selection case macro 100% and decision case macro 66.7%. Trial-weighted LLM decision accuracy was 12/18, 18/30 and 27/45 for repeat, candidate-order and seed-order: the denominator change reflects schedule weighting, not a new set of correctly answered cases. LLM followed in all 93 decisions, including all 36 trials on STOP-labeled Q1/Q6. The measured milestone therefore separated ordering behavior from the unresolved action-selection question, motivating the next corpus stage without a prompt change
+
+## 2026-09-12: Direct capture review and restricted-whitelist finding
+
+The planning session produced `docs/superpowers/plans/2026-09-12-agent-exp-direct-seed-capture.md`; another agent implemented the code. A subsequent read-only review of that intermediate worktree ran the isolated agent-exp suite: 187 passed in 9.85s. Seed-capture import and CLI help succeeded; v2 import/help succeeded with dotenv reads disabled and networking blocked. Four archived summaries recomputed exactly, with 12/36/90/60 result rows across initial-selection/repeat/seed-order/candidate-order. These checks apply to the reviewed intermediate bytes, not all later edits
+
+Three P2 findings were delivered: capture hashes sampled after retrieval could describe changed files; model identifiers accepted in settings were not applied by the default embedding/reranker factories; removed v2 exports broke ratio-sweep import. The user delegated corrections and runtime-env support elsewhere. Later source inspections showed modifications for those concerns, but this session did not perform a complete post-fix review or fresh suite on the final working tree
+
+The whitelist audit read only Markdown headings and frozen seed data, using the canonical frontier/extractor with store dependencies stubbed. `data_quyche/QCDT_2025_DHBK.md` contains headings for 48 unique articles, 1 through 48. The old `internal_dieu_v1.json` contains 13 IDs, exactly equal to the union of annotated `link` IDs in `corpus_cross_references.json`. This proves the restriction and its overlap with annotations, not the history of how the file was authored. Actual store completeness was not inspected
+
+On unchanged v1 seeds, replacing only the allowed-ID set with that independent heading inventory changed Q5 from `[3, 40]` to `[41, 3, 40, 8, 43]`; the other seven hop-0 frontiers were unchanged and Q2/Q8 remained empty. Q5 gold is `42 -> 3`, actual seeds are `[42, 45]`: Article 42 supplies targets 41/3/40 and Article 45 supplies 8/43. The existing Q5 label accepts only 3, so the original first-candidate advantage is conditional on the restricted frontier. The result is a demonstrated filter issue, not evidence that citation regex parsing failed
+
+### features/cross_reference/log.md  (feature narrative, durable)
+
+The fixed checkpoint at 35bd7b1 on feat/exp-harness-citation (2026-09-13) retains the capture/refactor and its offline tests alongside the corrected experimental inputs and results. Direct capture reads questions through shared retrieval, independently of corpus link annotations; the v2 hop-recall parser still has its own A -> B scoring contract. The checkpoint therefore removes the seed-capture dependency on those annotations without claiming a generalized v2 scoring parser
+
+The retained inputs are `evals/agent-exp/datasets/internal_dieu_fixed.json` (Điều 1-48), `evals/agent-exp/snapshots/seeds_v1_fixed.json` and `evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl`. All eight seed rows match the earlier snapshot in question, full context and order; Q5 alone gains candidates under the full inventory. Six cases enter scoring, with Q2/Q8 mechanically excluded
+
+The active result directories under `evals/agent-exp/results/` are:
+
+| Run | Condition | Results across both policies |
+| --- | --- | ---: |
+| 20260912T172319Z_initial-selection_d3b00cce4b36 | Initial selection | 12 |
+| 20260912T172447Z_permutation_b3ca3306a74f | Repeat control | 36 |
+| 20260912T172530Z_permutation_20b57f530187 | Candidate order | 78 |
+| 20260912T172606Z_permutation_3c7c35fef2c1 | Seed order | 90 |
+
+Initial selection yields selection accuracy 3/4 and decision accuracy 3/6 for both policies; repeat control reproduces those rates. Candidate-order selection case macro is 0.80 for LLM versus 0.675 for first, and decision case macro is 0.5333 versus 0.45. LLM permutation consistency across eligible cases is 0.65; its three paired wins all come from repetitions of the reversed Q3 order. Seed-order preserves each case's original action and both policies' selection/decision case macro remains 0.75/0.50. Trial-weighted denominators differ by schedule and must not be read as changes in question-level performance
+
+On Q5, each of five candidate orders repeats the same action three times: [41,3,40,8,43] selects 41; [3,40,8,43,41] selects 3; [40,8,43,41,3], [8,43,41,3,40] and [43,41,3,40,8] select 41. Thus 3 is correct in 3/15 trials, all at position 1, and first-position selection is 6/15. The observed earlier-of-3/41 rule fits every trial but endpoint and relative-order hypotheses remain coupled in these rotations
+
+Q3 selects 20 in both orders, while Q6 selects 3 for [3,12] and 12 for [12,3], three times each. The archived Q6 [12,3] trials selected 3 despite matching recorded question, observation and candidate order. The user reported unchanged model/configuration. The diagnostic proposals and interpretation limits are recorded in decisions.md; no intervention results are claimed here
+
+Commit 35bd7b1 relocates the four restricted-inventory runs to `evals/agent-exp/results/archive/restricted-inventory-v1/`, retaining their source references. These historical measurements still describe their restricted inputs. They do not serve as the complete-inventory baseline
+
+Verification during this session previously recomputed all eight summaries exactly. A pre-commit isolated suite passed 201 tests in 14.20 seconds after process-local guards disabled implicit dotenv reads and blocked network calls; the first guarded attempt stopped during collection when Chroma attempted a .env read. The guards were verification scaffolding, not committed test changes. During this documentation extraction, all eight manifests' case/snapshot hashes, reconstructed schedules and recomputed summaries were checked again after the archive move; every summary matched. Store dependencies were stubbed and env-file/network access blocked for this replay check. No fresh retrieval or model calls were made

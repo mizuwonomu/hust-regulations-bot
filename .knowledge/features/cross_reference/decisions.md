@@ -168,3 +168,49 @@ Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross
 - Preserve v1 and create a separate v2. Prefer unfamiliar questions, same-topic distractors and a clear required target; vary source articles and spread useful citations across multiple seeds for seed-order tests. Approve labels before seeing LLM outputs, and require the target to remain outside the frozen collected set
 - Questions 2/8 were not diagnosed as internal_dieu bugs. Trace missing source retrieval, reranker/cap removal, extraction, already-collected targets and whitelist filtering before naming a cause; retain the exclusion stage alongside rejected question candidates
 - The user chose to run while reviewing uncommitted code, then archive afterward, and accepted loss of uncommitted donor variants to simplify the workspace. A source checkpoint was advice for provenance, not a runtime prerequisite; the integrated root harness had no donor-worktree dependency
+
+## 2026-09-12: Seed capture boundary and internal-article audit
+
+- The accepted capture design puts CLI/snapshot orchestration in `evals/agent-exp/` and shared single-pass retrieval in `evals/common/single_pass_retrieval.py`; v2 consumes the shared module and retains scoring. Capture produces a direct snapshot, without a fabricated baseline or `hop_scores`. Historical baseline import remains supported
+- Hop-0 means before citation following, not before query rewriting. Shared retrieval still rewrites via Groq. Credentials belong at the live entrypoint/runtime boundary; help, import, case preparation, deterministic replay, and summarization should not load secrets. Merely patching `load_dotenv` does not block Chroma's indirect dotenv reads
+- Keep four concepts separate: `internal_dieu` is the question-independent inventory of the internal regulation corpus; `collected` is actual retrieved/fetched state; candidates are uncollected internal targets cited by that state; `acceptable_dieu` is the reviewed next-action label. Neither gold links nor the question-specific seed set establishes the internal inventory
+- The current frontier scans every collected parent, including irrelevant retrieval results. Thus a distractor seed can produce legitimate candidate alternatives. Filtering those alternatives using gold would change the selection experiment. A controlled source-only state is a different valid experiment, but was not selected as a replacement for the real-seed permutation study in this discussion
+- Low outgoing degree does not establish shallow graph depth. Candidate count additionally depends on retrieved sources, already-collected targets, extraction, and whitelist filtering. Do not impose breadth/depth quotas before separating these effects
+- The user's priority remains permutation evidence beyond v1. Recommendations to audit the whitelist, preserve frozen retrieval contexts, version corrected snapshots/cases, re-review labels, and rerun comparable schedules are not authorization to delete old results or launch live runs
+- Artifact hash validity proves byte identity, not adequacy of the candidate universe. Preserve old inputs/results as evidence of the restricted experiment; label them superseded when corrected results exist rather than rewriting old provenance. A changed frontier requires new model decisions even when an old selected ID remains eligible
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Froze the corrected checkpoint at 35bd7b1 on feat/exp-harness-citation (2026-09-13) before diagnostic interventions because changes to the inventory, prompt and input ordering need separate attribution. The checkpoint includes the shared retrieval path, direct capture, independent inventory, fixed inputs and results
+- Kept inventory independent of both seed membership and annotations because restricting legal targets using answer labels removes distractors before the model decides. Archived restricted runs as superseded evidence with original manifests and source files preserved, rather than retroactively changing their meaning
+- Proposed a small diagnostic study alongside permutation because custom candidate ordering, within-article excerpt ordering and few-shot removal introduce different interventions. Retain reconstruction, fake-client checks and compact results in version control; keep their summaries separate from the established permutation benchmark
+
+**Assumptions it rests on**
+
+- Freeze question, candidate membership, labels and baseline prompt for paired comparisons unless that field is the declared intervention. The targeted study is exploratory/dev because its cases and hypotheses were selected after inspecting fixed results
+- Each comparison requires repeat controls in the same execution batch. The proposed starting budget is three calls per exact input across two batches with a saved execution schedule; this is a diagnostic budget, not statistical sufficiency
+- Reconstructible full inputs must include effective messages, grammar and settings in addition to case/observation/candidate identity. A changed prompt cannot be grouped as an identical input solely because its observation and candidates match
+
+**Failed approaches**
+
+- Tried: explaining Q5 as always choosing the first candidate → Failed because: it also selects 41 at positions 2, 3 and 4 → Avoid when: relying on original-order agreement with the first policy
+- Tried: interpreting Q5's correct choices as success at arbitrary positions → Failed because: every correct choice of 3 occurred at position 1 in the saved rotations → Avoid when: reading article counts without the per-trial candidate order
+- Tried: inferring neglect of observation from seed-order invariance → Failed because: the operation preserves content and the order of excerpts inside each parent → Avoid when: only entire context blocks move
+- Tried: attributing the old-to-fixed change solely to candidate count → Failed because: Q5 gains a specific competitor, while Q6 changes across runs without a changed candidate set → Avoid when: count and membership identity have changed together
+
+**Nuances agreed with the user**
+
+- The user confirmed unchanged model/GGUF and server configuration between the old and fixed runs. Treat Q6's cross-run discrepancy as unresolved; within-run repetition does not establish cross-run reproducibility
+- Keep the next three interventions as proposals. The next work is to turn the matrix below into a reviewable specification and exact schedules before implementation or live execution
+
+| Proposed sub-experiment | Intervention and control | Interpretation boundary |
+| --- | --- | --- |
+| A: Candidate relative position | On Q5 compare [8,3,41,40,43] with [8,41,3,40,43], then shift the pair using [8,40,3,41,43] and [8,40,41,3,43]. Keep observation and few-shots fixed, and freeze grammar bytes from the original case order | These probes separate endpoint effects from the relative order and absolute positions of 3/41. Agreement with an earlier-of-pair rule is behavioral evidence, not proof that the model internally groups those two IDs |
+| B: Complete excerpt-block order | Reorder complete citation blocks within Article 42 while preserving their text, candidates, few-shots and grammar. Keep the two page-split lines mentioning 41 and 3 together because they belong to one sentence | This tests evidence-block placement, not the order of 41/3 within that sentence. Rewriting or splitting the sentence would be a different intervention |
+| C: Defense-example few-shot ablation | Pair the original prompt with a variant removing only the thesis-defense human/assistant example pairs, over the same candidate schedule as A. Preserve system instructions, final question/observation, grammar and all other examples | A difference measures the effect of removing that example group. It does not isolate memorization from shorter prompts, shifted positions or changed FOLLOW/STOP example proportions |
+
+- Use Q5 as the primary case and Q3/Q6 as comparison cases where the intervention applies. Q3 is the two-candidate correct case; Q2 has no candidates. Q6 remains STOP-labeled, so neither observed follow is correct
+- Test the transformation contract with injected clients: declared-field changes only, unchanged candidate membership, whole-sentence preservation, complete example-pair removal, label-free requests and artifact reload. Do not assert that a live model must select 3 or achieve a chosen accuracy threshold
+- Report per-input action counts, selected/gold position, relative order of 3/41, paired decision changes, within-input repeat consistency and per-case accuracy. Errors remain errors; do not pool all interventions into a single permutation consistency score
