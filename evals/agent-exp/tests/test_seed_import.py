@@ -10,6 +10,13 @@ from pathlib import Path
 
 import pytest
 from artifacts import read_snapshot, sha256_file, write_snapshot
+from contracts import (
+    SEED_SCHEMA_VERSION_V1,
+    SEED_SCHEMA_VERSION_V2,
+    SUPPORTED_MANIFEST_SCHEMA_VERSIONS,
+    SUPPORTED_SEED_SCHEMA_VERSIONS,
+    SeedSnapshot,
+)
 from seed_cases import import_seeds
 
 
@@ -261,3 +268,104 @@ def test_import_modules_stay_isolated_in_fresh_process(tmp_path):
         "model": False,
         "db": False,
     }
+
+
+def _direct_v2_payload(snapshot: SeedSnapshot) -> dict:
+    payload = snapshot.model_dump(mode="json")
+    payload.update(
+        {
+            "schema_version": SEED_SCHEMA_VERSION_V2,
+            "source_kind": "direct_retrieval",
+            "baseline_source": None,
+            "capture_metadata": {
+                "capture_id": "abc123",
+                "captured_at": "2026-01-01T00:00:00+00:00",
+            },
+        }
+    )
+    return payload
+
+
+def test_v1_payload_without_new_origin_fields_still_loads(tmp_path):
+    baseline, dataset, whitelist = _write_inputs(tmp_path)
+    snapshot = import_seeds(baseline, dataset, whitelist)
+    payload = snapshot.model_dump(mode="json")
+    # Payload v1 lịch sử không có source_kind/capture_metadata
+    payload.pop("source_kind")
+    payload.pop("capture_metadata")
+
+    loaded = SeedSnapshot.model_validate(payload)
+    assert loaded.schema_version == SEED_SCHEMA_VERSION_V1
+    assert loaded.source_kind == "baseline_import"
+    assert loaded.baseline_source is not None
+    assert loaded.capture_metadata is None
+
+
+def test_v1_payload_missing_baseline_source_is_rejected(tmp_path):
+    baseline, dataset, whitelist = _write_inputs(tmp_path)
+    payload = import_seeds(baseline, dataset, whitelist).model_dump(mode="json")
+    payload["baseline_source"] = None
+    with pytest.raises(ValueError, match="baseline source"):
+        SeedSnapshot.model_validate(payload)
+
+
+def test_valid_direct_v2_payload_round_trips(tmp_path):
+    baseline, dataset, whitelist = _write_inputs(tmp_path)
+    snapshot = import_seeds(baseline, dataset, whitelist)
+    payload = _direct_v2_payload(snapshot)
+
+    loaded = SeedSnapshot.model_validate(payload)
+    assert loaded.source_kind == "direct_retrieval"
+    assert loaded.baseline_source is None
+    assert loaded.capture_metadata == payload["capture_metadata"]
+    assert loaded.model_dump(mode="json") == payload
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (lambda payload: payload.update({"schema_version": 3}), "unsupported seed schema version"),
+        (lambda payload: payload.update({"schema_version": 2}), "direct_retrieval"),
+        (
+            lambda payload: payload.update(
+                {
+                    "schema_version": 2,
+                    "source_kind": "direct_retrieval",
+                    "baseline_source": None,
+                }
+            ),
+            "capture metadata",
+        ),
+        (lambda payload: payload.update({"source_kind": "direct_retrieval"}), "baseline_import"),
+        (
+            lambda payload: payload.update({"capture_metadata": {"capture_id": "x"}}),
+            "capture metadata",
+        ),
+        (
+            lambda payload: payload.update(
+                {
+                    "schema_version": 2,
+                    "source_kind": "direct_retrieval",
+                    "baseline_source": {"path": "b.json", "sha256": "deadbeef"},
+                    "capture_metadata": {"capture_id": "x"},
+                }
+            ),
+            "baseline source",
+        ),
+    ],
+)
+def test_invalid_seed_version_and_origin_combinations_are_rejected(tmp_path, mutate, message):
+    baseline, dataset, whitelist = _write_inputs(tmp_path)
+    payload = import_seeds(baseline, dataset, whitelist).model_dump(mode="json")
+    mutate(payload)
+    with pytest.raises(ValueError, match=message):
+        SeedSnapshot.model_validate(payload)
+
+
+def test_seed_and_manifest_schema_versions_stay_independent():
+    assert SUPPORTED_SEED_SCHEMA_VERSIONS == {
+        SEED_SCHEMA_VERSION_V1,
+        SEED_SCHEMA_VERSION_V2,
+    }
+    # Manifest versioning không đổi vì thêm seed schema v2
+    assert SUPPORTED_MANIFEST_SCHEMA_VERSIONS == {1, 2}
