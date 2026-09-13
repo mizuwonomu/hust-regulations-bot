@@ -19,11 +19,7 @@ import asyncio
 import json
 import logging
 import os
-import pickle
-import random
-import re
 import sys
-import time
 from datetime import UTC, datetime
 from functools import partial
 from pathlib import Path
@@ -31,24 +27,27 @@ from typing import Any
 
 sys.path.append(os.path.abspath('.'))
 
-import torch
 from dotenv import load_dotenv
-from langchain_chroma import Chroma
-from langchain_classic.retrievers import EnsembleRetriever
-from langchain_classic.storage import EncoderBackedStore, LocalFileStore
-from langchain_community.retrievers import BM25Retriever
-from langchain_core.documents import Document
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
 from pydantic import BaseModel, Field
 from ragas import experiment
 from ragas.cache import DiskCacheBackend as DiskCachedBackend
 from ragas.dataset_schema import SingleTurnSample
 from ragas.llms import LangchainLLMWrapper
 from ragas.metrics import ContextPrecision, ContextRecall
-from tenacity import retry, retry_if_exception, stop_after_attempt, wait_random
+
+#Retrieval dùng chung với agent-exp capture; chỉ scoring/RAGAS ở lại module này
+from evals.common.single_pass_retrieval import (
+    QueryExpansion,
+    RateLimitError,
+    SinglePassSettings,
+    build_retrievers,
+    build_rewrite_chain,
+    build_single_pass_runtime,
+    random_offset_sleep,
+    retrieve_parent_contexts,
+    rewrite_into_subqueries,
+)
 
 #import từ config để eval tự bám theo production khi ratio đổi
 from src.rag.agent.gate import decide_next
@@ -59,34 +58,36 @@ from src.rag.agent.tools import (
     extract_citation_mentions,
     get_article,
 )
-from src.rag.config import (
-    JUDGE_MODEL,
+from src.rag.config import JUDGE_MODEL
+
+#Compat re-export cho run_ratio_sweep.py đang deferred: giữ đúng surface của HEAD
+from src.rag.config import (  # noqa: F401
     QUERY_REWRITE_MODEL,
     RERANK_MAX_CHILDREN,
     RERANK_RATIO,
 )
-from src.rag.embedding_utils import get_embedding_model
-from src.rag.reranker_utils import load_reranker
 
 load_dotenv()
+
+
+def __getattr__(name: str):
+    """Re-export lazy cho sweep cũ, không kéo model loader vào lúc import module."""
+    if name == "load_reranker":
+        from src.rag.reranker_utils import load_reranker
+
+        return load_reranker
+    if name == "get_embedding_model":
+        from src.rag.embedding_utils import get_embedding_model
+
+        return get_embedding_model
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 CHROMA_PATH = "chroma_db"
 DOC_STORE_PATH = "doc_store_pdr"
 DEFAULT_DATASET_PATH = "evals/datasets/corpus.json"
 RAW_CACHE_DIR = Path("evals/v2/.raw_cache")
 AGENT_MAX_FOLLOW_ARTICLES = 3
-
-
-class QueryExpansion(BaseModel):
-    reasoning: str = Field(description="Phân tích ngắn gọn ý định của câu hỏi gốc")
-    queries: list[str] = Field(description="Danh sách 3 câu hỏi đơn lẻ bằng tiếng Việt để tìm kiếm")
-
-
-class RateLimitError(RuntimeError):
-    pass
-
-
-_DIEU_PATTERN = re.compile(r"Điều\s+(\d+)")
 
 
 def parse_link(link: str) -> tuple[int, int]:
@@ -174,22 +175,6 @@ def _load_baseline_retrieved_dieu(baseline_path: str) -> dict[Any, set[int]]:
     return baseline
 
 
-def _extract_dieu_number(doc: Document) -> int | None:
-    """Lấy số Điều của parent, ưu tiên metadata 'Điều' rồi fallback về title.
-
-    Cả hai nguồn đều do splitter sinh ra ở format cố định 'Điều <số>. ...' -
-    đã probe doc_store_pdr: parent metadata giữ key 'Điều' (giá trị là chuỗi
-    tên Điều), chỉ doc preamble có None nên cần fallback title
-    """
-    candidates = [doc.metadata.get("Điều"), doc.metadata.get("title", "")]
-    for source in candidates:
-        if source:
-            match = _DIEU_PATTERN.search(source)
-            if match:
-                return int(match.group(1))
-    return None
-
-
 class EvalInputRow(BaseModel):
     id: Any
     user_input: str
@@ -266,202 +251,36 @@ class ExperimentResultRow(BaseModel):
     agent_trace: AgentTrace | None = None
 
 
-def _random_offset_sleep(label: str, min_seconds: int = 1, max_seconds: int = 3) -> None:
-    seconds = random.randint(min_seconds, max_seconds)
-    print(f"[{label}] Sleeping {seconds}s for API offset policy...")
-    time.sleep(seconds)
+#Adapter mỏng giữ interface cũ cho các sweep script đang deferred
+_random_offset_sleep = random_offset_sleep
 
 
-def _is_rate_limited_error(exc: Exception) -> bool:
-    message = str(exc).lower()
-    return ("429" in message) or ("rate limit" in message) or ("too many requests" in message)
+def _build_embedding_model():
+    """Adapter mỏng cho script sweep chưa chuyển sang shared runtime."""
+    from src.rag.embedding_utils import get_embedding_model
 
-
-def _get_device() -> str:
-    return "cuda" if torch.cuda.is_available() else "cpu"
-
-
-def _build_embedding_model() -> HuggingFaceEmbeddings:
     return get_embedding_model()
 
 
-def _build_retrievers(
-    k: int,
-    embedding_model: HuggingFaceEmbeddings,
-) -> tuple[EnsembleRetriever, EncoderBackedStore, Chroma]:
-    vector_store = Chroma(
-        collection_name="split_parents",
-        embedding_function=embedding_model,
-        persist_directory=CHROMA_PATH,
+def _build_retrievers(k: int, embedding_model):
+    """Adapter mỏng cho script sweep chưa chuyển sang shared runtime."""
+    return build_retrievers(
+        k=k,
+        embedding_model=embedding_model,
+        chroma_path=CHROMA_PATH,
+        chroma_collection="split_parents",
+        doc_store_path=DOC_STORE_PATH,
     )
 
-    child_vector_retriever = vector_store.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": k},
-    )
 
-    child_data = vector_store.get()
-    all_child_docs = [
-        Document(page_content=txt, metadata=md)
-        for txt, md in zip(child_data["documents"], child_data["metadatas"])
-    ]
-
-    bm25_retriever = BM25Retriever.from_documents(all_child_docs)
-    bm25_retriever.k = k
-
-    ensemble_retriever = EnsembleRetriever(
-        retrievers=[child_vector_retriever, bm25_retriever],
-        weights=[0.5, 0.5],
-    )
-
-    fs = LocalFileStore(DOC_STORE_PATH)
-    doc_store = EncoderBackedStore(
-        store=fs,
-        key_encoder=lambda x: x,
-        value_serializer=pickle.dumps,
-        value_deserializer=pickle.loads,
-    )
-
-    return ensemble_retriever, doc_store, vector_store
+def _build_rewrite_chain(llm):
+    """Adapter mỏng cho script sweep chưa chuyển sang shared runtime."""
+    return build_rewrite_chain(llm)
 
 
-def _build_rewrite_chain(llm: ChatGroq):
-    parser = PydanticOutputParser(pydantic_object=QueryExpansion)
-
-    rephrase_system_prompt = """You are a Query Transformation Engine for a Vietnamese university regulation QA system.
-    Your ONLY Task: Given a new user question, rewrite the question into standalone Vietnamese sub-queries.
-
-    Rules:
-    - Output ONLY valid JSON that follows the required schema.
-    - DO NOT answer human's question.
-    - NEVER ask for clarification.
-    - If no rewrite needed, keep the original question text intact in the first query.
-    - Preserve ALL Vietnamese legal/academic terms unchanged.
-    - Generate maximum 3 sub-queries.
-
-    {format_instructions}
-    Examples:
-    [No history] Query: "Quy định về học phí" -> Quy định về học phí
-    [History: Quy định về học phí] Query: "Thế còn miễn giảm?" -> Quy định miễn giảm học phí tại HUST là gì?
-    """
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", rephrase_system_prompt),
-            ("human", "{question}"),
-        ]
-    ).partial(format_instructions=parser.get_format_instructions())
-
-    return prompt | llm | parser
-
-
-@retry(
-    stop=stop_after_attempt(5),
-    wait=wait_random(min=30, max=60),
-    retry=retry_if_exception(_is_rate_limited_error),
-    reraise=True,
-)
 def _rewrite_into_subqueries(question: str, rewrite_chain) -> list[str]:
-    """
-    Parse rewrite output into QueryExpansion and return the `queries` field.
-
-    This intentionally mirrors `src/rag/qa_chain.py` behavior:
-    - rely on the Pydantic model (`QueryExpansion`) as contract
-    - if parsed `queries` is empty, fallback to `[original_question]`
-    """
-    try:
-        parsed: QueryExpansion = rewrite_chain.invoke({"question": question})
-    except Exception as exc:
-        if _is_rate_limited_error(exc):
-            raise RateLimitError(str(exc)) from exc
-        raise
-
-    queries = [q.strip() for q in parsed.queries if isinstance(q, str) and q.strip()]
-
-    if not queries:
-        return [question]
-
-    return queries
-
-
-def _rerank_ratio_filter(question: str, docs: list[Document], reranker: Any) -> list[Document]:
-    """Mirror production: src/rag/qa_chain.py::_apply_score_ratio.
-
-    top-1 giữ vô điều kiện, rank>=2 giữ nếu score >= top_score * RERANK_RATIO.
-    KHÔNG có sàn tuyệt đối và KHÔNG có fallback top-k: production trả rỗng thì
-    eval cũng phải trả rỗng
-    """
-    if not docs:
-        return []
-
-    pairs = [(question, d.page_content) for d in docs]
-    scores = reranker.predict(pairs)
-
-    scored_docs = list(zip(docs, [float(s) for s in scores]))
-    scored_docs.sort(key=lambda x: x[1], reverse=True)
-
-    top_score = scored_docs[0][1]
-    cutoff = top_score * RERANK_RATIO
-
-    kept = [scored_docs[0][0]]
-    kept.extend(doc for doc, s in scored_docs[1:] if s >= cutoff)
-
-    return kept[:RERANK_MAX_CHILDREN]
-
-
-def retrieve_parent_contexts(
-    query: str,
-    rewrite_chain,
-    ensemble_retriever: EnsembleRetriever,
-    reranker: Any,
-    doc_store: EncoderBackedStore,
-) -> tuple[list[str], set[int]]:
-    # Required offset before each retrieval-only invoke (query rewrite uses qwen3)
-    _random_offset_sleep(label="retrieval_invoke")
-
-    sub_queries = _rewrite_into_subqueries(query, rewrite_chain)
-
-    # Step 2: parallel retrieval for each sub-query (max 20 chunks each retriever)
-    nested_docs: list[list[Document]] = ensemble_retriever.map().invoke(sub_queries)
-
-    # Step 3: merge + deduplicate by content
-    dedup_map: dict[str, Document] = {}
-    for sublist in nested_docs:
-        for doc in sublist:
-            dedup_map.setdefault(doc.page_content, doc)
-
-    merged_docs = list(dedup_map.values())
-
-    # Step 4: rerank + chọn theo tỉ lệ tương đối với top-1 (khớp production)
-    selected_children = _rerank_ratio_filter(query, merged_docs, reranker)
-
-    # Step 5: fetch parent docs by parent IDs
-    parent_ids: list[str] = []
-    seen_ids = set()
-    for doc in selected_children:
-        p_id = doc.metadata.get("doc_id")
-        if p_id and p_id not in seen_ids:
-            seen_ids.add(p_id)
-            parent_ids.append(p_id)
-
-    parent_docs = [p for p in doc_store.mget(parent_ids) if p is not None]
-    max_parents = 4
-    if len(parent_docs) > max_parents:
-        parent_docs = parent_docs[:max_parents]
-
-    #Expose số Điều ra ngoài trước khi stringify - hop-recall cần set này
-    retrieved_dieu: set[int] = set()
-    for doc in parent_docs:
-        number = _extract_dieu_number(doc)
-        if number is not None:
-            retrieved_dieu.add(number)
-
-    #Ghép title vào context để mirror production
-    contexts = [
-        f"{doc.metadata.get('title', '')}\n{doc.page_content}".strip()
-        for doc in parent_docs
-    ]
-    return contexts, retrieved_dieu
+    """Adapter mỏng cho script sweep chưa chuyển sang shared runtime."""
+    return rewrite_into_subqueries(question, rewrite_chain)
 
 
 def _normalize_experiment_results(exp_results: Any) -> list[ExperimentResultRow]:
@@ -499,11 +318,9 @@ async def run_eval(
     if "GROQ_API_KEY" not in os.environ:
         raise OSError("GROQ_API_KEY is required in environment or .env")
 
-    #Cho phép quét ratio
-    global RERANK_RATIO
-    if ratio is not None:
-        RERANK_RATIO = ratio
-    print(f"[config] RERANK_RATIO = {RERANK_RATIO}")
+    #Cho phép quét ratio cho riêng runtime này, không đụng global dùng chung
+    settings = SinglePassSettings.effective(rerank_ratio=ratio)
+    print(f"[config] RERANK_RATIO = {settings.rerank_ratio}")
 
     with open(dataset_path, "r", encoding="utf-8") as f:  # noqa: ASYNC230
         dataset_raw = json.load(f)
@@ -512,20 +329,12 @@ async def run_eval(
         raise ValueError("Dataset must be a JSON array of samples")  # noqa: TRY004
     dataset = [EvalInputRow.model_validate(row) for row in dataset_raw]
 
-    embedding_model = _build_embedding_model()
-    reranker = load_reranker()
-    ensemble_retriever, doc_store, vector_store = _build_retrievers(
-        k=15,
-        embedding_model=embedding_model,
-    )
-
-    rewrite_llm = ChatGroq(
-        model=QUERY_REWRITE_MODEL,
-        temperature=0.2,
-        max_retries=0,
-        reasoning_effort="none",
-    )
-    rewrite_chain = _build_rewrite_chain(rewrite_llm)
+    runtime = build_single_pass_runtime(settings)
+    rewrite_chain = runtime.rewrite_chain
+    ensemble_retriever = runtime.ensemble_retriever
+    reranker = runtime.reranker
+    doc_store = runtime.doc_store
+    vector_store = runtime.vector_store
 
     # Judge đi qua LangchainLLMWrapper + ChatGroq thay vì llm_factory
     RAW_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -574,6 +383,7 @@ async def run_eval(
                 ensemble_retriever=ensemble_retriever,
                 reranker=reranker,
                 doc_store=doc_store,
+                settings=settings,
             ),
             "get_article_fn": partial(
                 get_article,
@@ -630,6 +440,7 @@ async def run_eval(
                 ensemble_retriever=ensemble_retriever,
                 reranker=reranker,
                 doc_store=doc_store,
+                settings=settings,
             )
 
         #Hop-recall chạy song song với RAGAS, chỉ tính khi row có link (multi-hop)
@@ -886,10 +697,10 @@ async def run_eval(
         "dataset_path": dataset_path,
         #Kết quả phải tự mô tả: hai run chỉ khác nhau ở ratio thì filename không đủ
         "config": {
-            "rerank_ratio": RERANK_RATIO,
-            "rerank_max_children": RERANK_MAX_CHILDREN,
-            "retriever_k": 15,
-            "max_parents": 4,
+            "rerank_ratio": settings.rerank_ratio,
+            "rerank_max_children": settings.rerank_max_children,
+            "retriever_k": settings.retriever_k,
+            "max_parents": settings.max_parents,
             "agent": use_agent,
             "agent_max_follow_articles": (
                 AGENT_MAX_FOLLOW_ARTICLES if use_agent else None

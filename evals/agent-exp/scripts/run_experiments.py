@@ -126,6 +126,8 @@ def _code_hashes() -> dict[str, str]:
         SCRIPT_DIR / "artifacts.py",
         SCRIPT_DIR / "metrics.py",
         SCRIPT_DIR / "run_experiments.py",
+        SCRIPT_DIR / "seed_capture.py",
+        REPO_ROOT / "evals/common/single_pass_retrieval.py",
         REPO_ROOT / "src/rag/agent/gate.py",
         REPO_ROOT / "src/rag/agent/prompt.py",
         REPO_ROOT / "src/rag/agent/llm_client.py",
@@ -645,21 +647,102 @@ def _summarize_command(args: argparse.Namespace) -> int:
     return 0 if status == "complete" else 1
 
 
+def _live_capture_runtime_factory(settings: Any) -> Any:
+    """Dựng live retrieval runtime; import nặng chỉ chạy sau preflight input/output."""
+    from evals.common.single_pass_retrieval import build_single_pass_runtime
+
+    return build_single_pass_runtime(settings)
+
+
+def _run_capture_command(args: argparse.Namespace) -> int:
+    """Capture seed trực tiếp từ retrieval thật, không parse citation arrow."""
+    from seed_capture import capture_seeds, publish_captured_snapshot
+
+    output_path = Path(args.output)
+    if output_path.exists():
+        raise ValueError(f"{output_path}: destination already exists")
+
+    from evals.common.single_pass_retrieval import SinglePassSettings
+
+    env_file = getattr(args, "env_file", None)
+
+    def _before_runtime() -> None:
+        #Env chỉ được nạp khi được chỉ định rõ, sau khi input/output đã hợp lệ
+        if env_file is None:
+            return
+        from evals.common.runtime_env import load_runtime_env
+
+        load_runtime_env(env_file)
+
+    settings = SinglePassSettings.effective(rerank_ratio=args.ratio)
+    try:
+        snapshot = capture_seeds(
+            Path(args.dataset),
+            Path(args.internal_dieu),
+            settings=settings,
+            runtime_factory=_live_capture_runtime_factory,
+            before_runtime=_before_runtime,
+        )
+    except (ValueError, OSError):
+        #Input sai là lỗi dữ liệu, để main trả mã 2 như các command khác
+        raise
+    except Exception as exc:  # noqa: BLE001
+        print(f"Capture failed: {_sanitize_error(exc)}", file=sys.stderr)
+        return 1
+    publish_captured_snapshot(snapshot, output_path)
+    print(f"Snapshot written to {output_path}")
+    return 0
+
+
+def _load_requested_env(env_file: Path | None) -> None:
+    """Nạp env file cho các command cần API, chỉ khi người dùng chỉ định."""
+    if env_file is None:
+        return
+    from evals.common.runtime_env import load_runtime_env
+
+    load_runtime_env(env_file)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Citation-gate experiments")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    import_parser = subparsers.add_parser("import-seeds", help="import a single-pass baseline")
+    #Option dùng chung cho mọi subcommand, không cần subcommand env riêng
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument(
+        "--env-file",
+        type=Path,
+        default=None,
+        help="nạp biến môi trường từ file này trước khi gọi API (mặc định: chỉ dùng env process)",
+    )
+
+    import_parser = subparsers.add_parser(
+        "import-seeds", parents=[common], help="import a single-pass baseline"
+    )
     import_parser.add_argument("--baseline", type=Path, required=True)
     import_parser.add_argument("--dataset", type=Path, required=True)
     import_parser.add_argument("--internal-dieu", type=Path, required=True)
     import_parser.add_argument("--output", type=Path, required=True)
 
-    prepare_parser = subparsers.add_parser("prepare-cases", help="prepare draft gate cases")
+    prepare_parser = subparsers.add_parser(
+        "prepare-cases", parents=[common], help="prepare draft gate cases"
+    )
     prepare_parser.add_argument("--seeds", type=Path, required=True)
     prepare_parser.add_argument("--output", type=Path, required=True)
 
-    run_parser = subparsers.add_parser("run", help="execute a replay experiment")
+    capture_parser = subparsers.add_parser(
+        "capture-seeds",
+        parents=[common],
+        help="capture a direct single-pass seed snapshot",
+    )
+    capture_parser.add_argument("--dataset", type=Path, required=True)
+    capture_parser.add_argument("--internal-dieu", type=Path, required=True)
+    capture_parser.add_argument("--output", type=Path, required=True)
+    capture_parser.add_argument("--ratio", type=float, default=None)
+
+    run_parser = subparsers.add_parser(
+        "run", parents=[common], help="execute a replay experiment"
+    )
     run_parser.add_argument(
         "--experiment",
         choices=["initial-selection", "permutation"],
@@ -681,7 +764,9 @@ def _build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--repeats", type=int, default=None)
     run_parser.add_argument("--output-root", type=Path, required=True)
 
-    summarize_parser = subparsers.add_parser("summarize", help="recompute a saved run")
+    summarize_parser = subparsers.add_parser(
+        "summarize", parents=[common], help="recompute a saved run"
+    )
     summarize_parser.add_argument("--run-dir", type=Path, required=True)
     return parser
 
@@ -691,6 +776,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     try:
+        if args.command != "capture-seeds":
+            #Capture tự nạp env sau preflight; các command khác nạp trước dispatch
+            _load_requested_env(getattr(args, "env_file", None))
         if args.command == "import-seeds":
             snapshot = import_seeds(args.baseline, args.dataset, args.internal_dieu)
             write_snapshot(snapshot, args.output)
@@ -703,6 +791,8 @@ def main(argv: list[str] | None = None) -> int:
             write_cases(cases, args.output)
             print(f"Cases written to {args.output}")
             return 0
+        if args.command == "capture-seeds":
+            return _run_capture_command(args)
         if args.command == "run":
             return _run_command(args)
         if args.command == "summarize":

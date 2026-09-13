@@ -9,6 +9,7 @@ from typing import Any
 
 try:
     from contracts import (
+        SEED_SCHEMA_VERSION_V1,
         Exclusion,
         GateCase,
         GateInput,
@@ -18,6 +19,7 @@ try:
     )
 except ModuleNotFoundError:
     from .contracts import (
+        SEED_SCHEMA_VERSION_V1,
         Exclusion,
         GateCase,
         GateInput,
@@ -27,7 +29,7 @@ except ModuleNotFoundError:
     )
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = SEED_SCHEMA_VERSION_V1
 # Seed và observation luôn được dựng lại bằng helper của loop hiện tại
 
 
@@ -39,7 +41,7 @@ def _file_hash(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _canonical_json(value: Any) -> bytes:
+def canonical_json(value: Any) -> bytes:
     return json.dumps(
         value,
         ensure_ascii=False,
@@ -85,7 +87,7 @@ def _load_json(path: Path) -> Any:
         raise ValueError(f"{path}: invalid JSON at line {exc.lineno}") from exc
 
 
-def _validate_dataset(path: Path, data: Any) -> dict[tuple[type[Any], Any], str]:
+def validate_dataset(path: Path, data: Any) -> dict[tuple[type[Any], Any], str]:
     if not isinstance(data, list):
         raise ValueError(f"{path}: dataset must be a JSON array")
 
@@ -189,12 +191,16 @@ def _validate_baseline(path: Path, data: Any) -> list[dict[str, Any]]:
     return validated
 
 
-def _load_whitelist(path: Path) -> set[int]:
-    data = _load_json(path)
+def validate_whitelist(path: Path, data: Any) -> set[int]:
+    """Validate whitelist đã parse sẵn mà không đọc lại file."""
     values = _positive_article_list(data, path=path, field_name="internal_dieu")
     if not values:
         raise ValueError(f"{path}: internal_dieu whitelist must not be empty")
     return set(values)
+
+
+def load_whitelist(path: Path) -> set[int]:
+    return validate_whitelist(path, _load_json(path))
 
 
 def _unavailable_metadata(data: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
@@ -220,7 +226,7 @@ def _snapshot_id(
         "rows": [row.model_dump(mode="json") for row in rows],
         "internal_dieu": sorted(internal_dieu),
     }
-    digest = hashlib.sha256(_canonical_json(payload)).hexdigest()
+    digest = hashlib.sha256(canonical_json(payload)).hexdigest()
     return f"seeds-{digest[:16]}"
 
 
@@ -236,9 +242,9 @@ def import_seeds(
 
     baseline_data = _load_json(baseline_path)
     dataset_data = _load_json(dataset_path)
-    dataset_questions = _validate_dataset(dataset_path, dataset_data)
+    dataset_questions = validate_dataset(dataset_path, dataset_data)
     baseline_rows = _validate_baseline(baseline_path, baseline_data)
-    internal_dieu = _load_whitelist(whitelist_path)
+    internal_dieu = load_whitelist(whitelist_path)
 
     baseline_ids = {_question_identity(row["id"]) for row in baseline_rows}
     dataset_ids = set(dataset_questions)
@@ -284,6 +290,7 @@ def import_seeds(
             internal_dieu=internal_dieu,
         ),
         dataset_id=dataset_path.stem,
+        source_kind="baseline_import",
         baseline_source={"path": str(baseline_path), "sha256": baseline_hash},
         dataset_source={"path": str(dataset_path), "sha256": dataset_hash},
         whitelist_source={"path": str(whitelist_path), "sha256": whitelist_hash},
@@ -317,7 +324,7 @@ def _observation_hash(observation: str) -> str:
 
 
 def _case_id(dataset_id: str, question_id: Any) -> str:
-    token = hashlib.sha256(_canonical_json(question_id)).hexdigest()[:12]
+    token = hashlib.sha256(canonical_json(question_id)).hexdigest()[:12]
     return f"{dataset_id}:hop0:q-{token}"
 
 
@@ -572,14 +579,18 @@ def read_cases(path: Path) -> list[GateCase]:
 
 
 __all__ = [
+    "canonical_json",
     "import_seeds",
+    "load_whitelist",
     "normalize_seed",
     "policy_input",
     "prepare_cases",
     "question_identity",
     "read_cases",
     "rebuild_case_state",
+    "validate_dataset",
     "validate_permutation_cases",
     "validate_replay",
+    "validate_whitelist",
     "write_cases",
 ]

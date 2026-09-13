@@ -24,6 +24,7 @@ ExpectedAction: TypeAlias = Literal["follow", "stop", "unresolved", "no_candidat
 LabelStatus: TypeAlias = Literal["draft", "approved"]
 PermutationCondition: TypeAlias = Literal["repeat", "candidate-order", "seed-order", "combined"]
 PermutationSchedule: TypeAlias = Literal["original", "rotate"]
+SeedSourceKind: TypeAlias = Literal["baseline_import", "direct_retrieval"]
 TrialCondition: TypeAlias = Literal[
     "original", "repeat", "candidate-order", "seed-order", "combined"
 ]
@@ -39,6 +40,11 @@ Metadata: TypeAlias = dict[str, JsonValue]
 
 INITIAL_SELECTION_SCHEMA_VERSION = 1
 PERMUTATION_SCHEMA_VERSION = 2
+SEED_SCHEMA_VERSION_V1 = 1
+SEED_SCHEMA_VERSION_V2 = 2
+SUPPORTED_SEED_SCHEMA_VERSIONS = frozenset(
+    {SEED_SCHEMA_VERSION_V1, SEED_SCHEMA_VERSION_V2}
+)
 SUPPORTED_MANIFEST_SCHEMA_VERSIONS = frozenset(
     {INITIAL_SELECTION_SCHEMA_VERSION, PERMUTATION_SCHEMA_VERSION}
 )
@@ -165,12 +171,18 @@ class SeedRow(ContractModel):
 
 
 class SeedSnapshot(ContractModel):
-    """Đóng băng seed baseline, provenance và whitelist corpus độc lập."""
+    """Đóng băng seed baseline, provenance và whitelist corpus độc lập.
+
+    Schema v1 là seed nhập từ baseline single-pass nên bắt buộc có baseline source.
+    Schema v2 là capture trực tiếp nên không có baseline source mà có capture metadata.
+    """
 
     schema_version: int = Field(ge=1)
     snapshot_id: str
     dataset_id: str
-    baseline_source: SourceFile
+    source_kind: SeedSourceKind = "baseline_import"
+    baseline_source: SourceFile | None = None
+    capture_metadata: Metadata | None = None
     dataset_source: SourceFile
     whitelist_source: SourceFile
     retrieval_config: Metadata
@@ -182,6 +194,13 @@ class SeedSnapshot(ContractModel):
     @classmethod
     def _identity_text(cls, value: str, info) -> str:
         return _validate_nonblank(value, field_name=info.field_name)
+
+    @field_validator("capture_metadata")
+    @classmethod
+    def _capture_metadata(cls, value: Metadata | None) -> Metadata | None:
+        if value is None:
+            return None
+        return _validate_metadata(value)
 
     @field_validator("retrieval_config")
     @classmethod
@@ -216,6 +235,29 @@ class SeedSnapshot(ContractModel):
     @field_serializer("internal_dieu")
     def _serialize_internal_dieu(self, value: set[int]) -> list[int]:
         return sorted(value)
+
+    @model_validator(mode="after")
+    def _origin_invariant(self) -> SeedSnapshot:
+        if self.schema_version not in SUPPORTED_SEED_SCHEMA_VERSIONS:
+            raise ValueError(
+                f"unsupported seed schema version: {self.schema_version}, "
+                f"supported versions are {sorted(SUPPORTED_SEED_SCHEMA_VERSIONS)}"
+            )
+        if self.schema_version == SEED_SCHEMA_VERSION_V1:
+            if self.source_kind != "baseline_import":
+                raise ValueError("schema version 1 seeds must declare baseline_import origin")
+            if self.baseline_source is None:
+                raise ValueError("schema version 1 seeds require a baseline source")
+            if self.capture_metadata is not None:
+                raise ValueError("schema version 1 seeds cannot carry capture metadata")
+            return self
+        if self.source_kind != "direct_retrieval":
+            raise ValueError("schema version 2 seeds must declare direct_retrieval origin")
+        if self.baseline_source is not None:
+            raise ValueError("direct retrieval seeds cannot carry a baseline source")
+        if self.capture_metadata is None:
+            raise ValueError("direct retrieval seeds require capture metadata")
+        return self
 
 
 class GateInput(ContractModel):
@@ -1179,6 +1221,10 @@ __all__ = [
     "RunManifest",
     "SeedRow",
     "SeedSnapshot",
+    "SeedSourceKind",
+    "SEED_SCHEMA_VERSION_V1",
+    "SEED_SCHEMA_VERSION_V2",
+    "SUPPORTED_SEED_SCHEMA_VERSIONS",
     "SourceFile",
     "Summary",
     "Trial",

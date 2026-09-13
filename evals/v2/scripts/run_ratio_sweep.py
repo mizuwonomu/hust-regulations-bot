@@ -62,7 +62,7 @@ def main() -> None:
 
     emb = ev._build_embedding_model()
     reranker = ev.load_reranker()
-    retriever, _ = ev._build_retrievers(k=15, embedding_model=emb)
+    retriever, _, _ = ev._build_retrievers(k=15, embedding_model=emb)
     rewrite_chain = ev._build_rewrite_chain(
         ev.ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_retries=0)
     )
