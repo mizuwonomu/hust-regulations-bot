@@ -1,0 +1,366 @@
+{
+  "by_policy": {
+    "first": {
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 4,
+        "value": 0.75
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      },
+      "first_position_selection_rate": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "costs": {
+        "latency_ms": {
+          "count": 6,
+          "mean": 0.033267833714489825,
+          "min": 0.02279000182170421,
+          "max": 0.040062997868517414
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      }
+    },
+    "llm": {
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 4,
+        "value": 0.75
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      },
+      "first_position_selection_rate": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "costs": {
+        "latency_ms": {
+          "count": 6,
+          "mean": 820.6085805007509,
+          "min": 494.2153789997974,
+          "max": 2172.9096719973313
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      }
+    }
+  },
+  "by_candidate_group": {
+    "single_candidate": {
+      "first": {
+        "scheduled": 2,
+        "valid": 2,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "first_position_selection_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 2,
+            "mean": 0.03425599970796611,
+            "min": 0.02844900154741481,
+            "max": 0.040062997868517414
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      },
+      "llm": {
+        "scheduled": 2,
+        "valid": 2,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "first_position_selection_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 2,
+            "mean": 507.1514660012326,
+            "min": 494.2153789997974,
+            "max": 520.0875530026678
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      }
+    },
+    "multi_candidate": {
+      "first": {
+        "scheduled": 4,
+        "valid": 4,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 1,
+          "denominator": 2,
+          "value": 0.5
+        },
+        "decision_accuracy": {
+          "numerator": 1,
+          "denominator": 4,
+          "value": 0.25
+        },
+        "first_position_selection_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "value": 1.0
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 4,
+            "mean": 0.03277375071775168,
+            "min": 0.02279000182170421,
+            "max": 0.039058999391272664
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      },
+      "llm": {
+        "scheduled": 4,
+        "valid": 4,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 1,
+          "denominator": 2,
+          "value": 0.5
+        },
+        "decision_accuracy": {
+          "numerator": 1,
+          "denominator": 4,
+          "value": 0.25
+        },
+        "first_position_selection_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "value": 1.0
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 4,
+            "mean": 977.33713775051,
+            "min": 501.3907860011386,
+            "max": 2172.9096719973313
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "by_position": {
+    "1": {
+      "first": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "llm": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      }
+    },
+    "2": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    },
+    "3": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    },
+    "4": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    },
+    "5": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    },
+    "stop": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    }
+  },
+  "paired": {
+    "scheduled_pairs": 6,
+    "valid_pairs": 6,
+    "incomplete_pairs": 0,
+    "agreement": {
+      "numerator": 6,
+      "denominator": 6,
+      "value": 1.0
+    },
+    "first_wins": 0,
+    "llm_wins": 0,
+    "ties": 6,
+    "different_trial_ids": []
+  },
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "no_candidates"
+    }
+  ]
+}

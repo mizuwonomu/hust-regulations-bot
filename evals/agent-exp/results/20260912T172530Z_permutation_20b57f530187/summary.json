@@ -1,0 +1,2041 @@
+{
+  "schema_version": 2,
+  "experiment": "permutation",
+  "run_id": "20b57f530187",
+  "by_policy": {
+    "first": {
+      "scheduled": 39,
+      "valid": 39,
+      "errors": 0,
+      "missing": 0,
+      "telemetry": {
+        "latency_ms": {
+          "count": 39,
+          "mean": 0.04578466672310009,
+          "min": 0.017544000002089888,
+          "max": 0.10308800119673833
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      },
+      "by_condition": {
+        "candidate-order": {
+          "scheduled": 39,
+          "valid": 39,
+          "errors": 0,
+          "missing": 0,
+          "selection_accuracy": {
+            "numerator": 12,
+            "denominator": 27,
+            "value": 0.4444444444444444
+          },
+          "decision_accuracy": {
+            "numerator": 12,
+            "denominator": 39,
+            "value": 0.3076923076923077
+          },
+          "first_position_selection_rate": {
+            "numerator": 33,
+            "denominator": 33,
+            "value": 1.0
+          },
+          "selection_case_macro": {
+            "total": 2.7,
+            "defined": 4,
+            "eligible": 6,
+            "excluded": 2,
+            "value": 0.675
+          },
+          "decision_case_macro": {
+            "total": 2.7,
+            "defined": 6,
+            "eligible": 6,
+            "excluded": 0,
+            "value": 0.45
+          },
+          "question_macro": {
+            "question_count": 6,
+            "selection_accuracy": {
+              "total": 2.7,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.675
+            },
+            "decision_accuracy": {
+              "total": 2.7,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 0.45
+            },
+            "permutation_consistency": {
+              "total": 0.0,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.0
+            },
+            "repeat_consistency": {
+              "total": 6.0,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 1.0
+            },
+            "hops": [
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 1
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "decision_accuracy": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 3
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.5,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.5
+                },
+                "decision_accuracy": {
+                  "total": 0.5,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.5
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 4
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "decision_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 5
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.2,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.2
+                },
+                "decision_accuracy": {
+                  "total": 0.2,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.2
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 6
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "decision_accuracy": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 7
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "decision_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              }
+            ]
+          },
+          "cases": [
+            {
+              "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+              "source_hop": 0,
+              "scheduled": 3,
+              "valid": 3,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 0,
+                "eligible": 0,
+                "excluded": 0,
+                "value": null
+              },
+              "repeat_consistency": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 6,
+                "value": 0.5
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 6,
+                "value": 0.5
+              },
+              "first_position_selection_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "decision_accuracy": {
+                "numerator": 0,
+                "denominator": 6,
+                "value": 0.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+              "source_hop": 0,
+              "scheduled": 3,
+              "valid": 3,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 0,
+                "eligible": 0,
+                "excluded": 0,
+                "value": null
+              },
+              "repeat_consistency": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "decision_accuracy": {
+                "numerator": 0,
+                "denominator": 6,
+                "value": 0.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+              "source_hop": 0,
+              "scheduled": 15,
+              "valid": 15,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 15,
+                "value": 0.2
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 15,
+                "value": 0.2
+              },
+              "first_position_selection_rate": {
+                "numerator": 15,
+                "denominator": 15,
+                "value": 1.0
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.0
+              },
+              "repeat_consistency": {
+                "total": 5.0,
+                "defined": 5,
+                "eligible": 5,
+                "excluded": 0,
+                "value": 1.0
+              }
+            }
+          ],
+          "permutation_consistency": {
+            "matching_pairs": 0,
+            "scheduled_pairs": 39,
+            "valid_pairs": 39,
+            "pooled": {
+              "numerator": 0,
+              "denominator": 39,
+              "value": 0.0
+            },
+            "eligible_groups": 12,
+            "excluded_groups": 6,
+            "eligible_cases": 4,
+            "excluded_cases": 2,
+            "case_mean": {
+              "total": 0.0,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.0
+            }
+          },
+          "repeat_consistency": {
+            "matching_pairs": 39,
+            "scheduled_pairs": 39,
+            "valid_pairs": 39,
+            "pooled": {
+              "numerator": 39,
+              "denominator": 39,
+              "value": 1.0
+            },
+            "eligible_groups": 13,
+            "excluded_groups": 0,
+            "eligible_cases": 6,
+            "excluded_cases": 0,
+            "case_mean": {
+              "total": 6.0,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 1.0
+            }
+          },
+          "gold_positions": [
+            {
+              "view": "single_gold",
+              "candidate_count": 2,
+              "gold_positions": [
+                1
+              ],
+              "correct": 3,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+                  "correct": 3,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 3,
+                    "denominator": 3,
+                    "value": 1.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 2,
+              "gold_positions": [
+                2
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                1
+              ],
+              "correct": 3,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 3,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 3,
+                    "denominator": 3,
+                    "value": 1.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                2
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                3
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                4
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                5
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            }
+          ],
+          "position_cohorts": [
+            {
+              "candidate_count": 2,
+              "positions": [
+                1,
+                2
+              ],
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "scheduled_per_position": 3
+            },
+            {
+              "candidate_count": 5,
+              "positions": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "scheduled_per_position": 3
+            }
+          ],
+          "position_distributions": [
+            {
+              "condition": "candidate-order",
+              "candidate_count": null,
+              "scheduled": 33,
+              "valid": 33,
+              "coverage": {
+                "numerator": 33,
+                "denominator": 33,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 33,
+                  "denominator": 33,
+                  "value": 1.0
+                },
+                "2": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "value": 0.0
+                },
+                "3": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "value": 0.0
+                },
+                "4": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "value": 0.0
+                },
+                "5": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "value": 0.0
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 33,
+                "value": 0.0
+              }
+            },
+            {
+              "condition": "candidate-order",
+              "candidate_count": 2,
+              "scheduled": 18,
+              "valid": 18,
+              "coverage": {
+                "numerator": 18,
+                "denominator": 18,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 18,
+                  "denominator": 18,
+                  "value": 1.0
+                },
+                "2": {
+                  "numerator": 0,
+                  "denominator": 18,
+                  "value": 0.0
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 18,
+                "value": 0.0
+              }
+            },
+            {
+              "condition": "candidate-order",
+              "candidate_count": 5,
+              "scheduled": 15,
+              "valid": 15,
+              "coverage": {
+                "numerator": 15,
+                "denominator": 15,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 15,
+                  "denominator": 15,
+                  "value": 1.0
+                },
+                "2": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "value": 0.0
+                },
+                "3": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "value": 0.0
+                },
+                "4": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "value": 0.0
+                },
+                "5": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "value": 0.0
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 15,
+                "value": 0.0
+              }
+            }
+          ],
+          "identical_inputs": []
+        }
+      }
+    },
+    "llm": {
+      "scheduled": 39,
+      "valid": 39,
+      "errors": 0,
+      "missing": 0,
+      "telemetry": {
+        "latency_ms": {
+          "count": 39,
+          "mean": 592.2526167436072,
+          "min": 314.80053500126814,
+          "max": 1457.5731049990281
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      },
+      "by_condition": {
+        "candidate-order": {
+          "scheduled": 39,
+          "valid": 39,
+          "errors": 0,
+          "missing": 0,
+          "selection_accuracy": {
+            "numerator": 15,
+            "denominator": 27,
+            "value": 0.5555555555555556
+          },
+          "decision_accuracy": {
+            "numerator": 15,
+            "denominator": 39,
+            "value": 0.38461538461538464
+          },
+          "first_position_selection_rate": {
+            "numerator": 18,
+            "denominator": 33,
+            "value": 0.5454545454545454
+          },
+          "selection_case_macro": {
+            "total": 3.2,
+            "defined": 4,
+            "eligible": 6,
+            "excluded": 2,
+            "value": 0.8
+          },
+          "decision_case_macro": {
+            "total": 3.2,
+            "defined": 6,
+            "eligible": 6,
+            "excluded": 0,
+            "value": 0.5333333333333333
+          },
+          "question_macro": {
+            "question_count": 6,
+            "selection_accuracy": {
+              "total": 3.2,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.8
+            },
+            "decision_accuracy": {
+              "total": 3.2,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 0.5333333333333333
+            },
+            "permutation_consistency": {
+              "total": 2.6,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.65
+            },
+            "repeat_consistency": {
+              "total": 6.0,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 1.0
+            },
+            "hops": [
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 1
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "decision_accuracy": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "permutation_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 3
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "decision_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "permutation_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 4
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "decision_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 5
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.2,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.2
+                },
+                "decision_accuracy": {
+                  "total": 0.2,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.2
+                },
+                "permutation_consistency": {
+                  "total": 0.6,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.6
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 6
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "decision_accuracy": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 0.0
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              },
+              {
+                "question_key": {
+                  "dataset_id": "corpus_cross_references",
+                  "question_id": 7
+                },
+                "source_hop": 0,
+                "scheduled_cases": 1,
+                "defined_cases": 1,
+                "selection_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "decision_accuracy": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                },
+                "permutation_consistency": {
+                  "total": 0.0,
+                  "defined": 0,
+                  "eligible": 1,
+                  "excluded": 1,
+                  "value": null
+                },
+                "repeat_consistency": {
+                  "total": 1.0,
+                  "defined": 1,
+                  "eligible": 1,
+                  "excluded": 0,
+                  "value": 1.0
+                }
+              }
+            ]
+          },
+          "cases": [
+            {
+              "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+              "source_hop": 0,
+              "scheduled": 3,
+              "valid": 3,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 0,
+                "eligible": 0,
+                "excluded": 0,
+                "value": null
+              },
+              "repeat_consistency": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "decision_accuracy": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 3,
+                "denominator": 6,
+                "value": 0.5
+              },
+              "permutation_consistency": {
+                "total": 3.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 1.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "decision_accuracy": {
+                "numerator": 0,
+                "denominator": 6,
+                "value": 0.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 3,
+                "denominator": 6,
+                "value": 0.5
+              },
+              "permutation_consistency": {
+                "total": 3.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 1.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+              "source_hop": 0,
+              "scheduled": 3,
+              "valid": 3,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 0,
+                "eligible": 0,
+                "excluded": 0,
+                "value": null
+              },
+              "repeat_consistency": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+              "source_hop": 0,
+              "scheduled": 6,
+              "valid": 6,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 0,
+                "denominator": 0,
+                "value": null
+              },
+              "decision_accuracy": {
+                "numerator": 0,
+                "denominator": 6,
+                "value": 0.0
+              },
+              "first_position_selection_rate": {
+                "numerator": 6,
+                "denominator": 6,
+                "value": 1.0
+              },
+              "permutation_consistency": {
+                "total": 0.0,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.0
+              },
+              "repeat_consistency": {
+                "total": 2.0,
+                "defined": 2,
+                "eligible": 2,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+              "source_hop": 0,
+              "scheduled": 15,
+              "valid": 15,
+              "errors": 0,
+              "missing": 0,
+              "selection_accuracy": {
+                "numerator": 3,
+                "denominator": 15,
+                "value": 0.2
+              },
+              "decision_accuracy": {
+                "numerator": 3,
+                "denominator": 15,
+                "value": 0.2
+              },
+              "first_position_selection_rate": {
+                "numerator": 6,
+                "denominator": 15,
+                "value": 0.4
+              },
+              "permutation_consistency": {
+                "total": 1.7999999999999998,
+                "defined": 3,
+                "eligible": 3,
+                "excluded": 0,
+                "value": 0.6
+              },
+              "repeat_consistency": {
+                "total": 5.0,
+                "defined": 5,
+                "eligible": 5,
+                "excluded": 0,
+                "value": 1.0
+              }
+            }
+          ],
+          "permutation_consistency": {
+            "matching_pairs": 24,
+            "scheduled_pairs": 39,
+            "valid_pairs": 39,
+            "pooled": {
+              "numerator": 24,
+              "denominator": 39,
+              "value": 0.6153846153846154
+            },
+            "eligible_groups": 12,
+            "excluded_groups": 6,
+            "eligible_cases": 4,
+            "excluded_cases": 2,
+            "case_mean": {
+              "total": 2.6,
+              "defined": 4,
+              "eligible": 6,
+              "excluded": 2,
+              "value": 0.65
+            }
+          },
+          "repeat_consistency": {
+            "matching_pairs": 39,
+            "scheduled_pairs": 39,
+            "valid_pairs": 39,
+            "pooled": {
+              "numerator": 39,
+              "denominator": 39,
+              "value": 1.0
+            },
+            "eligible_groups": 13,
+            "excluded_groups": 0,
+            "eligible_cases": 6,
+            "excluded_cases": 0,
+            "case_mean": {
+              "total": 6.0,
+              "defined": 6,
+              "eligible": 6,
+              "excluded": 0,
+              "value": 1.0
+            }
+          },
+          "gold_positions": [
+            {
+              "view": "single_gold",
+              "candidate_count": 2,
+              "gold_positions": [
+                1
+              ],
+              "correct": 3,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+                  "correct": 3,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 3,
+                    "denominator": 3,
+                    "value": 1.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 2,
+              "gold_positions": [
+                2
+              ],
+              "correct": 3,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+                  "correct": 3,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 3,
+                    "denominator": 3,
+                    "value": 1.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                1
+              ],
+              "correct": 3,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 3,
+                "denominator": 3,
+                "value": 1.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 3,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 3,
+                    "denominator": 3,
+                    "value": 1.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 1.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 1.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                2
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                3
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                4
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            },
+            {
+              "view": "single_gold",
+              "candidate_count": 5,
+              "gold_positions": [
+                5
+              ],
+              "correct": 0,
+              "scheduled": 3,
+              "accuracy": {
+                "numerator": 0,
+                "denominator": 3,
+                "value": 0.0
+              },
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "cases": [
+                {
+                  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+                  "correct": 0,
+                  "scheduled": 3,
+                  "accuracy": {
+                    "numerator": 0,
+                    "denominator": 3,
+                    "value": 0.0
+                  }
+                }
+              ],
+              "case_macro": {
+                "total": 0.0,
+                "defined": 1,
+                "eligible": 1,
+                "excluded": 0,
+                "value": 0.0
+              }
+            }
+          ],
+          "position_cohorts": [
+            {
+              "candidate_count": 2,
+              "positions": [
+                1,
+                2
+              ],
+              "case_ids": [
+                "corpus_cross_references:hop0:q-4e07408562be"
+              ],
+              "scheduled_per_position": 3
+            },
+            {
+              "candidate_count": 5,
+              "positions": [
+                1,
+                2,
+                3,
+                4,
+                5
+              ],
+              "case_ids": [
+                "corpus_cross_references:hop0:q-ef2d127de37b"
+              ],
+              "scheduled_per_position": 3
+            }
+          ],
+          "position_distributions": [
+            {
+              "condition": "candidate-order",
+              "candidate_count": null,
+              "scheduled": 33,
+              "valid": 33,
+              "coverage": {
+                "numerator": 33,
+                "denominator": 33,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 18,
+                  "denominator": 33,
+                  "value": 0.5454545454545454
+                },
+                "2": {
+                  "numerator": 9,
+                  "denominator": 33,
+                  "value": 0.2727272727272727
+                },
+                "3": {
+                  "numerator": 3,
+                  "denominator": 33,
+                  "value": 0.09090909090909091
+                },
+                "4": {
+                  "numerator": 3,
+                  "denominator": 33,
+                  "value": 0.09090909090909091
+                },
+                "5": {
+                  "numerator": 0,
+                  "denominator": 33,
+                  "value": 0.0
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 33,
+                "value": 0.0
+              }
+            },
+            {
+              "condition": "candidate-order",
+              "candidate_count": 2,
+              "scheduled": 18,
+              "valid": 18,
+              "coverage": {
+                "numerator": 18,
+                "denominator": 18,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 12,
+                  "denominator": 18,
+                  "value": 0.6666666666666666
+                },
+                "2": {
+                  "numerator": 6,
+                  "denominator": 18,
+                  "value": 0.3333333333333333
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 18,
+                "value": 0.0
+              }
+            },
+            {
+              "condition": "candidate-order",
+              "candidate_count": 5,
+              "scheduled": 15,
+              "valid": 15,
+              "coverage": {
+                "numerator": 15,
+                "denominator": 15,
+                "value": 1.0
+              },
+              "positions": {
+                "1": {
+                  "numerator": 6,
+                  "denominator": 15,
+                  "value": 0.4
+                },
+                "2": {
+                  "numerator": 3,
+                  "denominator": 15,
+                  "value": 0.2
+                },
+                "3": {
+                  "numerator": 3,
+                  "denominator": 15,
+                  "value": 0.2
+                },
+                "4": {
+                  "numerator": 3,
+                  "denominator": 15,
+                  "value": 0.2
+                },
+                "5": {
+                  "numerator": 0,
+                  "denominator": 15,
+                  "value": 0.0
+                }
+              },
+              "stop": {
+                "numerator": 0,
+                "denominator": 15,
+                "value": 0.0
+              }
+            }
+          ],
+          "identical_inputs": []
+        }
+      }
+    }
+  },
+  "paired": [
+    {
+      "policies": [
+        "first",
+        "llm"
+      ],
+      "scheduled_pairs": 39,
+      "valid_pairs": 39,
+      "coverage": {
+        "numerator": 39,
+        "denominator": 39,
+        "value": 1.0
+      },
+      "agreement": {
+        "numerator": 24,
+        "denominator": 39,
+        "value": 0.6153846153846154
+      },
+      "a_wins": 0,
+      "b_wins": 3,
+      "ties": 36,
+      "by_condition": [
+        {
+          "condition": "candidate-order",
+          "scheduled_pairs": 39,
+          "valid_pairs": 39,
+          "coverage": {
+            "numerator": 39,
+            "denominator": 39,
+            "value": 1.0
+          },
+          "agreement": {
+            "numerator": 24,
+            "denominator": 39,
+            "value": 0.6153846153846154
+          },
+          "a_wins": 0,
+          "b_wins": 3,
+          "ties": 36
+        }
+      ]
+    }
+  ],
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "no_candidates"
+    }
+  ],
+  "schedule": {
+    "condition": "candidate-order",
+    "schedule": "rotate",
+    "repeats": 3,
+    "policies": [
+      "first",
+      "llm"
+    ],
+    "scheduled_trials": 39,
+    "expected_trial_count": 39,
+    "expected_policy_result_count": 78,
+    "persisted_results": 78
+  }
+}
