@@ -1,0 +1,836 @@
+{
+  "artifact_schema_version": 3,
+  "experiment": "fixed-diagnostic",
+  "run_id": "f0958dace891",
+  "started_at": "2026-09-16T15:50:55.247451+00:00",
+  "ended_at": "2026-09-17T07:31:44.550084+00:00",
+  "status": "complete",
+  "suite_id": "fixed-diagnostic-b-v1",
+  "diagnostic_kind": "observation-block-order",
+  "source_revision": "35bd7b1",
+  "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+  "independent_question_count": 1,
+  "case_source": {
+    "role": "case",
+    "path": "evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl",
+    "sha256": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c",
+    "required_for_replay": true
+  },
+  "snapshot_source": {
+    "role": "snapshot",
+    "path": "evals/agent-exp/snapshots/seeds_v1_fixed.json",
+    "sha256": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b",
+    "required_for_replay": true
+  },
+  "inventory_source": {
+    "role": "inventory",
+    "path": "evals/agent-exp/datasets/internal_dieu_fixed.json",
+    "sha256": "da509a47b9c7b82c4717c7df894c9d3bb44eba2fcade8e1e91f466dba5406ca2",
+    "required_for_replay": true
+  },
+  "prompt_source": {
+    "role": null,
+    "path": "src/rag/agent/prompt.py",
+    "sha256": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+    "required_for_replay": true
+  },
+  "spec_source": {
+    "role": "provenance",
+    "path": "embedded/fixed-diagnostic-b-v1.json",
+    "sha256": "c4fadbf5bf626868b197d62ba56fd43c387d8aee7836e4d3eb202728f11f3b6a",
+    "required_for_replay": false
+  },
+  "source_references": [
+    {
+      "role": "case",
+      "path": "evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl",
+      "sha256": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c",
+      "required_for_replay": true
+    },
+    {
+      "role": "snapshot",
+      "path": "evals/agent-exp/snapshots/seeds_v1_fixed.json",
+      "sha256": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b",
+      "required_for_replay": true
+    },
+    {
+      "role": "inventory",
+      "path": "evals/agent-exp/datasets/internal_dieu_fixed.json",
+      "sha256": "da509a47b9c7b82c4717c7df894c9d3bb44eba2fcade8e1e91f466dba5406ca2",
+      "required_for_replay": true
+    }
+  ],
+  "execution_revision": "d863d1f79607e3da042fe1cc2253b51c83bf7f09",
+  "execution_dirty": true,
+  "executed_module_hashes": {
+    "diagnostic_contracts.py": "30fc5f6851af9aa4d9c9ab9bcf3c4fab550ba5162cdaf778ca8ee80dbd0166c0",
+    "diagnostic_schedule.py": "d4be3849ee0659df0b3a5aba0bacf6dc5e956073d4daf239d286e0447953475d",
+    "diagnostic_transforms.py": "18fa8e295bc694b473c00ed121476475174f156cf96a0edb8f113603e0cae5cc",
+    "diagnostic_policy.py": "22469c5a26e8f447eba76e08d9d10378b615da29bda5a5c002282f49e0f4e0db",
+    "diagnostic_artifacts.py": "047a55acc05f85c036c49feecec3980bba5dfa5909c1dbe4fb5b323aa6d8fd32",
+    "diagnostic_metrics.py": "bdadbda51898956e09e790e6754361759ee9a86eff756cddf81ee84c81a10130",
+    "diagnostic_report.py": "0a04c480feec957e7e82e417ae31b55171ce6fe534ff04b2381f3e6d6c4fbf2f",
+    "run_diagnostics.py": "15f1ccd5d126c951851c5155b1fbee9552a0db61b3acbd49f3a146878a55be77"
+  },
+  "policies": [
+    "first",
+    "llm"
+  ],
+  "execution_config": {
+    "model_alias": "citation-agent",
+    "base_url": "http://127.0.0.1:8080/v1",
+    "temperature": 0.0,
+    "max_completion_tokens": 4096,
+    "enable_thinking": false,
+    "timeout_seconds": null,
+    "max_retries": null,
+    "extra_request_options": {
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  "policy_config": {
+    "first": {
+      "status": "not_initialized"
+    },
+    "llm": {
+      "model_alias": "citation-agent",
+      "base_url": "http://127.0.0.1:8080/v1",
+      "temperature": 0.0,
+      "max_completion_tokens": 4096,
+      "enable_thinking": false,
+      "timeout_seconds": null,
+      "max_retries": null,
+      "extra_request_options": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    }
+  },
+  "trials": [
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-0:r0",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-0",
+      "repeat_id": 0,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-0:r0",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-0",
+      "repeat_id": 0,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-0:r1",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-0",
+      "repeat_id": 1,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-0:r1",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-0",
+      "repeat_id": 1,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-0:r2",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-0",
+      "repeat_id": 2,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-0:r2",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-0",
+      "repeat_id": 2,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-1:r0",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-1",
+      "repeat_id": 0,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-1:r0",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-1",
+      "repeat_id": 0,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-1:r1",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-1",
+      "repeat_id": 1,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-1:r1",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-1",
+      "repeat_id": 1,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks:batch-1:r2",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b1-reversed-blocks",
+      "batch_id": "batch-1",
+      "repeat_id": 2,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "192137432c4e958675ec92abc390e280331155a044e07f65699165cf9879f93f",
+      "effective_messages_hash": "a03717263b6cedfbb69992fc246553dfa659f83e68929d7cd5dc86ecb340d604",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "2e6ab6819a72be59f52de67a74118e5da589b10e2a256f685f95972b6e91b886"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control:batch-1:r2",
+      "input_trace_id": "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "diagnostic_kind": "observation-block-order",
+      "arm_id": "b0-original-control",
+      "batch_id": "batch-1",
+      "repeat_id": 2,
+      "matched_pair_id": "b42-block-order",
+      "pair_positions": [
+        1,
+        2
+      ],
+      "relative_pair_order": "41-3",
+      "presented_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "grammar_candidates": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27",
+      "effective_messages_hash": "90a5dbe9323d0a5f76efb68e4c1d1b6abdd90ec68a620e0eeaa06931669ae1a2",
+      "grammar_hash": "27265846af63add201e857839cf1f595f07ad48b21e5fc47225504fca5e97954",
+      "prompt_variant_id": "baseline-v1",
+      "request_fingerprint": "3fb8d8436cce096cfbcae4caa9725ad834cd295fd7618b86177b12ea1a5f4c89"
+    }
+  ],
+  "input_trace_ids": [
+    "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b0-original-control",
+    "corpus_cross_references:hop0:q-ef2d127de37b:observation-block-order:b1-reversed-blocks"
+  ],
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "reason": "not_selected_case"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "not_selected_case"
+    }
+  ],
+  "expected_trial_count": 12,
+  "expected_policy_result_count": 24,
+  "experiment_definition": {
+    "schema_version": 1,
+    "source_revision": "35bd7b1",
+    "snapshot_path": "evals/agent-exp/snapshots/seeds_v1_fixed.json",
+    "snapshot_hash": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b",
+    "snapshot_id": "seeds-e6979613ae81ffd9",
+    "case_path": "evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl",
+    "case_hash": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c",
+    "inventory_path": "evals/agent-exp/datasets/internal_dieu_fixed.json",
+    "inventory_hash": "da509a47b9c7b82c4717c7df894c9d3bb44eba2fcade8e1e91f466dba5406ca2",
+    "source_case_identity": {
+      "dataset_id": "corpus_cross_references",
+      "question_id": 5,
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "source_hop": 0
+    },
+    "prompt_variant_id": "baseline-v1",
+    "prompt_source_hash": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+    "execution_config": {
+      "model_alias": "citation-agent",
+      "base_url": "http://127.0.0.1:8080/v1",
+      "temperature": 0.0,
+      "max_completion_tokens": 4096,
+      "enable_thinking": false,
+      "timeout_seconds": null,
+      "max_retries": null,
+      "extra_request_options": {
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        }
+      }
+    },
+    "grammar_candidates": [
+      41,
+      3,
+      40,
+      8,
+      43
+    ],
+    "batches": [
+      {
+        "batch_id": "batch-0",
+        "arm_order": [
+          "b0-original-control",
+          "b1-reversed-blocks"
+        ]
+      },
+      {
+        "batch_id": "batch-1",
+        "arm_order": [
+          "b1-reversed-blocks",
+          "b0-original-control"
+        ]
+      }
+    ],
+    "repeats_per_input_per_batch": 3,
+    "suite_id": "fixed-diagnostic-b-v1",
+    "diagnostic_kind": "observation-block-order",
+    "arms": [
+      {
+        "arm_id": "b0-original-control",
+        "diagnostic_kind": "observation-block-order",
+        "presented_candidates": [
+          41,
+          3,
+          40,
+          8,
+          43
+        ],
+        "observation_transform_id": "b-identity",
+        "matched_pair_id": "b42-block-order",
+        "relative_pair_order": null,
+        "pair_positions": []
+      },
+      {
+        "arm_id": "b1-reversed-blocks",
+        "diagnostic_kind": "observation-block-order",
+        "presented_candidates": [
+          41,
+          3,
+          40,
+          8,
+          43
+        ],
+        "observation_transform_id": "b-reversed-blocks",
+        "matched_pair_id": "b42-block-order",
+        "relative_pair_order": null,
+        "pair_positions": []
+      }
+    ],
+    "observation_blocks": [
+      {
+        "block_id": "b42-foundation-timing",
+        "context_article_id": 42,
+        "source_line_count": 2,
+        "source_line_numbers": [
+          3,
+          4
+        ],
+        "source_byte_span": [
+          114,
+          659
+        ],
+        "source_text_sha256": "72a8156f1ecbaa2c3f7442574389fb6c3e2c957c03007db00ad40bbc51346c1a",
+        "referenced_candidates": [
+          41,
+          3
+        ],
+        "must_remain_contiguous": true
+      },
+      {
+        "block_id": "b42-university-defense",
+        "context_article_id": 42,
+        "source_line_count": 1,
+        "source_line_numbers": [
+          5
+        ],
+        "source_byte_span": [
+          659,
+          946
+        ],
+        "source_text_sha256": "7dea2278ac343e0ac906c8aa6cc34ce31e382ac313d9fc2a67492834237bf5ab",
+        "referenced_candidates": [
+          40
+        ],
+        "must_remain_contiguous": true
+      }
+    ],
+    "observation_sections": [
+      {
+        "section_id": "obs-preamble",
+        "source_line_numbers": [
+          1,
+          2
+        ],
+        "source_byte_span": [
+          0,
+          114
+        ],
+        "source_text_sha256": "822f578bfa2df76d0fdf90d9ea3d604f7d24980be23994373dbb97a96d952db2",
+        "referenced_candidates": []
+      },
+      {
+        "section_id": "ctx45-section",
+        "source_line_numbers": [
+          6,
+          7,
+          8
+        ],
+        "source_byte_span": [
+          946,
+          1427
+        ],
+        "source_text_sha256": "d7958e277a3f1eca3bdd8b79bec3ff763ed58b6c992571d04ee51b0087f65ffd",
+        "referenced_candidates": [
+          8,
+          43
+        ]
+      }
+    ],
+    "page_split_group": {
+      "group_id": "b42-foundation-timing-page-split",
+      "block_id": "b42-foundation-timing",
+      "source_line_numbers": [
+        3,
+        4
+      ],
+      "line_sha256": [
+        "ecf9c573736048571de62e435bec736eed9ac4233e553b55c49385b4f19ec88a",
+        "fa30ddecb4b25dd46829532022274693909a930c8fe9a1dc537f12647d3e005b"
+      ]
+    },
+    "observation_transforms": [
+      {
+        "transform_id": "b-identity",
+        "ordered_block_ids": [
+          "b42-foundation-timing",
+          "b42-university-defense"
+        ],
+        "prefix_byte_span": [
+          0,
+          114
+        ],
+        "prefix_sha256": "822f578bfa2df76d0fdf90d9ea3d604f7d24980be23994373dbb97a96d952db2",
+        "suffix_byte_span": [
+          946,
+          1427
+        ],
+        "suffix_sha256": "d7958e277a3f1eca3bdd8b79bec3ff763ed58b6c992571d04ee51b0087f65ffd"
+      },
+      {
+        "transform_id": "b-reversed-blocks",
+        "ordered_block_ids": [
+          "b42-university-defense",
+          "b42-foundation-timing"
+        ],
+        "prefix_byte_span": [
+          0,
+          114
+        ],
+        "prefix_sha256": "822f578bfa2df76d0fdf90d9ea3d604f7d24980be23994373dbb97a96d952db2",
+        "suffix_byte_span": [
+          946,
+          1427
+        ],
+        "suffix_sha256": "d7958e277a3f1eca3bdd8b79bec3ff763ed58b6c992571d04ee51b0087f65ffd"
+      }
+    ]
+  },
+  "sources": {
+    "case": {
+      "role": "case",
+      "path": "evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl",
+      "sha256": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c",
+      "required_for_replay": true
+    },
+    "snapshot": {
+      "role": "snapshot",
+      "path": "evals/agent-exp/snapshots/seeds_v1_fixed.json",
+      "sha256": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b",
+      "required_for_replay": true
+    },
+    "inventory": {
+      "role": "inventory",
+      "path": "evals/agent-exp/datasets/internal_dieu_fixed.json",
+      "sha256": "da509a47b9c7b82c4717c7df894c9d3bb44eba2fcade8e1e91f466dba5406ca2",
+      "required_for_replay": true
+    }
+  },
+  "migration": {
+    "previous_artifact_schema_version": 1,
+    "pre_migration_manifest_sha256": "3bec71d7915c4c5f73f1cb048681667aea36d47ddee7287fee7a462f97032162",
+    "reason": "replace generated diagnostic inputs and bundled result sources with result-native evidence",
+    "deleted_result_local_source_paths": [
+      {
+        "path": "sources/fixed_diagnostic_b_v1.json",
+        "sha256": "c4fadbf5bf626868b197d62ba56fd43c387d8aee7836e4d3eb202728f11f3b6a"
+      },
+      {
+        "path": "sources/gate_cases_fixed_v1.jsonl",
+        "sha256": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c"
+      },
+      {
+        "path": "sources/internal_dieu_fixed.json",
+        "sha256": "da509a47b9c7b82c4717c7df894c9d3bb44eba2fcade8e1e91f466dba5406ca2"
+      },
+      {
+        "path": "sources/prompt.py",
+        "sha256": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928"
+      },
+      {
+        "path": "sources/seeds_v1_fixed.json",
+        "sha256": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b"
+      }
+    ],
+    "deleted_generated_input_hashes": [
+      {
+        "path": "evals/agent-exp/datasets/fixed_diagnostic_a_v1.json",
+        "sha256": "3237683b7736481089adcc1fbe6ab3c9aad392231daba0a0fc065467c62138a2"
+      },
+      {
+        "path": "evals/agent-exp/datasets/fixed_diagnostic_b_v1.json",
+        "sha256": "c4fadbf5bf626868b197d62ba56fd43c387d8aee7836e4d3eb202728f11f3b6a"
+      },
+      {
+        "path": "evals/agent-exp/datasets/fixed_diagnostic_c_v1.json",
+        "sha256": "b2595390b9b45bdf3ceb8ce888e64cf69db977217f578b131d2507430e7b5325"
+      },
+      {
+        "path": "evals/agent-exp/datasets/baseline_prompt_reference.jsonl",
+        "sha256": "57a6a17caead28f29cadb4c1a515e35e4e470267203057cc74b51a447c9bd04c"
+      },
+      {
+        "path": "evals/agent-exp/datasets/prompt_pre_refactor.py",
+        "sha256": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928"
+      }
+    ]
+  }
+}
