@@ -1,4 +1,3 @@
-
 # AGENTS.md
 
 Guidance for working in this repository. This is a **Vietnamese RAG chatbot for HUST academic regulations** (HUST Regulations Bot).
@@ -59,3 +58,20 @@ When the user asks for help with a bug or an architectural decision:
 - For `chore`, `docs`: Keep messages short. Subject must be in English with scope, body must be the subject translated to Japanese (keep the scope in English). Example: `chore(deps): update library` / Body: `chore(deps): 最新依存関係を更新`
 - For `feat`, `fix`, `refactor`: Subject in English. After that, the first line of body must include the translated Japanese subject from English subject. Moreover, You MUST include a detailed body with bullet points explaining the changes in both languages: full body English first, then Japanese.
 - Commit messages must never contain trailing periods (.) or emdashes (—) at the end of any sentences.
+
+# Subagent Delegation
+
+## By default
+
+Do not delegate tasks to subagents if the user doesn't require that. Even if you think it could speed up tasks or improving quality, remember to ask user first and waiting for approval.
+
+## If user approves
+
+Choose the model and reasoning effort for the task:
+
+- If you are the orchestrator model (when user says you will orchestrate other models), but the user didn't give the implementor model name with its reasoning effort, be sure to ask the user again about this. Do not automatically wasting tokens on delegate to expensive models. Also, remember those rules:
+  - Give each subagent one clear objective, scope, and expected deliverable.
+  - A subagent that owns a pull request owns implementation, required checks, the configured review process, and final handoff.
+  - Let the owner finish. When waiting for subagents, use `wait_agent` with `timeout_ms: 3300000` (55 minutes); agent updates wake you early. Do not poll with short waits. Intervene only if blocked or scope changes materially.
+  - Messages that you send to other agents and your final answer may be read by a human, so ensure they are legible. Always put proper spaces between words and/or numbers.
+- If you are the implementer model (when user says you need to implement task A, or plan B, etc.), do not delegate tasks to any subagents by yourself. You should only implement the task, or the plan, not orchestrate other models.
