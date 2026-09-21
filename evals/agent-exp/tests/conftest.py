@@ -1,4 +1,4 @@
-"""Isolate the agent experiment tests from database and dotenv fixtures."""
+"""Cô lập test agent experiment khỏi fixture database và dotenv."""
 
 from __future__ import annotations
 
