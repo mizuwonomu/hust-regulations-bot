@@ -144,6 +144,7 @@ dependencies = [
     "websockets==15.0.1",
     "zipp==3.23.0",
     "zstandard==0.24.0",
+    "langchain-typesafe>=0.0.1a3",
 ]
 
 [dependency-groups]
