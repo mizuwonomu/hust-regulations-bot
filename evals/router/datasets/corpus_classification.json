@@ -1,0 +1,182 @@
+[
+  {
+    "id": 1,
+    "query": "Quy trình đăng ký học tập cho sinh viên đại học chính quy gồm mấy giai đoạn và cụ thể là gì vậy bạn?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 2,
+    "query": "Sinh viên bị cảnh báo học tập mức 2 thì học kỳ chính được đăng ký tối đa bao nhiêu tín chỉ?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 3,
+    "query": "Điều kiện để nghiên cứu sinh được phép đề nghị bảo vệ luận án tiến sĩ cấp Đại học là gì?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 4,
+    "query": "Trường hợp nào sinh viên sẽ bị buộc thôi học theo quy chế đào tạo mới năm 2025?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 5,
+    "query": "Thời gian tạm dừng học tập tối đa đối với sinh viên đại học quy định như thế nào?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 6,
+    "query": "Sinh viên học chương trình kỹ sư chuyên sâu cần đạt bao nhiêu tín chỉ và điều kiện GPA ra sao để nhận bằng?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 7,
+    "query": "Quy định về việc công nhận và chuyển đổi tín chỉ học phần giữa các chương trình đào tạo của HUST?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 8,
+    "query": "Học viên cao học muốn gia hạn thời gian học tập thì làm thủ tục như thế nào và được gia hạn tối đa bao lâu?",
+    "type": "RAG",
+    "group": "primary"
+  },
+  {
+    "id": 9,
+    "query": "Cậu là chatbot hỗ trợ sinh viên Bách khoa đúng không?",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 10,
+    "query": "Chúc bạn một ngày làm việc hiệu quả và tràn đầy năng lượng nhé!",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 11,
+    "query": "Dạo này kỳ thi cuối kỳ áp lực quá, tớ thấy hơi mệt mỏi và lo lắng.",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 12,
+    "query": "Môn Giải tích 1 thầy dạy có khó lắm không bạn nhỉ?",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 13,
+    "query": "Hôm nay trời mưa to quá, đi học ở D3-D5 ngập hết cả chân rồi.",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 14,
+    "query": "Bạn có biết quán cơm tấm nào ngon gần cổng Parabol Bách khoa không?",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 15,
+    "query": "Học đại học Bách khoa Hà Nội có thực sự khốc liệt như lời đồn không b?",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 16,
+    "query": "Cảm ơn bạn rất nhiều vì đã lắng nghe tớ tâm sự nhé.",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 17,
+    "query": "Kỳ này tớ đăng ký được hẳn 22 tín chỉ, hi vọng là cày nổi.",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 18,
+    "query": "Tớ đang tính đăng ký câu lạc bộ tin học, không biết có tốn nhiều thời gian không.",
+    "type": "chat",
+    "group": "primary"
+  },
+  {
+    "id": 19,
+    "query": "điều kiện xét tốt nghiệp đại học bách khoa",
+    "type": "RAG",
+    "group": "short-natural"
+  },
+  {
+    "id": 20,
+    "query": "mức cảnh báo học tập 2 bị hạn chế tín chỉ",
+    "type": "RAG",
+    "group": "short-natural"
+  },
+  {
+    "id": 21,
+    "query": "thời gian hoàn thành đồ án tốt nghiệp",
+    "type": "RAG",
+    "group": "short-natural"
+  },
+  {
+    "id": 22,
+    "query": "hi bạn nha",
+    "type": "chat",
+    "group": "short-natural"
+  },
+  {
+    "id": 23,
+    "query": "cảm ơn m nhiều",
+    "type": "chat",
+    "group": "short-natural"
+  },
+  {
+    "id": 24,
+    "query": "ok tks u b",
+    "type": "chat",
+    "group": "short-natural"
+  },
+  {
+    "id": 25,
+    "query": "Chào ad nha, chúc ad ngày mới vui vẻ! Cho mình hỏi là bị cảnh báo mức 1 thì kỳ này đăng ký tối đa bao nhiêu tín vậy ạ?",
+    "type": "RAG",
+    "group": "mix-intent"
+  },
+  {
+    "id": 26,
+    "query": "Hello bạn chatbot, cậu khỏe không? Bạn cho mình tra cứu điều kiện để được tạm dừng học tập 1 học kỳ với nhé.",
+    "type": "RAG",
+    "group": "mix-intent"
+  },
+  {
+    "id": 27,
+    "query": "đatn cpa tối thiểu bn để đk bảo vệ v ad?",
+    "type": "RAG",
+    "group": "abbreviation"
+  },
+  {
+    "id": 28,
+    "query": "g9 b nha t đi ngủ đâyyy",
+    "type": "chat",
+    "group": "abbreviation"
+  },
+  {
+    "id": 29,
+    "query": "dieu kien bao ve do an tot nghiep bkhn la ji b?",
+    "type": "RAG",
+    "group": "typo"
+  },
+  {
+    "id": 30,
+    "query": "chuc bn mot ngay tot lanh nheee",
+    "type": "chat",
+    "group": "typo"
+  }
+]
