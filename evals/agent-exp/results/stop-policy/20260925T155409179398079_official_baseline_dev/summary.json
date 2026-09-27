@@ -1,0 +1,1514 @@
+{
+  "schema_version": 1,
+  "experiment": "stop-policy",
+  "run_id": "df0cd3a5eadd",
+  "variant": "baseline",
+  "split": "dev",
+  "policies": [
+    "first",
+    "llm"
+  ],
+  "scheduled": 96,
+  "valid": 96,
+  "errors": 0,
+  "missing": 0,
+  "by_policy": {
+    "first": {
+      "scheduled": 48,
+      "valid": 48,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 12,
+        "denominator": 48,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 6,
+        "denominator": 12,
+        "value": 0.5
+      },
+      "decision_accuracy": {
+        "numerator": 6,
+        "denominator": 48,
+        "value": 0.125
+      },
+      "label_rates": {
+        "follow_accuracy": {
+          "numerator": 12,
+          "denominator": 12,
+          "value": 1.0
+        },
+        "false_stop_rate": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop_accuracy": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        },
+        "over_hop_rate": {
+          "numerator": 36,
+          "denominator": 36,
+          "value": 1.0
+        },
+        "follow_valid": 12,
+        "stop_valid": 36
+      },
+      "error_rate": {
+        "follow": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        }
+      },
+      "missing_rate": {
+        "follow": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        }
+      },
+      "case_macro": {
+        "case_count": 16,
+        "follow_accuracy": {
+          "total": 4.0,
+          "defined": 4,
+          "eligible": 16,
+          "excluded": 12,
+          "value": 1.0
+        },
+        "stop_accuracy": {
+          "total": 0.0,
+          "defined": 12,
+          "eligible": 16,
+          "excluded": 4,
+          "value": 0.0
+        },
+        "action_accuracy": {
+          "total": 4.0,
+          "defined": 16,
+          "eligible": 16,
+          "excluded": 0,
+          "value": 0.25
+        },
+        "selection_accuracy": {
+          "total": 2.0,
+          "defined": 4,
+          "eligible": 16,
+          "excluded": 12,
+          "value": 0.5
+        },
+        "decision_accuracy": {
+          "total": 2.0,
+          "defined": 16,
+          "eligible": 16,
+          "excluded": 0,
+          "value": 0.125
+        }
+      },
+      "telemetry": {
+        "latency_ms": {
+          "count": 48,
+          "mean": 0.007784208340429662,
+          "min": 0.004544999683275819,
+          "max": 0.030155999411363155
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      }
+    },
+    "llm": {
+      "scheduled": 48,
+      "valid": 48,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 12,
+        "denominator": 48,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 9,
+        "denominator": 12,
+        "value": 0.75
+      },
+      "decision_accuracy": {
+        "numerator": 9,
+        "denominator": 48,
+        "value": 0.1875
+      },
+      "label_rates": {
+        "follow_accuracy": {
+          "numerator": 12,
+          "denominator": 12,
+          "value": 1.0
+        },
+        "false_stop_rate": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop_accuracy": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        },
+        "over_hop_rate": {
+          "numerator": 36,
+          "denominator": 36,
+          "value": 1.0
+        },
+        "follow_valid": 12,
+        "stop_valid": 36
+      },
+      "error_rate": {
+        "follow": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        }
+      },
+      "missing_rate": {
+        "follow": {
+          "numerator": 0,
+          "denominator": 12,
+          "value": 0.0
+        },
+        "stop": {
+          "numerator": 0,
+          "denominator": 36,
+          "value": 0.0
+        }
+      },
+      "case_macro": {
+        "case_count": 16,
+        "follow_accuracy": {
+          "total": 4.0,
+          "defined": 4,
+          "eligible": 16,
+          "excluded": 12,
+          "value": 1.0
+        },
+        "stop_accuracy": {
+          "total": 0.0,
+          "defined": 12,
+          "eligible": 16,
+          "excluded": 4,
+          "value": 0.0
+        },
+        "action_accuracy": {
+          "total": 4.0,
+          "defined": 16,
+          "eligible": 16,
+          "excluded": 0,
+          "value": 0.25
+        },
+        "selection_accuracy": {
+          "total": 3.0,
+          "defined": 4,
+          "eligible": 16,
+          "excluded": 12,
+          "value": 0.75
+        },
+        "decision_accuracy": {
+          "total": 3.0,
+          "defined": 16,
+          "eligible": 16,
+          "excluded": 0,
+          "value": 0.1875
+        }
+      },
+      "telemetry": {
+        "latency_ms": {
+          "count": 48,
+          "mean": 666.1470029584203,
+          "min": 291.64402300011716,
+          "max": 1981.2911250010075
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 48,
+            "sum": 98367
+          },
+          "output_tokens": {
+            "count": 48,
+            "sum": 651
+          },
+          "total_tokens": {
+            "count": 48,
+            "sum": 99018
+          }
+        }
+      }
+    }
+  },
+  "strata": [
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-19581e27de7c",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-2c624232cdd2",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-3fdba35f04dc",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4b227777d4dd",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4e07408562be",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4fc82b26aecb",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-6b51d431df5d",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-7902699be42c",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-e7f6c011776e",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-ef2d127de37b",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-19581e27de7c.e1bf4ac32ddb",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-2c624232cdd2.e4cc9cdda5eb",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-6b51d431df5d.74f6204bf8e9",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-7902699be42c.0a943d6c0b4e",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-e7f6c011776e.88a645fec2dd",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-ef2d127de37b.301740252ad0",
+      "policy": "first",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Chuyển sang Hình thức Đào tạo Vừa làm Vừa học (VLVH)",
+      "policy": "first",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Cảnh báo Học tập và Hạn chế Khối lượng Tín chỉ",
+      "policy": "first",
+      "scheduled": 12,
+      "valid": 12,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 12,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 12,
+        "value": 0.25
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Nghỉ học tạm thời và Học phí",
+      "policy": "first",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Xếp hạng Tốt nghiệp và Tra cứu Điểm/Tín chỉ Tích lũy",
+      "policy": "first",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 6,
+        "denominator": 6,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Điều khoản Chuyển tiếp và Mốc Hiệu lực Thi hành theo Khóa",
+      "policy": "first",
+      "scheduled": 18,
+      "valid": 18,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 18,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "source_hop",
+      "value": "hop0",
+      "policy": "first",
+      "scheduled": 30,
+      "valid": 30,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 9,
+        "denominator": 30,
+        "value": 0.3
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 9,
+        "value": 0.3333333333333333
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 30,
+        "value": 0.1
+      }
+    },
+    {
+      "kind": "source_hop",
+      "value": "post_follow",
+      "policy": "first",
+      "scheduled": 18,
+      "valid": 18,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      }
+    },
+    {
+      "kind": "split",
+      "value": "dev",
+      "policy": "first",
+      "scheduled": 48,
+      "valid": 48,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 12,
+        "denominator": 48,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 6,
+        "denominator": 12,
+        "value": 0.5
+      },
+      "decision_accuracy": {
+        "numerator": 6,
+        "denominator": 48,
+        "value": 0.125
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-19581e27de7c",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-2c624232cdd2",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-3fdba35f04dc",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4b227777d4dd",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4e07408562be",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-4fc82b26aecb",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-6b51d431df5d",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-7902699be42c",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-e7f6c011776e",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop0:q-ef2d127de37b",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-19581e27de7c.e1bf4ac32ddb",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-2c624232cdd2.e4cc9cdda5eb",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-6b51d431df5d.74f6204bf8e9",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-7902699be42c.0a943d6c0b4e",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-e7f6c011776e.88a645fec2dd",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "case",
+      "value": "corpus_stop_policy:hop:q-ef2d127de37b.301740252ad0",
+      "policy": "llm",
+      "scheduled": 3,
+      "valid": 3,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 3,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Chuyển sang Hình thức Đào tạo Vừa làm Vừa học (VLVH)",
+      "policy": "llm",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Cảnh báo Học tập và Hạn chế Khối lượng Tín chỉ",
+      "policy": "llm",
+      "scheduled": 12,
+      "valid": 12,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 12,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 12,
+        "value": 0.25
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Nghỉ học tạm thời và Học phí",
+      "policy": "llm",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      },
+      "selection_accuracy": {
+        "numerator": 0,
+        "denominator": 0,
+        "value": null
+      },
+      "decision_accuracy": {
+        "numerator": 0,
+        "denominator": 6,
+        "value": 0.0
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Xếp hạng Tốt nghiệp và Tra cứu Điểm/Tín chỉ Tích lũy",
+      "policy": "llm",
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 6,
+        "denominator": 6,
+        "value": 1.0
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 6,
+        "value": 0.5
+      }
+    },
+    {
+      "kind": "semantic_group",
+      "value": "Điều khoản Chuyển tiếp và Mốc Hiệu lực Thi hành theo Khóa",
+      "policy": "llm",
+      "scheduled": 18,
+      "valid": 18,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      }
+    },
+    {
+      "kind": "source_hop",
+      "value": "hop0",
+      "policy": "llm",
+      "scheduled": 30,
+      "valid": 30,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 9,
+        "denominator": 30,
+        "value": 0.3
+      },
+      "selection_accuracy": {
+        "numerator": 6,
+        "denominator": 9,
+        "value": 0.6666666666666666
+      },
+      "decision_accuracy": {
+        "numerator": 6,
+        "denominator": 30,
+        "value": 0.2
+      }
+    },
+    {
+      "kind": "source_hop",
+      "value": "post_follow",
+      "policy": "llm",
+      "scheduled": 18,
+      "valid": 18,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      },
+      "selection_accuracy": {
+        "numerator": 3,
+        "denominator": 3,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 3,
+        "denominator": 18,
+        "value": 0.16666666666666666
+      }
+    },
+    {
+      "kind": "split",
+      "value": "dev",
+      "policy": "llm",
+      "scheduled": 48,
+      "valid": 48,
+      "errors": 0,
+      "missing": 0,
+      "action_accuracy": {
+        "numerator": 12,
+        "denominator": 48,
+        "value": 0.25
+      },
+      "selection_accuracy": {
+        "numerator": 9,
+        "denominator": 12,
+        "value": 0.75
+      },
+      "decision_accuracy": {
+        "numerator": 9,
+        "denominator": 48,
+        "value": 0.1875
+      }
+    }
+  ],
+  "readiness": {
+    "split": "dev",
+    "requirements": [
+      {
+        "requirement": "hop0_follow",
+        "eligible_cases": 3,
+        "satisfied": true
+      },
+      {
+        "requirement": "hop0_stop",
+        "eligible_cases": 7,
+        "satisfied": true
+      },
+      {
+        "requirement": "post_follow_follow",
+        "eligible_cases": 1,
+        "satisfied": true
+      },
+      {
+        "requirement": "post_follow_stop",
+        "eligible_cases": 5,
+        "satisfied": true
+      }
+    ],
+    "complete": true
+  },
+  "paired": {
+    "policies": [
+      "first",
+      "llm"
+    ],
+    "scheduled_pairs": 48,
+    "valid_pairs": 48,
+    "incomplete_pairs": 0,
+    "action_agreement": {
+      "numerator": 42,
+      "denominator": 48,
+      "value": 0.875
+    },
+    "a_wins": 0,
+    "b_wins": 3,
+    "ties": 45,
+    "different_trial_ids": [
+      "corpus_stop_policy:hop0:q-e7f6c011776e:r0",
+      "corpus_stop_policy:hop0:q-e7f6c011776e:r1",
+      "corpus_stop_policy:hop0:q-e7f6c011776e:r2",
+      "corpus_stop_policy:hop:q-7902699be42c.0a943d6c0b4e:r0",
+      "corpus_stop_policy:hop:q-7902699be42c.0a943d6c0b4e:r1",
+      "corpus_stop_policy:hop:q-7902699be42c.0a943d6c0b4e:r2"
+    ]
+  },
+  "exclusions": [
+    {
+      "case_id": "corpus_stop_policy:hop0:q-6b86b273ff34",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-4a44dc153642",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-8527a891e224",
+      "reason": "fewshot_overlap"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-e629fa6598d7",
+      "reason": "fewshot_overlap"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-b17ef6d19c7a",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop0:q-4523540f1504",
+      "reason": "fewshot_overlap"
+    },
+    {
+      "case_id": "corpus_stop_policy:hop:q-8527a891e224.1daa05204be1",
+      "reason": "fewshot_overlap"
+    }
+  ]
+}
