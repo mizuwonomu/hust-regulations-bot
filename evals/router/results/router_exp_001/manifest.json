@@ -1,0 +1,69 @@
+{
+  "corpus": {
+    "gold_counts": {
+      "RAG": 15,
+      "chat": 15
+    },
+    "path": "/home/coronny/rag-project/exp-typesafe-ai/evals/router/datasets/corpus_classification.json",
+    "rows": 30,
+    "sha256": "e015b5717a063be75692091db432326e64eb1d52220d784498baa25d8a46a9de"
+  },
+  "created_at": "2026-09-25T10:03:05.213960+00:00",
+  "git": {
+    "branch": "exp/typesafe-ai",
+    "dirty": true,
+    "revision": "2e3dc94f2dabc557e9a3c866aaf3524880e84821"
+  },
+  "groq": {
+    "max_retries": 0,
+    "model": "qwen/qwen3.6-27b",
+    "prompt_sha256": "393028cc8ff79e3ff6538e456f26d13603c2219f800d4525b2be30832b63e418",
+    "reasoning_effort": "none",
+    "temperature": 0.0
+  },
+  "jev": {
+    "criteria": {
+      "RAG": "Các câu hỏi liên quan đến quy chế đào tạo, Luật, Quy định nhà trường. Từ khóa nhận diện ví dụ: \"học phí\", \"tín chỉ\", \"cảnh báo học tập\", \"điểm học phần\". Các câu hỏi về thủ tục, điều kiện, thời gian học tập tại HUST",
+      "chat": "Các câu chào hỏi xã giao, hỏi thăm sức khỏe, không liên quan đến thông tin cụ thể trong tài liệu"
+    },
+    "criteria_sha256": "ac3ce2a125592b23c030b9bfff5a2d84bcec09d056deb4f25cd5652373c8056c",
+    "model": "jev-1.13.0",
+    "question_id": "route"
+  },
+  "packages": {
+    "httpx2": "2.3.0",
+    "langchain-core": "1.6.4",
+    "langchain-groq": "1.1.2",
+    "langchain-typesafe": "0.0.1a3",
+    "pydantic": "2.11.7",
+    "python": "3.13.5"
+  },
+  "pricing": {
+    "groq": {
+      "model_id": "qwen/qwen3.6-27b",
+      "observed_at": "2026-09-25",
+      "source_url": "https://console.groq.com/docs/models",
+      "usd_per_million_input": 0.6,
+      "usd_per_million_output": 3.0
+    },
+    "jev": {
+      "model_id": "jev-1.13.0",
+      "observed_at": "2026-09-25",
+      "source_url": "https://www.layer3labs.io/guides/jev-pricing",
+      "usd_per_million_input": 0.042,
+      "usd_per_million_output": 0.0
+    }
+  },
+  "request_fingerprint": "7a7382032fcfff944a55f8c9bb90c64d51123f70ef738062dbb1a174a4e58386",
+  "schedule": {
+    "arms": [
+      "groq",
+      "jev"
+    ],
+    "calls": 180,
+    "repeats": 3,
+    "rule": "arm order alternates by (case_index + repeat_index) % 2",
+    "sha256": "413fbd4677c443c0b6c0bdd662edc3eb3f2b1d1c96c57620fed6c42b3b02f286"
+  },
+  "timeout_seconds": 30.0
+}
