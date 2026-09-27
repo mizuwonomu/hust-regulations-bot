@@ -238,3 +238,39 @@ Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross
 - Include both necessary-FOLLOW and justified-STOP cases with nonempty candidates. Empty frontiers remain mechanical exclusions because they do not exercise the gate's action choice
 - Treat the six eligible original cases as diagnostic/dev coverage only. Repeated agreement on those cases does not replace independent heldout cases, and the observed Q5 effects do not prove an internal mechanism or general model quality
 - Replacement few-shots and complete zero-shot remain proposed experiments. Their examples, FOLLOW/STOP proportions, length controls and milestone relationship are open research questions rather than accepted implementation requirements
+
+## 2026-09-24: STOP capture parity and provenance
+
+- Chose to retain the lightweight `stop_policy_eval.state.rebuild_case_state` implementation because the canonical `seed_cases.rebuild_case_state` imports production loop and tools helpers, and `tools.py` imports `langchain_chroma` at module scope. Direct canonical imports would break the STOP package's offline import boundary
+- Require an isolated-process parity test against the canonical helper, with dotenv loading and network connections blocked. Compare UTF-8 observation bytes and ordered candidates over malformed titles, negative keys, duplicate citations, self-references, CRLF, membership-only seeds and references outside the inventory
+- Require capture provenance for local `capture.py`, `state.py`, `cases.py` and STOP `contracts.py`, plus `seed_cases.py`, the production loop, tools, schema and reference parser. Tests independently read each source file and verify its recorded SHA-256
+- Load capture environment variables only through `capture_seeds.before_runtime`, after input/provenance preflight and before runtime construction. `--env-file` defaults to `.env`, leaves already-exported values intact and is never read by offline commands
+- The live single-pass runtime rewrites each seed question with the configured `ChatGroq` client. The env file supplies its provider credential when absent from the shell; seed serialization itself does not use credentials
+
+## 2026-09-25: STOP one-edge successor capture boundaries
+
+- Keep source decision runs distinct from official evaluation runs through `run_purpose=later_hop_capture`; they use one policy and one repeat, may schedule assigned draft hop-0 states with nonempty frontiers, write decisions without an evaluation summary, and advance at most one citation edge
+- Empty successor frontiers are terminal outcomes, not STOP cases, because no next gate call exists. STOP, error, missing and invalid source results do not create successor states
+- Before live evidence, bind successor article lookup to the capture snapshot's recorded store identity and preserve an auditable store/content fingerprint in the export manifest. A followed-article hash freezes the retrieved bytes but does not by itself establish store continuity from hop 0
+- Separate gate-state identity from source lineage before combining or rerunning source captures. Question, hop, observation, ordered candidates and collected-article lineage define the evaluated state; source run, policy and trial remain provenance and must not make an otherwise identical state a second evaluation case
+- Source-only result correctness fields are non-evaluation metadata while labels remain draft. Reports must not aggregate them; prefer null/source-specific fields if the result schema is revised
+
+## 2026-09-27: STOP baseline interpretation and foundation-study boundary
+
+- The September 25 source capture and September 26 official dev evaluation have now been inspected. Preserve them as a baseline checkpoint while observation, few-shot and ordering questions remain open; closing a baseline measurement does not establish a solved STOP policy
+- Distinguish binary STOP/FOLLOW agreement from exact decision agreement, which also includes the selected article. The current STOP report labels the latter as Action agreement because the shared action key contains both action and article
+- A high first-position selection rate under one ordering does not establish a causal position effect. Exclude single-candidate states when describing choice among positions; use paired order interventions before attributing the behavior to position
+- The sole approved post-follow FOLLOW case in this dev run is Q9 after an incorrect hop-0 selection of Article 19. Its later correct selection of Article 12 measures recovery on a supplied state, not a demonstrated chain of two necessary FOLLOW actions
+- Compact observation may hide fetched answer content while retaining only article titles and citation sentences. Treat this and the five-FOLLOW/one-STOP prompt demonstrations as hypotheses requiring separate interventions, not established causes of the observed all-FOLLOW output
+- User learning direction: retain the current RAG research branch and resume its experiments alongside DL/LLM foundation study. Suggested foundation isolation starts from a future checkpoint containing the current STOP implementation and evidence, rather than an old agent base; this is advice, not authorization to commit or create a worktree
+- Replacing a ChatOpenAI wrapper with direct HTTP exposes the client protocol, not model internals. Foundation exercises should separately address forward/backward computation, embeddings, causal attention and token generation; PyTorch exercises need not replace the production client or inference server
+
+## 2026-09-27: STOP-policy baseline checkpoint
+
+- Chose to close the reproducible baseline milestone in ten commits ending at `b812a80` on `feat/exp-harness-citation` (2026-09-27) because the corpus, evaluator, tests, reviewed states, source run, one-edge export, official dev result and setup guide now form one inspectable checkpoint. Closing this milestone records the measured behavior; it does not close the wider STOP-policy research question
+- Assumption: the package remains evaluation-only under `evals/agent-exp/`; no production RAG caller imports it and merging the checkpoint does not activate citation gating in the application
+- Assumption: the official result is a development-set frozen-state replay. Heldout generalization, answer quality, retrieval benefit and a full citation loop require separate evidence
+- Tried: treating exclusion of reviewed semantic few-shot overlaps as removal of few-shot bias -> Failed because: overlap review removes identified content leakage, while the remaining prompt still contains five FOLLOW demonstrations and one STOP demonstration that may affect every state -> Avoid when: claiming that a corpus exclusion isolates prompt influence
+- Nuance: replacement examples at the same five-FOLLOW/one-STOP ratio, complete zero-shot, fuller collected-article observations and paired candidate-order changes remain separate diagnostic interventions. None blocks retaining the unchanged baseline they are meant to compare against
+- Nuance: `_hop0_source_dev` records decisions used to construct successors, `_hop1_export` records frozen successor states and terminal outcomes, and `_official_baseline_dev` evaluates the combined reviewed hop-0 and hop-1 state set. The one-edge bootstrap does not create or evaluate hop 2
+- Nuance: mergeability means the scoped evaluator and evidence are worth preserving on the shared branch. It does not mean the all-FOLLOW behavior is acceptable for production or that its cause has been identified

@@ -1,12 +1,11 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-09-21)
-Research the next STOP-policy corpus and evaluation design from the 2026-09-21 research delta; implementation planning remains deferred -> features/cross_reference/log.md
+## Current focus  (2026-09-27) STOP-policy baseline checkpoint is committed at `b812a80` and ready for integration; few-shot, observation, ordering and heldout questions continue as separate research -> features/cross_reference/log.md
 
 ## Features
 
 - backend_migration: DONE end-to-end. De-wrapper memory split DONE (2026-08-29, branch refactor/memory-split) — `RunnableWithMessageHistory` removed, explicit `read_history`/`persist_turn`, conn-pin + `MemoryStatus`/`TrackedPostgresHistory` deleted, `connection.py` deleted. Prior: step 3 SSE streaming (2026-08-28, 803573b→f0da5a3), chat cutover (2026-08-26), G3 `def` endpoint, G4 concurrency + silent-200 fix, G5 read cutover. Open tails in debt below  -> features/backend_migration/log.md
-- cross_reference: IN PROGRESS; fixed inventory and semantic A/B/C diagnostic milestone DONE (2026-09-21, `f889d98`); STOP-policy corpus research is next -> features/cross_reference/log.md
+- cross_reference: IN PROGRESS; fixed A/B/C diagnostics DONE (2026-09-21, `f889d98`) and STOP-policy implementation plus dev baseline DONE (2026-09-27, `b812a80`); causal diagnostics, heldout and end-to-end benefit remain open -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
 - model_migration: live chain DONE (2026-08-17, commit c740dc7) — 2nd Groq decommission (llama family) swapped to qwen3 `reasoning_effort="none"` for router/rewrite/chitchat/title, gpt-oss-120b kept for answer. Job 3 (eval revival) DONE end-to-end (2026-08-30, commits 578a235 + 696702f) — live-path scripts on qwen3 judge via `LangchainLLMWrapper` + `reasoning_format="parsed"` on legacy `ragas.metrics`, ragas pinned `==0.4.3`, first qwen3-judge baseline on corpus.json (recall 0.9567 / precision 0.8933 / faith 0.8515 / corr 0.8446), old files archived; sweep/calibration/v1 scripts still on dead ids by choice. First phase: qwen3-32b→gpt-oss-120b + model-parameterized harness (2026-08-07, 506afcc/f1755b4). Multi-hop hop-recall harness (2026-08-31, commit 5f4fcef, branch harness/cross-reference): deterministic self-computed `hop_recall` added to `run_evals_retrieval.py` on `corpus_cross_references.json`, first single-pass baseline captured  -> features/model_migration/log.md
 
@@ -14,12 +13,13 @@ Research the next STOP-policy corpus and evaluation design from the 2026-09-21 r
 
 ### tracker.md  (living status — flags + pointers only)
 
-- **The next STOP-policy corpus is not yet designed or supplied.** Define semantic case groups, later-hop provenance, reviewed labels and dev/heldout allocation when the user provides it; do not turn research recommendations into an implementation plan yet -> features/cross_reference/decisions.md
+- **The committed STOP baseline is development evidence only.** It contains reviewed hop-0 and hop-1 frozen states, but heldout remains untouched and the result does not establish generalization -> features/cross_reference/log.md
 - **Fixed evidence has limited diversity.** The six eligible original cases are diagnostic/dev coverage, not a future STOP benchmark; repeated calls and candidate rotations are not independent questions -> features/cross_reference/log.md
 - **Q6 reproducibility across runs is unresolved.** Identical recorded inputs changed decisions across the old and fixed runs despite the user's confirmation of unchanged model/configuration -> features/cross_reference/log.md
 - **Q5 intervention causes remain confounded after A/B/C.** Candidate order and removal of the doctoral-defense example group changed particular configurations, but prompt length, example positions, action proportions and competitor relationships still prevent a mechanism or prevalence claim -> features/cross_reference/decisions.md
-- **STOP-policy evaluation scope remains unresolved.** A separate corpus must include necessary-FOLLOW and justified-STOP cases with nonempty candidates; replacement few-shots, zero-shot, length controls and action proportions are not finalized -> features/cross_reference/decisions.md
-- **Label evidence needs an observation-level check.** Q1/Q6 STOP rationales rely on information in full seeds that is not fully exposed in compact observations; audit labels against the actual gate task without retrospectively editing v1 -> features/cross_reference/decisions.md
+- **The cause of all-FOLLOW behavior remains unresolved.** Replacement few-shots at the same 5:1 ratio, zero-shot, fuller collected-state observation and paired candidate-order interventions are proposed diagnostics, not baseline requirements -> features/cross_reference/decisions.md
+- **The retained report has two interpretation defects.** `Action agreement` compares action plus selected article although binary STOP/FOLLOW agreement is 48/48, and Q5 hop-1's rationale names stale candidates; preserve the raw artifacts and correct the narrative separately -> features/cross_reference/log.md
+- **Later-hop evidence identity remains narrower than the intended research claim.** Export does not bind current store identity to the hop-0 capture, and state identity includes source-run lineage, so equivalent states from different source runs can remain distinct -> features/cross_reference/decisions.md
 - **Internal reasoning and end-to-end benefit remain unmeasured.** Stable selected IDs do not isolate semantic reasoning from heuristics, and this replay does not establish full-loop retrieval or answer-quality gains -> features/cross_reference/decisions.md
 - **Historical gate runtime provenance remains partial.** Fresh schema-v3 runs now bind revision, dirty state and module hashes, but the retained pre-refactor LLM results still do not verify served weights or every effective runtime setting -> features/cross_reference/log.md
 - **Private specs are intentionally absent from public provenance going forward.** Historical manifests still expose spec path/hash, not its contents. Old donor checkpoint SHAs were not captured; consolidation records describe uncommitted donor sources -> features/cross_reference/decisions.md
