@@ -1,0 +1,155 @@
+[
+  {
+    "id": 1,
+    "user_input": "Kỳ này em làm đồ án tốt nghiệp kỹ sư thì cấu trúc điểm giữa quá trình và cuối kỳ được tính tỷ trọng thế nào b? Điểm tối thiểu bao nhiêu thì đồ án được coi là đạt v m?",
+    "response": "Theo khoản 4 Điều 22, việc đánh giá kết quả Đồ án tốt nghiệp kỹ sư được thực hiện theo quy định tại khoản 2 Điều 13, theo đó điểm đồ án được tính từ điểm quá trình (trọng số 0,5) và điểm cuối kỳ (trọng số 0,5) [13.2a, 22.4]. Tuy nhiên, khác với đại học thông thường, đồ án tốt nghiệp kỹ sư chỉ được đánh giá là đạt khi điểm học phần đạt từ điểm C trở lên [22.4].",
+    "retrieved_contexts": "Điều 22. Thực tập tốt nghiệp và Đồ án tốt nghiệp kỹ sư\n4. Việc đánh giá kết quả thực hiện ĐATN KS được thực hiện theo khoản 2 Điều 13 của Quy chế này. Đồ án tốt nghiệp kỹ sư được đánh giá đạt khi điểm đánh giá học phần đạt từ điểm C trở lên.\n\nĐiều 13. Đồ án/khóa luận tốt nghiệp đại học\n2. Kết quả ĐATN được đánh giá như sau:\na) Điểm ĐATN được tính từ các điểm thành phần theo trọng số 0,5 đối với điểm quá trình và trọng số 0,5 đối với điểm cuối kỳ.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "22 -> 13"
+  },
+  {
+    "id": 2,
+    "user_input": "Bên hệ kỹ sư chuyên sâu thì dải điểm CPA để xếp hạng tốt nghiệp các loại Xuất sắc, Giỏi, Khá, Trung bình được quy định thế nào vậy b?",
+    "response": "Theo khoản 2 Điều 24, hạng tốt nghiệp của chương trình kỹ sư được xếp dựa trên điểm trung bình toàn khóa tương tự như dải xếp loại học lực quy định tại khoản 6 Điều 12 [24.2]. Cụ thể: CPA từ 3,6 đến 4,0 xếp hạng Xuất sắc; 3,2 đến cận 3,6 xếp hạng Giỏi; 2,5 đến cận 3,2 xếp hạng Khá; và 2,0 đến cận 2,5 xếp hạng Trung bình [12.6, 24.2].",
+    "retrieved_contexts": "Điều 24. Điểm trung bình toàn khóa và hạng tốt nghiệp kỹ sư\n2. Hạng tốt nghiệp được xếp dựa trên điểm trung bình toàn khóa như xếp loại học lực quy định tại khoản 6 Điều 12 của Quy chế này...\n\nĐiều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n6. Sinh viên được xếp loại học lực theo học kỳ căn cứ điểm trung bình học kỳ và xếp loại học lực từ đầu khóa căn cứ điểm trung bình tích lũy như sau:\nGPA hoặc CPA: < 1,0 (Kém), 1,0-1,99 (Yếu), 2,0-2,49 (Trung bình), 2,5-3,19 (Khá), 3,2-3,59 (Giỏi), 3,6-4,0 (Xuất sắc).",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "24 -> 12"
+  },
+  {
+    "id": 3,
+    "user_input": "Em đang học đại học mà xin nghỉ học tạm thời trong 7 tuần đầu của học kỳ chính thì các môn đã đăng ký xử lý ra sao và học phí học kỳ đó tính thế nào b?",
+    "response": "Theo khoản 4 Điều 16, khi quyết định nghỉ học tạm thời có hiệu lực, toàn bộ các học phần đã đăng ký trong học kỳ sẽ bị hủy [16.4]. Việc nộp học phí được thực hiện theo khoản 4 Điều 9: nếu sinh viên có đơn đề nghị xin nghỉ tạm thời trong 7 tuần đầu của học kỳ chính và được giải quyết thì phải đóng 50% học phí của học kỳ đó (quy định này không áp dụng cho học kỳ hè) [9.4, 16.4].",
+    "retrieved_contexts": "Điều 16. Nghỉ học tạm thời và tự nguyện thôi học\n4. Khi chế độ nghỉ tạm thời có hiệu lực thì các học phần đã đăng ký học trong học kỳ sẽ bị hủy và tính học phí theo quy định tại khoản 4 Điều 9 Quy chế này...\n\nĐiều 9. Học phí\n4. Người học thuộc CTĐT cử nhân, kỹ sư có đơn đề nghị thôi học, nghỉ học tạm thời hoặc chuyển cơ sở đào tạo trong khoảng thời gian 7 tuần đầu của học kỳ, nếu được giải quyết theo nguyện vọng thì phải đóng một nửa (50%) học phí của học kỳ đó. Quy định này không áp dụng với kỳ hè.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "16 -> 9"
+  },
+  {
+    "id": 4,
+    "user_input": "Em là học viên hệ kỹ sư, nếu em làm thủ tục xin nghỉ học tạm thời trong 7 tuần đầu kỳ thì học phí kỳ đó của em bị trừ hay phải nộp bao nhiêu % vậy ad?",
+    "response": "Theo khoản 6 Điều 25, khi chế độ nghỉ tạm thời có hiệu lực đối với học viên kỹ sư, các học phần đã đăng ký trong học kỳ sẽ bị hủy và tính học phí theo quy định tại khoản 4 Điều 9 [25.6]. Cụ thể, nếu nộp đơn và được giải quyết trong 7 tuần đầu của học kỳ chính, bạn phải đóng một nửa (50%) học phí của học kỳ đó [9.4, 25.6].",
+    "retrieved_contexts": "Điều 25. Nghỉ học tạm thời, tự nguyện thôi học và buộc thôi học\n6. Khi chế độ nghỉ tạm thời có hiệu lực thì các học phần đã đăng ký học trong học kỳ sẽ bị hủy và tính học phí theo quy định tại khoản 4 Điều 9 Quy chế này...\n\nĐiều 9. Học phí\n4. Người học thuộc CTĐT cử nhân, kỹ sư có đơn đề nghị thôi học, nghỉ học tạm thời hoặc chuyển cơ sở đào tạo trong khoảng thời gian 7 tuần đầu của học kỳ, nếu được giải quyết theo nguyện vọng thì phải đóng một nửa (50%) học phí của học kỳ đó.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "25 -> 9"
+  },
+  {
+    "id": 5,
+    "user_input": "Em sv khóa 2024 muốn xin chuyển sang một chương trình đào tạo khác cùng ngành thì cần điều kiện CPA bao nhiêu b? Quy định chuyển chương trình này chính thức áp dụng từ khi nào v m?",
+    "response": "Theo điểm b khoản 2 Điều 48, các quy định về chuyển chương trình đào tạo tại khoản 1 Điều 17 chính thức được áp dụng từ học kỳ 2 năm học 2024-2025 [48.2b]. Căn cứ điểm b khoản 1 Điều 17, sinh viên sau khi hoàn thành năm thứ nhất muốn chuyển CTĐT phải có xếp loại học lực tính theo điểm trung bình tích lũy (CPA) đạt từ loại Khá trở lên, tức CPA ≥ 2,5 [17.1b, 48.2b].",
+    "retrieved_contexts": "Điều 48. Hiệu lực thi hành\n2. Quy chế này được áp dụng từ học kỳ 1 năm học 2025-2026 cho tất cả các khóa đào tạo, trừ một số điều, khoản như sau:\nb) Khoản 1, khoản 2 và khoản 3 Điều 17 (về việc chuyển chương trình đào tạo) được áp dụng từ học kỳ 2 năm học 2024-2025.\n\nĐiều 17. Chuyển chương trình đào tạo, hình thức đào tạo\n1. Sinh viên học hết năm học thứ nhất (tính cả thời gian nghỉ tạm thời nếu có) được xem xét chuyển sang học một CTĐT khác nếu đáp ứng đủ các điều kiện sau:\na) Đáp ứng điều kiện trúng tuyển của CTĐT muốn chuyển sang học;\nb) Xếp loại học lực căn cứ theo điểm trung bình tích lũy (CPA) đạt từ loại khá trở lên (CPA ≥ 2,5);\nc) Không bị cảnh báo học tập;\nd) Hiện đang không bị kỷ luật.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "48 -> 17"
+  },
+  {
+    "id": 6,
+    "user_input": "Em khóa 2023, CPA tốt nghiệp đạt 3.35 nhưng tổng số tín chỉ phải học lại chiếm 6% toàn khóa thì em được xếp hạng tốt nghiệp gì b? Quy định giảm hạng này có áp dụng cho khóa em không m?",
+    "response": "Theo điểm a khoản 2 Điều 48, quy định về việc giảm hạng tốt nghiệp tại điểm a khoản 2 Điều 15 chính thức áp dụng cho các khóa tuyển sinh từ năm 2022 (bao gồm khóa 2023 của bạn) [48.2a]. Theo khoản 6 Điều 12, mức CPA 3.35 ban đầu đạt hạng Giỏi (dải 3,2 - 3,59) [12.6]. Tuy nhiên, do khối lượng học phần học lại của bạn là 6% (vượt quá ngưỡng 5% quy định tại điểm a khoản 2 Điều 15), bạn sẽ bị giảm một mức xuống xếp hạng tốt nghiệp Khá [15.2a, 48.2a].",
+    "retrieved_contexts": "Điều 48. Hiệu lực thi hành\n2. Quy chế này được áp dụng từ học kỳ 1 năm học 2025-2026 cho tất cả các khóa đào tạo, trừ một số điều, khoản như sau:\na) Điểm a khoản 2 Điều 15 (về việc giảm hạng tốt nghiệp) được áp dụng với các khóa tuyển sinh từ năm 2022.\n\nĐiều 15. Điểm trung bình toàn khóa và hạng tốt nghiệp đại học\n2. Hạng tốt nghiệp được xếp dựa trên điểm trung bình toàn khóa như xếp loại học lực quy định tại khoản 6 Điều 12 của Quy chế này, riêng trong các trường hợp sau đây thì hạng tốt nghiệp của những sinh viên có điểm trung bình toàn khóa xếp loại giỏi trở lên sẽ bị giảm một mức:\na) Khối lượng của các học phần phải học lại vượt quá 5% của tổng số TC của các học phần được dùng tính điểm trung bình toàn khóa. Quy định này không xét tới số TC của các học phần học cải thiện điểm.\n\nĐiều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n6. Sinh viên được xếp loại học lực theo học kỳ căn cứ điểm trung bình học kỳ và xếp loại học lực từ đầu khóa căn cứ điểm trung bình tích lũy như sau:\nGPA hoặc CPA: < 1,0 (Kém), 1,0-1,99 (Yếu), 2,0-2,49 (Trung bình), 2,5-3,19 (Khá), 3,2-3,59 (Giỏi), 3,6-4,0 (Xuất sắc).",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "48 -> 15 -> 12"
+  },
+  {
+    "id": 7,
+    "user_input": "Em sinh viên khóa 2023 hệ chính quy muốn đăng ký học song song 2 chương trình đào tạo thì quy định điều kiện năm học và CPA tối thiểu thế nào b? Khóa 2023 của em đã áp dụng quy định này chưa?",
+    "response": "Theo điểm c khoản 2 Điều 48, quy định tại khoản 2 Điều 18 chính thức áp dụng đối với các khóa tuyển sinh từ năm 2022 (bao gồm khóa 2023 của bạn) [48.2c]. Để được đăng ký học chương trình thứ hai, bạn phải thuộc hình thức đào tạo chính quy [18.1], đã được xếp trình độ từ năm thứ hai trở lên, có CPA đạt từ loại Trung bình trở lên (CPA ≥ 2,0) và đáp ứng điều kiện trúng tuyển của chương trình thứ hai trong năm tuyển sinh [18.2].",
+    "retrieved_contexts": "Điều 48. Hiệu lực thi hành\n2. Quy chế này được áp dụng từ học kỳ 1 năm học 2025-2026 cho tất cả các khóa đào tạo, trừ một số điều, khoản như sau:\nc) Khoản 2 Điều 18 (về việc học cùng lúc hai chương trình) được áp dụng với các khóa tuyển sinh từ năm 2022.\n\nĐiều 18. Học cùng lúc hai chương trình\n1. Sinh viên thuộc hình thức đào tạo chính quy có thể đăng ký học thêm các học phần của một CTĐT khác, nhưng chỉ được hưởng các quyền lợi chính thức và được xem xét công nhận tốt nghiệp chương trình thứ hai khi đã đăng ký thành công học chương trình thứ hai.\n2. Sinh viên được phép đăng ký học chương trình thứ hai sớm nhất khi đã được xếp trình độ năm thứ hai của chương trình thứ nhất. Tại thời điểm đăng ký, sinh viên phải có học lực tính theo điểm trung bình tích lũy (CPA) xếp loại từ trung bình trở lên và đáp ứng điều kiện trúng tuyển của chương trình thứ hai trong năm tuyển sinh.",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "48 -> 18"
+  },
+  {
+    "id": 8,
+    "user_input": "Em đang bị cảnh báo học tập thì số lượng tín chỉ đăng ký học tập tối đa và tối thiểu trong kỳ chính được quy định thế nào b?",
+    "response": "Theo điểm b khoản 2 Điều 10, sinh viên đang bị cảnh báo học tập bị giới hạn khối lượng đăng ký học tập theo quy định tại khoản 2 Điều 19 [10.2b]. Cụ thể theo khoản 2 Điều 19, sinh viên thuộc các chương trình đào tạo chuẩn đang bị cảnh báo từ mức 2 trở lên chỉ được đăng ký tối đa 14 tín chỉ và tối thiểu 8 tín chỉ cho một học kỳ chính; còn đối với chương trình ELITECH và hợp tác quốc tế thì giới hạn tối đa là 18 tín chỉ và tối thiểu 8 tín chỉ [19.2a, 19.2b].",
+    "retrieved_contexts": "Điều 10. Đăng ký học tập chương trình đại học\n2. Số lượng TC đăng ký:\nb) Sinh viên đang bị cảnh báo học tập bị giới hạn khối lượng đăng ký học tập theo quy định tại khoản 2 Điều 19 của Quy chế này.\n\nĐiều 19. Cảnh báo học tập và buộc thôi học\n2. Hạn chế khối lượng học tập là hình thức buộc những sinh viên đang bị cảnh báo học tập từ mức 2 trở lên đăng ký số TC học phần ít hơn bình thường tại học kỳ 1 của năm học, cụ thể như sau:\na) Sinh viên thuộc các CTĐT chuẩn được đăng ký tối đa 14 TC và tối thiểu 8 TC cho một học kỳ chính;\nb) Sinh viên thuộc các chương trình ELITECH và các CTĐT hợp tác quốc tế được đăng ký tối đa 18 TC và tối thiểu 8 TC cho một học kỳ chính.",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "10 -> 19"
+  },
+  {
+    "id": 9,
+    "user_input": "Em muốn đăng ký mở lớp học phần rút gọn thì cần đáp ứng những điều kiện gì về điểm số và trình độ năm học v m?",
+    "response": "Theo khoản 5 Điều 10, lớp học phần rút gọn được xem xét mở khi sinh viên thỏa mãn đồng thời các điều kiện: đã học học phần đó ít nhất 2 lần nhưng chưa đạt [10.5a], điểm quá trình lần học gần nhất từ 2 điểm trở lên [10.5b], và đạt trình độ năm học từ năm thứ ba trở lên theo quy định tại khoản 5 Điều 12 (tức đã tích lũy từ 64 tín chỉ trở lên) [10.5c, 12.5].",
+    "retrieved_contexts": "Điều 10. Đăng ký học tập chương trình đại học\n5. Đối với học phần có giờ lên lớp, xem xét mở lớp học phần rút gọn căn cứ trên nguyện vọng của sinh viên khi thỏa mãn đồng thời các điều kiện sau:\na) Sinh viên đã học học phần đó ít nhất 02 lần nhưng chưa đạt;\nb) Điểm quá trình của học phần phải từ 2 điểm trở lên trong lần học gần nhất;\nc) Sinh viên đạt trình độ năm học từ năm thứ ba trở lên theo quy định tại khoản 5 Điều 12 Quy chế này.\n\nĐiều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n5. Sinh viên được xếp hạng trình độ năm học căn cứ số TC tích lũy (TCTL) như sau:\nSố TCTL: < 32 (Năm thứ nhất), 32-63 (Năm thứ hai), 64-95 (Năm thứ ba), 96-127 (Năm thứ tư), ≥ 128 (Năm thứ năm).",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "10 -> 12"
+  },
+  {
+    "id": 10,
+    "user_input": "Em đang học cùng lúc hai chương trình đào tạo, nếu trong quá trình học chương trình thứ hai mà em bị cảnh báo học tập ở chương trình thứ nhất thì có được tiếp tục học chương trình 2 không b?",
+    "response": "Theo khoản 3 Điều 18, sinh viên học cùng lúc hai chương trình phải luôn đảm bảo khối lượng học tập ngành thứ nhất theo quy định với điểm CPA từ trung bình trở lên và không nằm trong diện bị cảnh báo học tập [18.3]. Nếu bị cảnh báo học tập theo quy định tại Điều 19, sinh viên sẽ không duy trì được kết quả này và bị loại khỏi danh sách đăng ký học chương trình thứ hai [18.3, 19.1].",
+    "retrieved_contexts": "Điều 18. Học cùng lúc hai chương trình\n3. Trong thời gian học CTĐT thứ hai, sinh viên phải luôn đảm bảo khối lượng học tập ngành thứ nhất theo quy định với điểm CPA từ trung bình trở lên và không nằm trong diện bị cảnh báo học tập. Sinh viên không duy trì được kết quả này sẽ bị loại khỏi danh sách đăng ký học chương trình thứ hai.\n\nĐiều 19. Cảnh báo học tập và buộc thôi học\n1. Kết quả học tập được đánh giá vào cuối mỗi học kỳ chính để xác định mức độ cảnh báo học tập với sinh viên...",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "18 -> 19"
+  },
+  {
+    "id": 11,
+    "user_input": "Sinh viên khóa 2024 nếu bị buộc thôi học do kết quả học tập yếu kém thì có được chuyển sang học hệ Vừa làm vừa học (VLVH) không b? Quy định này chính thức áp dụng từ khi nào và thời gian đào tạo chuẩn hệ VLVH dài hơn chính quy bao nhiêu % v m?",
+    "response": "Theo điểm b khoản 2 Điều 48, quy định về chuyển chương trình và hình thức đào tạo tại Điều 17 chính thức được áp dụng từ học kỳ 2 năm học 2024-2025 [48.2b]. Căn cứ điểm b khoản 4 Điều 17, sinh viên bị buộc thôi học do kết quả học tập yếu kém được quyền đề nghị chuyển sang học chương trình thuộc hình thức VLVH [17.4b]. Theo khoản 7 Điều 2, thời gian đào tạo theo kế hoạch chuẩn toàn khóa của hình thức VLVH được quy định dài hơn tối thiểu 20% so với hình thức chính quy [2.7, 17.4b, 48.2b].",
+    "retrieved_contexts": "Điều 48. Hiệu lực thi hành\n2. Quy chế này được áp dụng từ học kỳ 1 năm học 2025-2026 cho tất cả các khóa đào tạo, trừ một số điều, khoản như sau:\nb) Khoản 1, khoản 2 và khoản 3 Điều 17 (về việc chuyển chương trình đào tạo) được áp dụng từ học kỳ 2 năm học 2024-2025.\n\nĐiều 17. Chuyển chương trình đào tạo, hình thức đào tạo\n4. Sinh viên thuộc các trường hợp sau được quyền đề nghị chuyển sang học một chương trình thuộc hình thức VLVH của ĐHBK Hà Nội nếu có nguyện vọng:\nb) Sinh viên bị buộc thôi học do kết quả học tập yếu kém;\n\nĐiều 2. Ngành đào tạo, chương trình đào tạo\n7. Thời gian theo kế hoạch học tập chuẩn toàn khoá đối với hình thức đào tạo vừa làm vừa học dài hơn tối thiểu 20% so với hình thức đào tạo chính quy của cùng CTĐT.",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "48 -> 17 -> 2"
+  },
+  {
+    "id": 12,
+    "user_input": "Em bị cảnh báo học tập thì trường hợp nào sẽ bị buộc thôi học trực tiếp v ad? Nếu bị buộc thôi học do học chậm tiến độ thì mốc thời gian tối đa quy định ở đâu b?",
+    "response": "Theo điểm a khoản 3 Điều 19, sinh viên sẽ bị buộc thôi học trực tiếp nếu bị cảnh báo học tập mức 3 lần thứ hai liên tiếp [19.3a]. Ngoài ra, theo điểm b khoản 3 Điều 19, sinh viên cũng bị buộc thôi học nếu học chậm tiến độ quá thời gian cho phép quy định tại khoản 3 Điều 3 (cụ thể tối đa không quá 5 học kỳ chính đối với cử nhân và không quá 2 học kỳ chính đối với kỹ sư/thạc sĩ) [3.3a, 19.3b].",
+    "retrieved_contexts": "Điều 19. Cảnh báo học tập và buộc thôi học\n3. Buộc thôi học là hình thức áp dụng đối với những sinh viên có kết quả học tập rất kém theo một trong các trường hợp như sau:\na) Sinh viên bị cảnh báo học tập mức 3 lần thứ hai liên tiếp.\nb) Sinh viên học chậm tiến độ quá thời gian cho phép, hoặc không còn đủ khả năng tốt nghiệp trong thời gian cho phép theo quy định tại khoản 3 Điều 3 của Quy chế này.\n\nĐiều 3. Thời gian và kế hoạch học tập\n3. a) ...thời gian chậm tiến độ không được vượt quá 5 học kỳ chính đối với các chương trình cấp bằng cử nhân, không quá 2 học kỳ chính đối với các chương trình cấp bằng kỹ sư và thạc sĩ.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "19 -> 3"
+  },
+  {
+    "id": 13,
+    "user_input": "Sinh viên hệ chính quy nếu bị buộc thôi học do kết quả học tập yếu kém thì có được chuyển sang học hệ Vừa làm vừa học (VLVH) không b? Thời gian đào tạo chuẩn của hệ VLVH này được tính dài hơn chính quy bao nhiêu % v m?",
+    "response": "Theo điểm b khoản 4 Điều 17, sinh viên bị buộc thôi học do kết quả học tập yếu kém vẫn được quyền đề nghị chuyển sang học một chương trình thuộc hình thức Vừa làm vừa học (VLVH) của ĐHBK Hà Nội nếu có nguyện vọng [17.4b]. Về thời gian đào tạo, căn cứ khoản 7 Điều 2, thời gian theo kế hoạch học tập chuẩn toàn khóa đối với hình thức VLVH được quy định dài hơn tối thiểu 20% so với hình thức đào tạo chính quy của cùng CTĐT [2.7, 17.4b].",
+    "retrieved_contexts": "Điều 17. Chuyển chương trình đào tạo, hình thức đào tạo\n4. Sinh viên thuộc các trường hợp sau được quyền đề nghị chuyển sang học một chương trình thuộc hình thức VLVH của ĐHBK Hà Nội nếu có nguyện vọng:\nb) Sinh viên bị buộc thôi học do kết quả học tập yếu kém;\n\nĐiều 2. Ngành đào tạo, chương trình đào tạo\n7. Thời gian theo kế hoạch học tập chuẩn toàn khoá đối với hình thức đào tạo vừa làm vừa học dài hơn tối thiểu 20% so với hình thức đào tạo chính quy của cùng CTĐT.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "17 -> 2"
+  },
+  {
+    "id": 14,
+    "user_input": "Nghiên cứu sinh nếu bị hội đồng đánh giá luận án cấp Đại học quyết nghị không thông qua và cho phép bảo vệ lại, nhưng lần thứ hai vẫn không đạt thì bị xử lý ra sao b?",
+    "response": "Theo điểm a khoản 6 Điều 45, NCS sẽ bị buộc thôi học nếu luận án không được hội đồng đánh giá luận án cấp Đại học thông qua, bao gồm cả trường hợp cho phép đánh giá lại theo quy định tại Điều 43 [45.6a]. Cụ thể theo khoản 1 và khoản 3 Điều 43, NCS chỉ được phép chỉnh sửa và đề nghị bảo vệ lại lần thứ hai trong vòng 6 tháng; nếu lần thứ hai vẫn không đạt thì ĐHBK Hà Nội không tổ chức bảo vệ lần thứ ba và NCS bị buộc thôi học [43.1, 43.3, 45.6a].",
+    "retrieved_contexts": "Điều 45. Những thay đổi trong quá trình đào tạo\n6. NCS bị buộc thôi học trong những trường hợp sau:\na) Hết thời gian theo quy định, NCS không hoàn thành CTĐT hoặc luận án của NCS không được hội đồng đánh giá luận án cấp Đại học thông qua (bao gồm cả trường hợp cho phép đánh giá lại theo quy định tại Điều 43 Quy chế này).\n\nĐiều 43. Đánh giá lại luận án tiến sĩ\n1. Trong trường hợp hội đồng đánh giá luận án cấp Đại học có quyết nghị không thông qua luận án và cho phép bảo vệ lại, NCS được phép chỉnh sửa, bổ sung luận văn và đề nghị bảo vệ luận án lần thứ hai trong vòng 6 tháng nếu NCS còn thời gian theo quy định.\n3. Trong trường hợp luận án bảo vệ lần thứ hai vẫn không đạt yêu cầu, ĐHBK Hà Nội không tổ chức bảo vệ luận án lần thứ ba.",
+    "type": "multi_hop",
+    "group": "Control",
+    "link": "45 -> 43"
+  },
+  {
+    "id": 15,
+    "user_input": "Học viên cao học (thạc sĩ) nếu học chậm tiến độ so với chương trình chuẩn thì phải làm thủ tục gì b? Nếu chậm tiến độ quá thời gian gia hạn cho phép thì bị xử lý ra sao và thời gian chậm tối đa là mấy kỳ v m?",
+    "response": "Theo khoản 1 Điều 36, học viên thạc sĩ học chậm tiến độ phải làm thủ tục xin gia hạn thời gian học tập [36.1]. Nếu chậm tiến độ quá thời gian cho phép, theo điểm a khoản 3 Điều 36, học viên sẽ bị buộc thôi học [36.3a]. Căn cứ điểm a khoản 3 Điều 3, tổng thời gian học chậm tiến độ cho phép đối với chương trình cấp bằng thạc sĩ không được vượt quá 02 học kỳ chính [3.3a, 36.3a].",
+    "retrieved_contexts": "Điều 36. Gia hạn thời gian học tập, thôi học\n1. Học viên học chậm tiến độ so với thời gian thiết kế của chương trình thạc sĩ phải làm thủ tục xin gia hạn thời gian học tập.\n3. Học viên bị buộc thôi học trong các trường hợp sau đây:\na) Học viên học chậm tiến độ quá thời gian cho phép, hoặc không còn đủ khả năng tốt nghiệp trong thời gian cho phép theo quy định tại khoản 3 Điều 3 Quy chế này.\n\nĐiều 3. Thời gian và kế hoạch học tập\n3. a) ...thời gian chậm tiến độ không được vượt quá 5 học kỳ chính đối với các chương trình cấp bằng cử nhân, không quá 2 học kỳ chính đối với các chương trình cấp bằng kỹ sư và thạc sĩ.",
+    "type": "multi_hop",
+    "group": "Treatment",
+    "link": "36 -> 3"
+  },
+  {
+    "id": 16,
+    "user_input": "Học viên hệ kỹ sư chuyên sâu muốn biết quy định xếp hạng tốt nghiệp theo CPA được áp dụng chính thức từ khi nào, và mức CPA bao nhiêu thì được xếp hạng tốt nghiệp loại Giỏi v b?",
+    "response": "Theo điểm d khoản 2 Điều 48, quy định về điểm trung bình toàn khóa và xếp hạng tốt nghiệp của chương trình kỹ sư tại Điều 24 được áp dụng từ học kỳ 2 năm học 2024-2025 [48.2d]. Căn cứ khoản 2 Điều 24, hạng tốt nghiệp kỹ sư được xếp dựa trên CPA tương tự quy định xếp loại học lực tại khoản 6 Điều 12 [24.2]. Theo khoản 6 Điều 12, học viên có CPA đạt từ 3,2 đến cận 3,6 sẽ được xếp hạng tốt nghiệp Giỏi [12.6, 24.2, 48.2d].",
+    "retrieved_contexts": "Điều 48. Hiệu lực thi hành\n2. Quy chế này được áp dụng từ học kỳ 1 năm học 2025-2026 cho tất cả các khóa đào tạo, trừ một số điều, khoản như sau:\nd) Khoản 1 Điều 24 (về điểm trung bình toàn khóa CTĐT kỹ sư) được áp dụng từ học kỳ 2 năm học 2024-2025.\n\nĐiều 24. Điểm trung bình toàn khóa và hạng tốt nghiệp kỹ sư\n2. Hạng tốt nghiệp được xếp dựa trên điểm trung bình toàn khóa như xếp loại học lực quy định tại khoản 6 Điều 12 của Quy chế này...\n\nĐiều 12. Ý kiến phản hồi của người học, đánh giá kết quả học tập\n6. Sinh viên được xếp loại học lực theo học kỳ căn cứ điểm trung bình học kỳ và xếp loại học lực từ đầu khóa căn cứ điểm trung bình tích lũy như sau:\nGPA hoặc CPA: < 1,0 (Kém), 1,0-1,99 (Yếu), 2,0-2,49 (Trung bình), 2,5-3,19 (Khá), 3,2-3,59 (Giỏi), 3,6-4,0 (Xuất sắc).",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "48 -> 24 -> 12"
+  },
+  {
+    "id": 17,
+    "user_input": "Em là học viên hệ kỹ sư chuyên sâu, nếu đã hết thời gian học tập tối đa nhưng chưa thể tốt nghiệp do nợ chứng chỉ Giáo dục quốc phòng - An ninh thì có được gia hạn đăng ký học hoàn thiện không b? Thời hạn cho phép hoàn thiện tối đa là bao nhiêu năm v m?",
+    "response": "Theo khoản 2 Điều 23, việc xét và công nhận tốt nghiệp chương trình kỹ sư được thực hiện theo quy định tại Điều 14 [23.2]. Căn cứ khoản 5 Điều 14, học viên đã hết thời gian học tập tối đa quy định tại khoản 3 Điều 3 nhưng chưa đủ điều kiện tốt nghiệp do thiếu chứng chỉ GDQP-AN thì được phép đăng ký học để hoàn thiện trong thời hạn tối đa 03 năm kể từ khi hết thời hạn học tập [3.3a, 14.5, 23.2].",
+    "retrieved_contexts": "Điều 23. Công nhận tốt nghiệp và cấp bằng kỹ sư\n2. Việc xét và công nhận tốt nghiệp chương trình kỹ sư thực hiện theo quy định tại Điều 14 của Quy chế này.\n\nĐiều 14. Đăng ký tốt nghiệp đại học\n5. Sinh viên đã hết thời gian học tập tối đa theo quy định tại khoản 3 Điều 3 của Quy chế này nhưng chưa đủ điều kiện tốt nghiệp do chưa hoàn thành các học phần Giáo dục quốc phòng-an ninh hoặc Giáo dục thể chất, trong thời hạn tối đa 03 năm kể từ khi hết thời hạn học tập được phép đăng ký học để hoàn thiện các học phần còn thiếu này và đề nghị xét công nhận tốt nghiệp.\n\nĐiều 3. Thời gian và kế hoạch học tập\n3. a) ...thời gian chậm tiến độ không được vượt quá 5 học kỳ chính đối với các chương trình cấp bằng cử nhân, không quá 2 học kỳ chính đối với các chương trình cấp bằng kỹ sư và thạc sĩ.",
+    "type": "multi_hop",
+    "group": "Treatment yếu",
+    "link": "23 -> 14 -> 3"
+  }
+]

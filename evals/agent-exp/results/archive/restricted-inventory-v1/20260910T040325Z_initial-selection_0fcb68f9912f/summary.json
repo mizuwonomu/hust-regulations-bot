@@ -1,0 +1,330 @@
+{
+  "by_policy": {
+    "first": {
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "selection_accuracy": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 4,
+        "denominator": 6,
+        "value": 0.6666666666666666
+      },
+      "first_position_selection_rate": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "costs": {
+        "latency_ms": {
+          "count": 6,
+          "mean": 0.03934833330276888,
+          "min": 0.035121000109938905,
+          "max": 0.04154599992034491
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      }
+    },
+    "llm": {
+      "scheduled": 6,
+      "valid": 6,
+      "errors": 0,
+      "missing": 0,
+      "selection_accuracy": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "decision_accuracy": {
+        "numerator": 4,
+        "denominator": 6,
+        "value": 0.6666666666666666
+      },
+      "first_position_selection_rate": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "costs": {
+        "latency_ms": {
+          "count": 6,
+          "mean": 715.5976330001673,
+          "min": 439.5096589996683,
+          "max": 1854.232129000593
+        },
+        "usage": {
+          "input_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "output_tokens": {
+            "count": 0,
+            "sum": null
+          },
+          "total_tokens": {
+            "count": 0,
+            "sum": null
+          }
+        }
+      }
+    }
+  },
+  "by_candidate_group": {
+    "single_candidate": {
+      "first": {
+        "scheduled": 2,
+        "valid": 2,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "first_position_selection_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 2,
+            "mean": 0.03816450043814257,
+            "min": 0.035121000109938905,
+            "max": 0.04120800076634623
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      },
+      "llm": {
+        "scheduled": 2,
+        "valid": 2,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "first_position_selection_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "value": null
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 2,
+            "mean": 453.60490349958127,
+            "min": 439.5096589996683,
+            "max": 467.7001479994942
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      }
+    },
+    "multi_candidate": {
+      "first": {
+        "scheduled": 4,
+        "valid": 4,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 4,
+          "value": 0.5
+        },
+        "first_position_selection_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "value": 1.0
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 4,
+            "mean": 0.039940249735082034,
+            "min": 0.03615400055423379,
+            "max": 0.04154599992034491
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      },
+      "llm": {
+        "scheduled": 4,
+        "valid": 4,
+        "errors": 0,
+        "missing": 0,
+        "selection_accuracy": {
+          "numerator": 2,
+          "denominator": 2,
+          "value": 1.0
+        },
+        "decision_accuracy": {
+          "numerator": 2,
+          "denominator": 4,
+          "value": 0.5
+        },
+        "first_position_selection_rate": {
+          "numerator": 4,
+          "denominator": 4,
+          "value": 1.0
+        },
+        "costs": {
+          "latency_ms": {
+            "count": 4,
+            "mean": 846.5939977504604,
+            "min": 446.2156509998749,
+            "max": 1854.232129000593
+          },
+          "usage": {
+            "input_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "output_tokens": {
+              "count": 0,
+              "sum": null
+            },
+            "total_tokens": {
+              "count": 0,
+              "sum": null
+            }
+          }
+        }
+      }
+    }
+  },
+  "by_position": {
+    "1": {
+      "first": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      },
+      "llm": {
+        "numerator": 4,
+        "denominator": 4,
+        "value": 1.0
+      }
+    },
+    "2": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    },
+    "stop": {
+      "first": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      },
+      "llm": {
+        "numerator": 0,
+        "denominator": 4,
+        "value": 0.0
+      }
+    }
+  },
+  "paired": {
+    "scheduled_pairs": 6,
+    "valid_pairs": 6,
+    "incomplete_pairs": 0,
+    "agreement": {
+      "numerator": 6,
+      "denominator": 6,
+      "value": 1.0
+    },
+    "first_wins": 0,
+    "llm_wins": 0,
+    "ties": 6,
+    "different_trial_ids": []
+  },
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "no_candidates"
+    }
+  ]
+}

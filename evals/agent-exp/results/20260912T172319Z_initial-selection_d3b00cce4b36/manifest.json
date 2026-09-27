@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "run_id": "d3b00cce4b36",
+  "experiment": "initial-selection",
+  "started_at": "2026-09-12T17:23:19.252231+00:00",
+  "ended_at": "2026-09-12T17:23:30.049896+00:00",
+  "status": "complete",
+  "policies": [
+    "first",
+    "llm"
+  ],
+  "trials": [
+    {
+      "trial_id": "corpus_cross_references:hop0:q-6b86b273ff34:r0",
+      "case_id": "corpus_cross_references:hop0:q-6b86b273ff34",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        19,
+        12
+      ],
+      "observation_hash": "43f3f68b30e0dbee65ba3fe818f43b4308f468b7f26c8b8e14aa5302ff74c35d"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4e07408562be:r0",
+      "case_id": "corpus_cross_references:hop0:q-4e07408562be",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        20,
+        3
+      ],
+      "observation_hash": "81befbaa6cc7be57f9da60926c7f9c2cbf0311e87c898a79fce188f18f5040de"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-4b227777d4dd:r0",
+      "case_id": "corpus_cross_references:hop0:q-4b227777d4dd",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        3
+      ],
+      "observation_hash": "8a9b6079a1062a97c7afd06958a7429dd868433eda8e8d1c33328059b0300d50"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-ef2d127de37b:r0",
+      "case_id": "corpus_cross_references:hop0:q-ef2d127de37b",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1
+      ],
+      "candidate_order": [
+        41,
+        3,
+        40,
+        8,
+        43
+      ],
+      "observation_hash": "92a0cf6eced84c09c707f32d8217c2a61100682ebaf67a174c8ccf11c614af27"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-e7f6c011776e:r0",
+      "case_id": "corpus_cross_references:hop0:q-e7f6c011776e",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "candidate_order": [
+        3,
+        12
+      ],
+      "observation_hash": "e68cb6dc4f2b668c723157056d89d6300ef21edf92d5c7b5752b49e48847b5b1"
+    },
+    {
+      "trial_id": "corpus_cross_references:hop0:q-7902699be42c:r0",
+      "case_id": "corpus_cross_references:hop0:q-7902699be42c",
+      "repeat_id": 0,
+      "condition": "original",
+      "permutation_id": "original",
+      "seed_order": [
+        0,
+        1,
+        2
+      ],
+      "candidate_order": [
+        12
+      ],
+      "observation_hash": "81ce0a76fd20429b6aecadfd8e0da9a68026e7dfac989af8b1d23055571392f8"
+    }
+  ],
+  "cases_source": {
+    "path": "evals/agent-exp/datasets/gate_cases_fixed_v1.jsonl",
+    "sha256": "330675fde571e925416e5e00d962c54a30e213c4a8b8bc276e911fa5ed92ec4c"
+  },
+  "snapshot_source": {
+    "path": "evals/agent-exp/snapshots/seeds_v1_fixed.json",
+    "sha256": "ca012ef4915895387101fc9b430e8dfa2d6054ab9238802ddc5cf7799cc8366b"
+  },
+  "exclusions": [
+    {
+      "case_id": "corpus_cross_references:hop0:q-d4735e3a265e",
+      "reason": "no_candidates"
+    },
+    {
+      "case_id": "corpus_cross_references:hop0:q-2c624232cdd2",
+      "reason": "no_candidates"
+    }
+  ],
+  "provenance": {
+    "source_revision": "2790a815b88d70210aadc668d70d817f4e259ac2",
+    "source_revision_reason": null,
+    "working_tree_modified": true,
+    "working_tree_modified_reason": null,
+    "code_hashes": {
+      "evals/agent-exp/scripts/contracts.py": "07aa66bdf99e3a884f7b9912e6cea11d5580b0b9151ef242b20ac074228581d1",
+      "evals/agent-exp/scripts/seed_cases.py": "e8444a16e92283f71f1f77999caba189dcc3cf38808f78d038e49b868b12c1d3",
+      "evals/agent-exp/scripts/permutation.py": "e87d431bd199d53b5e3f30fad09a6c6cfe5ef0a6fff79799b9548a15e3c39e7a",
+      "evals/agent-exp/scripts/permutation_metrics.py": "f89347d29a2065c02f245d1d803840a2185b9d438ef19da82cc0bb078f4902bc",
+      "evals/agent-exp/scripts/policies/first.py": "071b8cffb0542a935a8e68ec83bcfb3908aecb2ef0cbf3c7efe5753171746b77",
+      "evals/agent-exp/scripts/policies/llm.py": "09792c1290d76dd52479e8fbcc352924056b503084364b251cfb62bc30bdd90a",
+      "evals/agent-exp/scripts/artifacts.py": "9af0b5271d914750d1ccff702a41dff9355fe9519be920bf74942e6e8744b0c8",
+      "evals/agent-exp/scripts/metrics.py": "160aff31fdd14fa4a27644b417a1a24ae75ead63fec758c20cd48b8ff0c959fd",
+      "evals/agent-exp/scripts/run_experiments.py": "c1bd6a3de25da659d5d7be385158c634de5a8afa022100851308cc81658fd27b",
+      "evals/agent-exp/scripts/seed_capture.py": "51686daf654935bf3dcd96ceb4fb4cfdb235de63ef4e79405f623c2410501bea",
+      "evals/common/single_pass_retrieval.py": "07b1e576e8771730a107c97a7e2769fe10f3e9c48eed87673ce04c0457626798",
+      "src/rag/agent/gate.py": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56",
+      "src/rag/agent/prompt.py": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+      "src/rag/agent/llm_client.py": "dde242fb784eb6cb17f4929c21d947a1879cb500eca75550ce0d640e4d458623"
+    },
+    "python_version": "3.13.5",
+    "specification": {
+      "path": null,
+      "sha256": null,
+      "available": false,
+      "reason": "specification is local and intentionally not recorded"
+    }
+  },
+  "policy_config": {
+    "first": {
+      "model_calls": 0,
+      "description": "always follow candidates[0]"
+    },
+    "llm": {
+      "model_alias": "citation-agent",
+      "actual_model": null,
+      "actual_model_reason": "local server model is not exposed by the client",
+      "temperature": 0.0,
+      "sampling": {
+        "temperature": 0.0
+      },
+      "thinking": false,
+      "token_limit": null,
+      "timeout_seconds": null,
+      "retry_settings": null,
+      "prompt_file_hash": "29da5b09c93bde837b0f6e1e9401531681cf8bab03fc8fba86ff692513d8b928",
+      "grammar_source_hash": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56",
+      "gate_file_hash": "9bb97435e6ababd1ed43227efe7cbbd715bd15d541f8f90aac578c2a1eb9bd56"
+    }
+  },
+  "permutation": null,
+  "expected_trial_count": null,
+  "expected_policy_result_count": null,
+  "spec_source": null
+}

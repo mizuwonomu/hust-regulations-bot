@@ -78,3 +78,199 @@ Citation-agent checkpoint (commits bc3711e through 7575bbe, branch harness/cross
 - The older statement above that counting non-gold documents is a wrong precision proxy applies to predicting RAGAS precision, not to the separately defined set precision. RAGAS context precision is rank-sensitive and can leave trailing noise unpenalized; its context recall measures supported reference claims rather than rank-weighted article coverage.
 - Freeze a baseline before tuning prompt, reasoning settings or ratio. Choosing candidates[0] mechanically is a proposed same-seed control for the LLM's incremental value, not a chosen replacement design or an experiment already performed. The old forward/reverse-expansion failures above belong to their own corpus and setup, not a universal impossibility claim.
 - Heading-negative fixtures were robustness cases, not observed malformed corpus headings. The committed matcher now requires a dot after the article number and a constrained chapter prefix; retain this distinction when explaining why old tests failed.
+
+
+## 2026-09-09: Agent experiment contracts and review lessons
+
+- Keep the new decision experiments in `evals/agent-exp/`, independent of v2 and RAGAS. Reuse the existing eight questions; derive seed snapshots and gate cases from reproduced single-pass baseline output. User approval adds action/acceptable-candidate labels, not a replacement question corpus
+- Specs and plans are English documents under `docs/superpowers/specs/` and `docs/superpowers/plans/`. Initial-selection is implemented and reviewed first; permutation and stop-policy follow later. Source-loss/reranking work stays deferred
+- Freeze full parent text, order, and separate ID membership after parent selection/fetching. Whitelist is a JSON array of unique positive internal article IDs, supplied as data; do not derive it from gold or seed membership
+- First-position Selection Rate and consistency are behavioral metrics that do not require gold labels. Selection/Decision Accuracy require reviewed state-specific labels. Consistency is agreement of observable actions/article IDs, not proof of consistent internal reasoning
+- Preserve STOP as a valid output even on follow-required cases: selection_correct=False there, but null on stop-labeled cases. A schema that forbids false selection correctness for all STOP outputs breaks evaluation of false stops
+- Persist policy-specific compact results and summaries; keep verbose decisions, trajectories, and logs local/ignored. Independent state replay is not a new trajectory
+- Finalization should account for persisted results after interruption. A per-policy in-memory batch that is merged only after the whole policy completes can disagree with rows already written to disk
+- Recomputing summary must validate or derive correctness from actual decisions and approved labels, not merely trust serialized correctness flags. Mechanical no_candidates must agree with the frontier, and hop-0 cases must not duplicate a question under different case IDs
+- Existing green harness suites do not prove gate semantics or coverage of reporting failure paths. Record source-review observations, synthetic reproductions, offline suites, and live model evaluations separately
+
+## 2026-09-09: Consolidating review tests into the initial-selection harness
+
+- A passing replacement suite does not establish coverage equivalence with the original suite. Map source scenarios to actual assertions, distinguishing input validation, replay validation, artifact loading, and summary validation
+- The user limited consolidation to scenarios in review/feat-harness-original/tests and review/remaining-refinements.patch, preserving existing eval tests. Do not introduce new test scenarios merely to broaden coverage. New explanatory comments were specified verbatim by the coordinating agent
+- Preserve real loop/gate boundaries with injected synthetic dependencies: capture hop-0 input before fetching, and fake the external client while retaining the real gate parser. These checks do not validate live LLM judgment
+- Test actual repository ignore behavior, not a test-created literal; test debug independence by deleting fixture debug and comparing summaries; compare recorded source hashes to source bytes rather than a hash to itself
+- Transport classification must recognize concrete HTTP exception types rather than depend solely on message text. Seed import can avoid loading store-related modules by importing the existing loop/tools helpers only when constructing cases
+- The old optional num_samples consistency assertion was not adopted: actual baseline/dataset roster alignment remains required. Old approved-unresolved/no_candidates rejection expectations were adapted to the current exclusion contract
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Retained initial-selection as an independent hop-0 measurement milestone (checkpoint 2dfa92c, branch feat/exp-harness-citation, 2026-09-10) because the question was whether the LLM adds decision value over always following the first candidate. A full loop would mix this question with fetching, later states and retrieval coverage; success meant a trustworthy comparison, not an LLM win
+- Kept scripts separate from data and results because the user found code at the experiment root ambiguous. Kept snapshots and labeled datasets together as the frozen input checkpoint because cases refer to the snapshot and later seed-order experiments need its full texts and order, not only hashes
+- Preserved the original run manifest after the later commits and directory move because its revision and dirty-tree flag describe execution time. Replacing them with the new HEAD would falsify provenance; stored code hashes remain the evidence for the executed source
+- Preferred permutation on the fixed v1 cases before adding a v2 corpus because changing question content and ordering simultaneously would obscure the original position hypothesis. This was the recommended next experiment, not an authorization to run or tune it during extraction
+
+**Assumptions it rests on**
+
+- Seeds are a genuine single-pass baseline from the same corpus, and the whitelist describes internal articles independently of the answer gold set. Revisit seed preparation when corpus identity or the retrieval baseline changes
+- Labels judge the next useful citation edge from the actual gate input. An acceptable intermediate article need not equal the final answer's complete gold set; a stop means no remaining edge is needed, not proof that the entire answer is already supported
+- Candidate-order comparisons preserve question, observation, candidate membership and model settings. Because candidate order also determines grammar alternatives, their conclusions concern the current list-plus-grammar path rather than an isolated prompt-list effect
+
+**Failed approaches**
+
+- Tried: diagnosing position bias from complete first/LLM agreement on original-order inputs -> Failed because: candidate identity and position were never separated, so semantic selection and first-position selection could yield the same outputs -> Avoid when: interpreting one original-order replay as causal evidence
+- Tried: treating the absence of a reasoning trace as evidence that the model merely copied the first candidate -> Failed because: thinking was disabled, the prompt requested JSON without explanation, and debug stored parsed decisions rather than the full raw response -> Avoid when: inferring internal reasoning from this logger's output
+
+**Nuances agreed with the user**
+
+- Observation comes from collected seed titles and citation excerpts, not from the text of candidates[0]. Candidate IDs describe possible next fetches; their full article text has not yet been fetched in this replay
+- Retain single-candidate cases for action decisions, but report them separately from position analysis. Repeating or rotating a case adds trials, not independent semantic questions
+- Keep the first run and its approved labels fixed when progressing to another experiment. If labels change, create a new case version and comparison rather than silently changing the meaning of old results
+- In the remaining-refinements patch review, grouped help/invalid-command tests and the renamed repeat-schedule test preserved the original checks. Error-record persistence alone did not cover summary counts, so the requested refinement was to restore errors=1 and valid=0 assertions in the existing CLI failure test rather than expand unrelated coverage
+
+## 2026-09-10: Permutation review interpretation and aggregation boundaries
+
+- Gold-position accuracy must group by the gold position in each trial's candidate_order, not its position in the original case. Otherwise rotation effects disappear into the original-position bucket even while overall accuracy remains plausible
+- Position distributions include valid decisions only. selected_position=None also occurs for errors; it is not sufficient evidence of STOP. Scheduled accuracy still counts errors/missing trials as incorrect
+- Consistency group identity must include case_id alongside repeat_id or permutation_id. Flattening case-local groups by their local key overwrites earlier cases and corrupts pooled pair coverage
+- Identical full inputs require both observation identity and ordered candidates. In combined experiments, equal observation hashes with different candidate orders are distinct policy inputs
+- Candidate-order isolates the current candidate-list/grammar path; seed-order fixes the candidate list while changing context order. Decision changes alone show order sensitivity; claiming preference for the first/last context requires relating chosen citations to their source positions, which can be ambiguous when several seeds cite the same article
+- High article-based permutation consistency with low accuracy means stable wrong decisions, not position bias by itself. Repeat consistency measures identical-input stability separately. Full-loop usefulness and internal reasoning cannot be inferred from either
+- A no-overwrite test using wall-clock-derived directory names can be flaky across a second boundary. Distinguish path collision protection from the stronger contract that the same manifest always maps to the same directory; this inherited issue must not be blamed on one permutation implementation
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Closed the fixed-v1 ordering comparison before changing questions or prompts (archive checkpoint fd7696d, branch feat/exp-harness-citation, 2026-09-11) because a stable dataset separates the effect of input ordering from a changed evaluation target. This is an experiment checkpoint, not completion of the broader citation-agent feature
+- Used the Codex foundation with selected DeepSeek integration scenarios and compatible per-case reporting inspired by GLM because one authoritative schedule/reconstruction/scoring path is easier to validate than merging three competing implementations. Independent metric counterexamples, rather than donor test counts, determined which formulas to retain
+- Used three repetitions per exact input as a small diagnostic budget because one repetition cannot measure stability and two provide only one comparison pair. Three provide three dependent pairs; this was never a statistical sufficiency threshold. Repeat control includes the LLM under the same recorded settings as both ordering treatments
+- Kept compact manifests, per-policy decisions and summaries in Git because these three complementary runs form a useful baseline and together added only about 307 KiB of non-debug data at review. Verbose debug remains local; repository growth should be controlled by retaining decision-relevant runs rather than discarding the evidence needed to rescore them
+- Kept specifications private at the user's request because implementation and results should be publishable without exposing design documents. Future runner metadata explicitly reports unavailable private-spec provenance instead of requiring a public spec path; setup guides remain the public operating contract. Historical path/hash metadata does not contain spec text and must not be silently rewritten to pretend it was recorded differently
+
+**Assumptions it rests on**
+
+- Ordering comparisons require the same frozen snapshot, labels, prompt and runtime configuration, with candidate membership unchanged. Revisit comparability whenever any of those changes; alias equality alone does not verify the served model weights
+- Larger candidate lists must arise from the real retrieval/rerank/fetch-to-frontier path. A source article containing many references is insufficient if deduplication, collected membership or whitelist filtering leaves fewer gate candidates
+- The next corpus measures gate selection conditional on usable retrieval states. Rejecting cases whose source is not retrieved is legitimate for this conditional question only if exclusions are retained; it cannot establish end-to-end retrieval quality
+
+**Failed approaches**
+
+- Tried: inferring a fixed-position rule from agreement with first on original-order inputs → Failed because: gold and the selected article were initially first, and candidate rotations later separated article choice from list position → Avoid when: an unpermuted dataset aligns correct targets with candidates[0]
+- Tried: interpreting stable choices after seed rotation as proof the model ignores observation → Failed because: seed rotation preserves semantic content, so a content-sensitive policy can correctly remain invariant → Avoid when: only order, not evidence or question meaning, changes
+- Tried: treating more candidates alone as a harder semantic test → Failed because: unrelated distractors can leave one obvious answer and repeated questions add no independent coverage → Avoid when: expanding a corpus to meet a numeric quota without reviewing competing citations
+
+**Nuances agreed with the user**
+
+- The accepted conclusion is resistance to a fixed candidate-list position on these observed cases, not proof of internal reasoning or absence of every position effect. Seed-order invariance is also limited to the rotations actually tested; candidate-order includes the current grammar/list coupling
+- FOLLOW/STOP causes were explicitly left to the separate stop-policy specification because this experiment does not distinguish corpus bias, prompt few-shot bias and observation/label mismatch. Do not tune the prompt solely to explain these v1 outcomes
+- Proposed a practical first expansion of at most 30 candidate questions to retain about 15-20 reviewed questions: roughly 8-10 with three candidates, 5-7 with four or five, and 2-3 with six or more if naturally available. These are provisional curation targets, not requirements or a statistical guarantee; quality and review effort take precedence over filling quotas
+- Preserve v1 and create a separate v2. Prefer unfamiliar questions, same-topic distractors and a clear required target; vary source articles and spread useful citations across multiple seeds for seed-order tests. Approve labels before seeing LLM outputs, and require the target to remain outside the frozen collected set
+- Questions 2/8 were not diagnosed as internal_dieu bugs. Trace missing source retrieval, reranker/cap removal, extraction, already-collected targets and whitelist filtering before naming a cause; retain the exclusion stage alongside rejected question candidates
+- The user chose to run while reviewing uncommitted code, then archive afterward, and accepted loss of uncommitted donor variants to simplify the workspace. A source checkpoint was advice for provenance, not a runtime prerequisite; the integrated root harness had no donor-worktree dependency
+
+## 2026-09-12: Seed capture boundary and internal-article audit
+
+- The accepted capture design puts CLI/snapshot orchestration in `evals/agent-exp/` and shared single-pass retrieval in `evals/common/single_pass_retrieval.py`; v2 consumes the shared module and retains scoring. Capture produces a direct snapshot, without a fabricated baseline or `hop_scores`. Historical baseline import remains supported
+- Hop-0 means before citation following, not before query rewriting. Shared retrieval still rewrites via Groq. Credentials belong at the live entrypoint/runtime boundary; help, import, case preparation, deterministic replay, and summarization should not load secrets. Merely patching `load_dotenv` does not block Chroma's indirect dotenv reads
+- Keep four concepts separate: `internal_dieu` is the question-independent inventory of the internal regulation corpus; `collected` is actual retrieved/fetched state; candidates are uncollected internal targets cited by that state; `acceptable_dieu` is the reviewed next-action label. Neither gold links nor the question-specific seed set establishes the internal inventory
+- The current frontier scans every collected parent, including irrelevant retrieval results. Thus a distractor seed can produce legitimate candidate alternatives. Filtering those alternatives using gold would change the selection experiment. A controlled source-only state is a different valid experiment, but was not selected as a replacement for the real-seed permutation study in this discussion
+- Low outgoing degree does not establish shallow graph depth. Candidate count additionally depends on retrieved sources, already-collected targets, extraction, and whitelist filtering. Do not impose breadth/depth quotas before separating these effects
+- The user's priority remains permutation evidence beyond v1. Recommendations to audit the whitelist, preserve frozen retrieval contexts, version corrected snapshots/cases, re-review labels, and rerun comparable schedules are not authorization to delete old results or launch live runs
+- Artifact hash validity proves byte identity, not adequacy of the candidate universe. Preserve old inputs/results as evidence of the restricted experiment; label them superseded when corrected results exist rather than rewriting old provenance. A changed frontier requires new model decisions even when an old selected ID remains eligible
+
+### decisions.md  (why — the expensive part)
+
+**Chosen approach + why**
+
+- Froze the corrected checkpoint at 35bd7b1 on feat/exp-harness-citation (2026-09-13) before diagnostic interventions because changes to the inventory, prompt and input ordering need separate attribution. The checkpoint includes the shared retrieval path, direct capture, independent inventory, fixed inputs and results
+- Kept inventory independent of both seed membership and annotations because restricting legal targets using answer labels removes distractors before the model decides. Archived restricted runs as superseded evidence with original manifests and source files preserved, rather than retroactively changing their meaning
+- Proposed a small diagnostic study alongside permutation because custom candidate ordering, within-article excerpt ordering and few-shot removal introduce different interventions. Retain reconstruction, fake-client checks and compact results in version control; keep their summaries separate from the established permutation benchmark
+
+**Assumptions it rests on**
+
+- Freeze question, candidate membership, labels and baseline prompt for paired comparisons unless that field is the declared intervention. The targeted study is exploratory/dev because its cases and hypotheses were selected after inspecting fixed results
+- Each comparison requires repeat controls in the same execution batch. The proposed starting budget is three calls per exact input across two batches with a saved execution schedule; this is a diagnostic budget, not statistical sufficiency
+- Reconstructible full inputs must include effective messages, grammar and settings in addition to case/observation/candidate identity. A changed prompt cannot be grouped as an identical input solely because its observation and candidates match
+
+**Failed approaches**
+
+- Tried: explaining Q5 as always choosing the first candidate → Failed because: it also selects 41 at positions 2, 3 and 4 → Avoid when: relying on original-order agreement with the first policy
+- Tried: interpreting Q5's correct choices as success at arbitrary positions → Failed because: every correct choice of 3 occurred at position 1 in the saved rotations → Avoid when: reading article counts without the per-trial candidate order
+- Tried: inferring neglect of observation from seed-order invariance → Failed because: the operation preserves content and the order of excerpts inside each parent → Avoid when: only entire context blocks move
+- Tried: attributing the old-to-fixed change solely to candidate count → Failed because: Q5 gains a specific competitor, while Q6 changes across runs without a changed candidate set → Avoid when: count and membership identity have changed together
+
+**Nuances agreed with the user**
+
+- The user confirmed unchanged model/GGUF and server configuration between the old and fixed runs. Treat Q6's cross-run discrepancy as unresolved; within-run repetition does not establish cross-run reproducibility
+- Keep the next three interventions as proposals. The next work is to turn the matrix below into a reviewable specification and exact schedules before implementation or live execution
+
+| Proposed sub-experiment | Intervention and control | Interpretation boundary |
+| --- | --- | --- |
+| A: Candidate relative position | On Q5 compare [8,3,41,40,43] with [8,41,3,40,43], then shift the pair using [8,40,3,41,43] and [8,40,41,3,43]. Keep observation and few-shots fixed, and freeze grammar bytes from the original case order | These probes separate endpoint effects from the relative order and absolute positions of 3/41. Agreement with an earlier-of-pair rule is behavioral evidence, not proof that the model internally groups those two IDs |
+| B: Complete excerpt-block order | Reorder complete citation blocks within Article 42 while preserving their text, candidates, few-shots and grammar. Keep the two page-split lines mentioning 41 and 3 together because they belong to one sentence | This tests evidence-block placement, not the order of 41/3 within that sentence. Rewriting or splitting the sentence would be a different intervention |
+| C: Defense-example few-shot ablation | Pair the original prompt with a variant removing only the thesis-defense human/assistant example pairs, over the same candidate schedule as A. Preserve system instructions, final question/observation, grammar and all other examples | A difference measures the effect of removing that example group. It does not isolate memorization from shorter prompts, shifted positions or changed FOLLOW/STOP example proportions |
+
+- Use Q5 as the primary case and Q3/Q6 as comparison cases where the intervention applies. Q3 is the two-candidate correct case; Q2 has no candidates. Q6 remains STOP-labeled, so neither observed follow is correct
+- Test the transformation contract with injected clients: declared-field changes only, unchanged candidate membership, whole-sentence preservation, complete example-pair removal, label-free requests and artifact reload. Do not assert that a live model must select 3 or achieve a chosen accuracy threshold
+- Report per-input action counts, selected/gold position, relative order of 3/41, paired decision changes, within-input repeat consistency and per-case accuracy. Errors remain errors; do not pool all interventions into a single permutation consistency score
+
+## 2026-09-21: Semantic diagnostic packages and fresh-run-only artifacts
+
+- Chose semantic A/B/C packages over flat diagnostic modules (commits `2a497c2` through `f889d98`, branch `feat/exp-harness-citation`, 2026-09-21) because each intervention owns different schedules, transforms, metrics and reports, while only request execution, source references and provenance are genuinely shared. This keeps cross-experiment dependencies explicit and prevents a transitive import failure from silently selecting a legacy flat module
+- Chose a fresh-run-only schema-v3 contract because the rejected migration design mixed historical evidence with future reproducibility, could make deleted generated inputs part of a new run's validity and risked modifying result bundles that should remain evidence. Fresh manifests therefore embed finalized experiment definitions, C's ordered registry and effective traces, while external replay dependencies are limited to the canonical case, snapshot and inventory bytes captured by that prepare
+- Chose exact-path opacity for the three pre-refactor A/B/C result roots because their outcomes were produced before the package refactor and cannot truthfully be rebound to new module, trace or request identities. `Path.exists()` is the entire presence check; an existing root is never opened by prepare, while an absent root may receive a genuinely new run rather than a reconstruction of the old one
+- Chose strict execution provenance because a revision without executable module hashes can falsely imply reproducibility. Fresh prepare now requires a Git revision, dirty state and nonempty package-relative SHA-256 module hashes; missing modules or incomplete provenance fail before materialization
+- Assumption: fresh replay continues to have the three canonical repository-relative inputs available at their recorded hashes. Moving or editing one is an artifact validation failure, not permission to search by basename or use a result-local fallback
+- Assumption: Git metadata is available when preparing a fresh diagnostic run. This is intentional because a run without revision and dirty-state provenance does not satisfy the schema-v3 contract
+- Assumption: A/B/C remain frozen single-decision diagnostics. Their schedules and reports isolate candidate order, complete observation-block order and one bundled prompt-example removal; they do not evaluate later-hop state updates, retrieval benefit, answer quality or a general STOP policy
+- Tried: migrating and validating historical result bundles into schema v3 → Failed because: old outcomes cannot acquire truthful post-refactor source/module/trace identities and the migration flow could mutate evidence before verification → Avoid when: a future refactor encounters an existing experimental result directory
+- Tried: flat diagnostic imports with `ModuleNotFoundError` fallbacks → Failed because: import collisions and transitive missing dependencies can select the wrong module path → Avoid when: adding another diagnostic package or direct CLI entrypoint
+- Tried: optional or silently empty execution-module provenance → Failed because: fresh manifests then name a revision without binding the code that prepared the request → Avoid when: adding a new fresh-run manifest or package module list
+- Nuance: B's hardcoded block, line, prefix and suffix content hashes are transformation invariants inside the in-memory experiment definition, not historical file/result hash gates. Prepare and reload rederive the relevant observation bytes and reject a mismatch; deriving these constants from drifted case bytes would silently redefine the treatment
+- Nuance: the result commits `2508984` and `f889d98` preserve historical behavioral evidence, while tests establish harness mechanics only. Neither the deterministic `first` lifecycle nor the 334-pass offline suite reproduces or substitutes for the saved LLM decisions
+
+## 2026-09-21: STOP-policy research follows the completed diagnostics
+
+- Chose research and interpretation as the next phase, not implementation planning, because A/B/C isolated concrete risks but did not establish their prevalence or a general correction. The continuation source is `.knowledge/handoffs/research_state/2026-09-21-stop-policy-corpus-research-delta.md`
+- Assumption: the user supplies the separate STOP-policy corpus, while the next design work defines grouping, provenance, labels, semantic-overlap review and dev/heldout allocation rather than inventing questions or retrospectively changing v1 labels
+- Keep few-shot examples, development cases and heldout cases semantically disjoint. Original questions, paraphrases, related hops and citation paths stay in one split; shared article IDs alone do not imply overlap when the information need and gate state are genuinely different
+- Include both necessary-FOLLOW and justified-STOP cases with nonempty candidates. Empty frontiers remain mechanical exclusions because they do not exercise the gate's action choice
+- Treat the six eligible original cases as diagnostic/dev coverage only. Repeated agreement on those cases does not replace independent heldout cases, and the observed Q5 effects do not prove an internal mechanism or general model quality
+- Replacement few-shots and complete zero-shot remain proposed experiments. Their examples, FOLLOW/STOP proportions, length controls and milestone relationship are open research questions rather than accepted implementation requirements
+
+## 2026-09-24: STOP capture parity and provenance
+
+- Chose to retain the lightweight `stop_policy_eval.state.rebuild_case_state` implementation because the canonical `seed_cases.rebuild_case_state` imports production loop and tools helpers, and `tools.py` imports `langchain_chroma` at module scope. Direct canonical imports would break the STOP package's offline import boundary
+- Require an isolated-process parity test against the canonical helper, with dotenv loading and network connections blocked. Compare UTF-8 observation bytes and ordered candidates over malformed titles, negative keys, duplicate citations, self-references, CRLF, membership-only seeds and references outside the inventory
+- Require capture provenance for local `capture.py`, `state.py`, `cases.py` and STOP `contracts.py`, plus `seed_cases.py`, the production loop, tools, schema and reference parser. Tests independently read each source file and verify its recorded SHA-256
+- Load capture environment variables only through `capture_seeds.before_runtime`, after input/provenance preflight and before runtime construction. `--env-file` defaults to `.env`, leaves already-exported values intact and is never read by offline commands
+- The live single-pass runtime rewrites each seed question with the configured `ChatGroq` client. The env file supplies its provider credential when absent from the shell; seed serialization itself does not use credentials
+
+## 2026-09-25: STOP one-edge successor capture boundaries
+
+- Keep source decision runs distinct from official evaluation runs through `run_purpose=later_hop_capture`; they use one policy and one repeat, may schedule assigned draft hop-0 states with nonempty frontiers, write decisions without an evaluation summary, and advance at most one citation edge
+- Empty successor frontiers are terminal outcomes, not STOP cases, because no next gate call exists. STOP, error, missing and invalid source results do not create successor states
+- Before live evidence, bind successor article lookup to the capture snapshot's recorded store identity and preserve an auditable store/content fingerprint in the export manifest. A followed-article hash freezes the retrieved bytes but does not by itself establish store continuity from hop 0
+- Separate gate-state identity from source lineage before combining or rerunning source captures. Question, hop, observation, ordered candidates and collected-article lineage define the evaluated state; source run, policy and trial remain provenance and must not make an otherwise identical state a second evaluation case
+- Source-only result correctness fields are non-evaluation metadata while labels remain draft. Reports must not aggregate them; prefer null/source-specific fields if the result schema is revised
+
+## 2026-09-27: STOP baseline interpretation and foundation-study boundary
+
+- The September 25 source capture and September 26 official dev evaluation have now been inspected. Preserve them as a baseline checkpoint while observation, few-shot and ordering questions remain open; closing a baseline measurement does not establish a solved STOP policy
+- Distinguish binary STOP/FOLLOW agreement from exact decision agreement, which also includes the selected article. The current STOP report labels the latter as Action agreement because the shared action key contains both action and article
+- A high first-position selection rate under one ordering does not establish a causal position effect. Exclude single-candidate states when describing choice among positions; use paired order interventions before attributing the behavior to position
+- The sole approved post-follow FOLLOW case in this dev run is Q9 after an incorrect hop-0 selection of Article 19. Its later correct selection of Article 12 measures recovery on a supplied state, not a demonstrated chain of two necessary FOLLOW actions
+- Compact observation may hide fetched answer content while retaining only article titles and citation sentences. Treat this and the five-FOLLOW/one-STOP prompt demonstrations as hypotheses requiring separate interventions, not established causes of the observed all-FOLLOW output
+- User learning direction: retain the current RAG research branch and resume its experiments alongside DL/LLM foundation study. Suggested foundation isolation starts from a future checkpoint containing the current STOP implementation and evidence, rather than an old agent base; this is advice, not authorization to commit or create a worktree
+- Replacing a ChatOpenAI wrapper with direct HTTP exposes the client protocol, not model internals. Foundation exercises should separately address forward/backward computation, embeddings, causal attention and token generation; PyTorch exercises need not replace the production client or inference server
+
+## 2026-09-27: STOP-policy baseline checkpoint
+
+- Chose to close the reproducible baseline milestone in ten commits ending at `b812a80` on `feat/exp-harness-citation` (2026-09-27) because the corpus, evaluator, tests, reviewed states, source run, one-edge export, official dev result and setup guide now form one inspectable checkpoint. Closing this milestone records the measured behavior; it does not close the wider STOP-policy research question
+- Assumption: the package remains evaluation-only under `evals/agent-exp/`; no production RAG caller imports it and merging the checkpoint does not activate citation gating in the application
+- Assumption: the official result is a development-set frozen-state replay. Heldout generalization, answer quality, retrieval benefit and a full citation loop require separate evidence
+- Tried: treating exclusion of reviewed semantic few-shot overlaps as removal of few-shot bias -> Failed because: overlap review removes identified content leakage, while the remaining prompt still contains five FOLLOW demonstrations and one STOP demonstration that may affect every state -> Avoid when: claiming that a corpus exclusion isolates prompt influence
+- Nuance: replacement examples at the same five-FOLLOW/one-STOP ratio, complete zero-shot, fuller collected-article observations and paired candidate-order changes remain separate diagnostic interventions. None blocks retaining the unchanged baseline they are meant to compare against
+- Nuance: `_hop0_source_dev` records decisions used to construct successors, `_hop1_export` records frozen successor states and terminal outcomes, and `_official_baseline_dev` evaluates the combined reviewed hop-0 and hop-1 state set. The one-edge bootstrap does not create or evaluate hop 2
+- Nuance: mergeability means the scoped evaluator and evidence are worth preserving on the shared branch. It does not mean the all-FOLLOW behavior is acceptable for production or that its cause has been identified
