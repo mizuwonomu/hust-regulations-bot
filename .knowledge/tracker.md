@@ -1,10 +1,11 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-09-07)
-Citation-agent checkpoint committed; reconcile missing eval harness and verify suite before merge, then investigate source loss and gate selectivity -> features/cross_reference/log.md
+## Current focus  (2026-09-27)
+Router baseline frozen; expand boundary/paraphrase coverage and evaluate Jev-specific criteria on unseen cases before any production migration -> features/router_experiment/log.md
 
 ## Features
 
+- router_experiment: DONE (2026-09-27, commits dd3f3bd..8e0a003) - 180-call Groq/Jev baseline captured with equal 96.67 percent decision accuracy, Jev lower p95 and about 89.15 percent lower estimated router cost; production migration remains open -> features/router_experiment/log.md
 - backend_migration: DONE end-to-end. De-wrapper memory split DONE (2026-08-29, branch refactor/memory-split) — `RunnableWithMessageHistory` removed, explicit `read_history`/`persist_turn`, conn-pin + `MemoryStatus`/`TrackedPostgresHistory` deleted, `connection.py` deleted. Prior: step 3 SSE streaming (2026-08-28, 803573b→f0da5a3), chat cutover (2026-08-26), G3 `def` endpoint, G4 concurrency + silent-200 fix, G5 read cutover. Open tails in debt below  -> features/backend_migration/log.md
 - cross_reference: IN PROGRESS - citation-agent checkpoint committed through 7575bbe; original ratio investigation DONE (2026-08-13), agent reproducibility and validation open -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
@@ -12,6 +13,10 @@ Citation-agent checkpoint committed; reconcile missing eval harness and verify s
 
 ## Known limitations / debt left open
 
+- **The router baseline is exploratory, not a production-readiness result.** Thirty authored cases with three exact repeats do not measure unseen-query robustness, paraphrase invariance, time stability, concurrency, or production traffic distribution -> features/router_experiment/decisions.md
+- **Boundary policy and corpus coverage remain narrow.** Expand with independently reviewed academic-keyword chat, implicit regulation requests, negation, mixed intent, abbreviations, missing diacritics, typos, and grouped paraphrases/contrast pairs. Keep each family in one split; ids 15, 17, and 18 are development seeds, not held-out evidence -> features/router_experiment/decisions.md
+- **Jev-specific criteria and migration gates are not evaluated.** Tune instructions/criteria only on development data, then compare frozen Jev, tuned Jev, and production Groq on unseen cases. Predeclare acceptable latency and both error directions; confidence fallback is not justified by the first run -> features/router_experiment/decisions.md
+- **Recorded cost is an estimate, not invoice reconciliation.** It uses complete provider usage and dated public rates for router calls only; downstream work, retries, fallback calls, and account-specific billing are excluded -> features/router_experiment/log.md
 - **Agent selectivity and generalization remain unvalidated.** Eight self-authored cases overlap few-shots; no semantic stops were recorded and no held-out or answer-synthesis comparison establishes production benefit -> features/cross_reference/log.md
 - **Source-loss diagnosis is open for IDs 2 and 8.** Inspect Điều 22/42 through merge, rerank cutoff, child cap and parent lookup. Ensemble rank 1 does not prove a ratio bug; an empty forward frontier is not an extractor exception -> features/cross_reference/decisions.md
 - **Committed suite needs fresh verification.** Historical four-heading-failure reports predate the tightened regex now committed. Record passed/failed/skipped against the revision using isolated collection; report real-store legacy tests separately. No tests were run during extraction -> features/cross_reference/log.md
