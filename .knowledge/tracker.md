@@ -1,10 +1,10 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-09-30) LLM foundations learning has completed stable softmax and forward cross-entropy; embeddings are next before attention -> features/llm_foundations/log.md
+## Current focus  (2026-10-02) The causal mask and supplied-Q/K/V attention learning checkpoint is closed; next assess prerequisites for the Transformer decoder checkpoint -> features/llm_foundations/log.md
 
 ## Features
 
-- llm_foundations: IN PROGRESS; stable softmax DONE (`aa4dd72`) and stable forward cross-entropy DONE (`1ad3d28`) on 2026-09-30; embeddings are the next prerequisite -> features/llm_foundations/log.md
+- llm_foundations: IN PROGRESS; softmax and forward cross-entropy DONE (2026-09-30); causal mask and attention checkpoint DONE (2026-10-02), with mentor-run forward tests and learner-confirmed remaining checks; next Transformer decoder prerequisites -> features/llm_foundations/log.md
 - backend_migration: DONE end-to-end. De-wrapper memory split DONE (2026-08-29, branch refactor/memory-split) — `RunnableWithMessageHistory` removed, explicit `read_history`/`persist_turn`, conn-pin + `MemoryStatus`/`TrackedPostgresHistory` deleted, `connection.py` deleted. Prior: step 3 SSE streaming (2026-08-28, 803573b→f0da5a3), chat cutover (2026-08-26), G3 `def` endpoint, G4 concurrency + silent-200 fix, G5 read cutover. Open tails in debt below  -> features/backend_migration/log.md
 - cross_reference: IN PROGRESS; fixed A/B/C diagnostics DONE (2026-09-21, `f889d98`) and STOP-policy implementation plus dev baseline DONE (2026-09-27, `b812a80`); causal diagnostics, heldout and end-to-end benefit remain open -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
@@ -14,9 +14,12 @@
 
 ### tracker.md  (living status — flags + pointers only)
 
-- **LLM foundations remains forward-only and incomplete.** Autograd behavior, manual backward derivations, embeddings, attention, decoder-only Transformers, causal language modeling and decoding have not been implemented or verified -> features/llm_foundations/log.md
-- **The learning contracts intentionally have narrow input domains.** Invalid shapes, empty dimensions, invalid targets, NaN/Inf and invalid reduction behavior are unspecified; softmax is tested on CPU float32/float64, while cross-entropy is tested on float64 with CUDA preference and CPU fallback -> features/llm_foundations/decisions.md
-- **Passing toy tests is not a production or causal claim.** These isolated components are not connected to the RAG agent, and they do not establish causes for STOP/FOLLOW, few-shot, observation or ordering effects -> features/llm_foundations/decisions.md
+- **LLM foundations still has deferred prerequisites and later components.** Manual backward understanding needs consolidation; decoder-only Transformers, causal language modeling and decoding remain unimplemented -> features/llm_foundations/log.md
+- **Input-validation and broader attention contracts remain unspecified.** Follow the current narrow assumptions before extending the learning APIs -> features/llm_foundations/decisions.md
+- **Additional CUDA device indices were not exercised in the observed run.** Single-device results do not establish behavior across multiple GPUs -> features/llm_foundations/log.md
+- **The mask string-device assertion has a small blind spot.** Its expected tensor follows the returned mask device, so that case alone does not independently assert the requested string device; other cases verify device-object requests -> features/llm_foundations/decisions.md
+- **The attention module retains a working-directory import workaround and formatting debt.** The review did not change the learner's `sys.path` mutation, indentation or comments ending with periods -> features/llm_foundations/log.md
+- **Real-agent causal conclusions remain unmeasured.** Preserve the boundary between isolated mathematical exercises and agent behavior -> features/llm_foundations/decisions.md
 - **The committed STOP baseline is development evidence only.** It contains reviewed hop-0 and hop-1 frozen states, but heldout remains untouched and the result does not establish generalization -> features/cross_reference/log.md
 - **Fixed evidence has limited diversity.** The six eligible original cases are diagnostic/dev coverage, not a future STOP benchmark; repeated calls and candidate rotations are not independent questions -> features/cross_reference/log.md
 - **Q6 reproducibility across runs is unresolved.** Identical recorded inputs changed decisions across the old and fixed runs despite the user's confirmation of unchanged model/configuration -> features/cross_reference/log.md
