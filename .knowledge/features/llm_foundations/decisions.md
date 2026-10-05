@@ -1,5 +1,14 @@
 # LLM Foundations Decisions
 
+## 2026-10-04 - Parameterized multi-head learning boundary
+
+- The user elected to skip implementing manual attention backward after working through chain rule and an autograd comparison; the October 3 manual-backward delta is superseded by the October 4 multi-head delta, not an implementation prerequisite
+- The current teaching architecture uses independent CausalSelfAttention instances in ModuleList, all consuming the same supplied rank-2 X, followed by feature concatenation and a learned output projection. Heads are parallel branches, not sequential layers; their parameter objects must not be shared
+- Head dimensions remain independently configurable; this teaching architecture does not require d_model to be divisible by num_heads. Tokenizer/embedding integration, batching, optimized fused projections, residual/norm/FFN and training remain outside this checkpoint
+- Output-projection coefficients are unrestricted learned linear weights, not percentages or normalized attention probabilities. Backward splits the concatenated gradient into head slices and sums their contributions at shared X
+- Initialization review distinguishes unscaled standard-normal Q/K/V parameters from Xavier-uniform W_O. Different schemes are not inherently a forward defect; Q/K scale can affect softmax saturation, and downstream W_O initialization cannot repair already saturated attention weights
+- No initialization change was authorized or implemented during this review; choosing a consistent dimension-aware initialization remains a teaching discussion before training
+
 ## 2026-09-30 - Stable softmax and forward cross-entropy
 
 ### Chosen approach and why
@@ -63,3 +72,29 @@
 - The scale variance argument assumes independent components with mean zero and variance one; it is not evidence that real Q/K always satisfy those assumptions
 - Keep the learner's reviewed core as the implementation source. Passing tests against a different worktree's corrected core does not verify the learner's main-checkout attempt
 - Toy attention behavior and test results do not establish a mechanism for STOP/FOLLOW, few-shot or ordering effects in the real agent
+
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose Xavier uniform with gain 1 for Q/K/V and output projections (HEAD 132f8a9, branch exp/foundation-model-mechanics, 2026-10-05) because a dimension-aware scale is a simple baseline for the next learning components; unscaled standard-normal projections let activation variance grow with input width
+- Kept initialization study bounded to variance propagation and softmax scale because architecture fundamentals are the next dependency; reproducing a large-model initialization recipe is unnecessary for this isolated checkpoint
+
+#### Assumptions it rests on
+
+- For q_j = sum_i x_i w_ij, the simplified derivation assumes independent zero-mean input components of common variance, independent zero-mean weights, and independence between input and weights at initialization: Var(q_j) = d_model * Var(x_i) * Var(w_ij)
+- Xavier gain 1 uses weight variance 2 / (fan_in + fan_out), balancing forward and backward scale rather than preserving both exactly for arbitrary rectangular projections
+- The scaled-dot-product variance argument additionally approximates independence of Q/K components; shared X, correlations, softmax, residual paths and training limit that approximation
+- This choice is a baseline for finite inputs at reasonable scale, not a guarantee of unit activation variance, stable deep training or optimal convergence; revisit when integrating normalization, residual depth and actual training
+
+#### Failed approaches
+
+- Tried: reasoning that scaling W_O by 1/4 could undo multiplying both Q and K by 2 -> Failed because: logits become 4S before nonlinear softmax, so output rescaling cannot generally recover the original value-mixture proportions -> Avoid when: trying to compensate for attention-logit scale after softmax; this was a corrected conceptual proposal, not an executed experiment
+
+#### Nuances agreed with the user
+
+- randn describes standard-normal sampling; Xavier describes a dimension-dependent scale and can use either normal or uniform sampling, so these are not mutually exclusive categories
+- The attention divisor sqrt(d_k) controls dot-product width, not arbitrary scale inherited from XW; downstream W_O cannot repair already saturated attention probabilities
+- BERT original code uses truncated normal with initializer_range 0.02; GPT-2 public projection code uses normal stddev 0.02, while its report separately describes residual-depth scaling. These are architecture-specific recipes, not evidence that 0.02 is optimal here. Sources: https://github.com/google-research/bert/blob/master/modeling.py ; https://github.com/openai/gpt-2/blob/master/src/model.py ; https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
+- The learner correctly identified the fourfold logit change and two gradient routes for Y = X + F(X); the mentor clarified that the routes contribute g + J_F(X)^T g. The corrected softmax-compensation explanation has not yet been independently restated by the learner
