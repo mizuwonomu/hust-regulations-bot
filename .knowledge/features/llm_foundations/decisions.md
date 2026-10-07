@@ -98,3 +98,28 @@
 - The attention divisor sqrt(d_k) controls dot-product width, not arbitrary scale inherited from XW; downstream W_O cannot repair already saturated attention probabilities
 - BERT original code uses truncated normal with initializer_range 0.02; GPT-2 public projection code uses normal stddev 0.02, while its report separately describes residual-depth scaling. These are architecture-specific recipes, not evidence that 0.02 is optimal here. Sources: https://github.com/google-research/bert/blob/master/modeling.py ; https://github.com/openai/gpt-2/blob/master/src/model.py ; https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf
 - The learner correctly identified the fourfold logit change and two gradient routes for Y = X + F(X); the mentor clarified that the routes contribute g + J_F(X)^T g. The corrected softmax-compensation explanation has not yet been independently restated by the learner
+
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose standalone LayerNorm followed by pre-norm attention residual composition (HEAD cde2112, branch exp/foundation-model-mechanics, 2026-10-07) because isolating normalization before composition makes statistics, affine parameters and the skip path independently understandable
+- Reused the existing LayerNorm and MHA children because this checkpoint teaches module composition, not a replacement attention implementation; FFN remains the next learning component
+
+#### Assumptions it rests on
+
+- One finite unbatched floating sequence with compatible parameter dtype/device and representable intermediate calculations; no claim about mixed precision, arbitrary extreme inputs or deep-training stability
+- LayerNorm computes feature-wise population statistics separately for each token, uses epsilon inside the square root, and shares learned gamma/beta across token positions
+- Pre-norm controls the input scale of the transformed branch, not the magnitude of the entire residual stream; any depth-growth argument depends on assumptions about update magnitudes and correlations
+
+#### Failed approaches
+
+- Tried: interpreting zero MHA output as proof that LayerNorm output is zero -> Failed because: the heads and output projection follow normalization, and zero W_O can null their final output even for nonzero normalized inputs -> Avoid when: reasoning backward from a zero residual update to its intermediate activations; this was a corrected conceptual inference, not a failed implementation experiment
+
+#### Nuances agreed with the user
+
+- The learner explicitly distinguished the two forward routes: original X goes directly to addition, while LN(X) enters all attention heads before concatenation and W_O
+- Residual addition sums direct and transformed input-gradient contributions; it does not guarantee nonvanishing gradients or preservation of original semantic meaning
+- Gamma/beta are learned despite deterministic one/zero initialization; mean and variance are recomputed, and normalization does not create a Gaussian distribution
+- The next prerequisite check is why two affine layers need an intervening nonlinear activation, before introducing position-wise FFN

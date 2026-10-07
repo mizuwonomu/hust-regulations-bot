@@ -36,3 +36,12 @@ At extraction, the learner confirmed that the remaining checks discussed in the 
 The initialization discussion connected projection width to query variance, then separated dot-product scaling from softmax normalization and downstream output projection. The learner updated Q/K/V initialization and reported passing tests. At extraction, direct source inspection confirmed Xavier-uniform Q/K/V; the previously reviewed output projection already used Xavier uniform. The repository anchor was HEAD 132f8a9 on exp/foundation-model-mechanics. No tests were rerun by the mentor, and no fresh test count, device result or training-stability claim was established
 
 Single-head and multi-head implementations and their tests were grouped into separate proposed commits at the learner's request. Current Git status shows no pending attention core or test changes. The learner retained implementation ownership throughout; the mentor supplied explanations, source review and commit-message drafts. The next proposed learning sequence is residual connections, LayerNorm and position-wise FFN, followed by a pre-norm decoder block, positional information and a small causal language-model training exercise
+
+
+### features/llm_foundations/log.md  (feature narrative, durable)
+
+The learner implemented standalone LayerNorm and then the pre-norm attention residual core. Mentor source review found the valid-domain normalization arithmetic and composition consistent with the intended mathematics: persistent registered children, epsilon forwarding, the original input skip, projected attention output addition and preserved autograd paths. The learner demonstrated the distinction between normalized attention input and the untouched skip input through the forward-flow discussion
+
+The learner explicitly confirmed that tests passed for the checkpoint and requested no rerun. This is learner-reported verification; the mentor performed source review, not a fresh test execution or full coverage audit. No new test count, device result or training outcome is asserted. At extraction, HEAD cde2112 on exp/foundation-model-mechanics had a clean working tree before knowledge edits, and the LayerNorm comment now correctly described learned affine coefficients
+
+Implementation status is recorded as complete for standalone LayerNorm and the attention residual sublayer. Learning proceeds to position-wise MLP/FFN; this result does not represent a complete decoder block
