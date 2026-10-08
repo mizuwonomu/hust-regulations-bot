@@ -1,10 +1,10 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-10-07) LayerNorm and pre-norm attention residual implemented, tests learner-confirmed; next learn position-wise MLP/FFN and the purpose of nonlinear activation -> features/llm_foundations/log.md
+## Current focus  (2026-10-08) Return to input embedding fundamentals: text -> token IDs -> learned token vectors -> positional information, after implementing one pre-norm decoder block -> features/llm_foundations/log.md
 
 ## Features
 
-- llm_foundations: IN PROGRESS; LayerNorm and pre-norm attention residual implementation DONE (2026-10-07), tests learner-confirmed; MLP/FFN next -> features/llm_foundations/log.md
+- llm_foundations: IN PROGRESS; standalone FFN and single decoder block implementation DONE (2026-10-08), source-reviewed; input representation learning next -> features/llm_foundations/log.md
 - backend_migration: DONE end-to-end. De-wrapper memory split DONE (2026-08-29, branch refactor/memory-split) — `RunnableWithMessageHistory` removed, explicit `read_history`/`persist_turn`, conn-pin + `MemoryStatus`/`TrackedPostgresHistory` deleted, `connection.py` deleted. Prior: step 3 SSE streaming (2026-08-28, 803573b→f0da5a3), chat cutover (2026-08-26), G3 `def` endpoint, G4 concurrency + silent-200 fix, G5 read cutover. Open tails in debt below  -> features/backend_migration/log.md
 - cross_reference: IN PROGRESS; fixed A/B/C diagnostics DONE (2026-09-21, `f889d98`) and STOP-policy implementation plus dev baseline DONE (2026-09-27, `b812a80`); causal diagnostics, heldout and end-to-end benefit remain open -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
@@ -14,8 +14,9 @@
 
 ### tracker.md  (living status — flags + pointers only)
 
-- **Later foundation components remain open.** Position-wise FFN, complete decoder composition, positional information, causal language modeling and decoding remain future checkpoints; manual-backward implementation was intentionally skipped -> features/llm_foundations/decisions.md
+- **Input construction and full-model work remain open.** Tokenizer encode/decode, positional input construction, block stacking, final normalization, vocabulary projection, causal LM training and generation remain future checkpoints; manual-backward implementation was intentionally skipped -> features/llm_foundations/decisions.md
 - **Input-validation and broader attention contracts remain unspecified.** Follow the current narrow assumptions before extending the learning APIs -> features/llm_foundations/decisions.md
+- **Decoder verification evidence is incomplete in this dialogue.** No decoder-specific passing result or full test-coverage audit was supplied; FFN tests were learner-confirmed only. Do not label the complete decoder numerically verified from source review or infer training success -> features/llm_foundations/log.md
 - **Residual API documentation needs reconciliation if restored.** Reviewed core/tests use `normalized_input` and `multi_head_attention`; the earlier contract specified `norm` and `attention`. Its former `docs/superpowers/specs/2026-10-07-pre-norm-attention-residual-contract.md` path is absent at extraction, so documentation alignment is not verified; do not infer the old names or state keys from stale handoffs
 - **Initialization has no training evidence yet.** Xavier is a teaching baseline; passing tests were reported by the learner without a fresh mentor run, and deep-training stability remains unmeasured -> features/llm_foundations/log.md
 - **Additional CUDA device indices were not exercised in the observed run.** Single-device results do not establish behavior across multiple GPUs -> features/llm_foundations/log.md

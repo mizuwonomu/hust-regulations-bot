@@ -123,3 +123,32 @@
 - Residual addition sums direct and transformed input-gradient contributions; it does not guarantee nonvanishing gradients or preservation of original semantic meaning
 - Gamma/beta are learned despite deterministic one/zero initialization; mean and variance are recomputed, and normalization does not create a Gaussian distribution
 - The next prerequisite check is why two affine layers need an intervening nonlinear activation, before introducing position-wise FFN
+
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose to finish one pre-norm decoder block before revisiting input construction (HEAD ed93d7c, branch exp/foundation-model-mechanics, 2026-10-08) because the learner wanted to consolidate existing module composition before introducing text-to-vector mechanics
+- Chose a standalone position-wise FFN with exact erf GELU between two affine transformations because the learner wanted to understand smooth activation behavior; the final affine remains unrestricted to permit signed residual updates
+- Selected Xavier uniform for both FFN weights and zero biases as a simple dimension-aware teaching baseline, not a proven GELU-optimal initialization; current source reflects that choice
+- Kept tokenizer, token embeddings and positional input construction outside the block because the block consumes supplied representations, while those components define how representations are constructed
+
+#### Assumptions it rests on
+
+- This is a single unbatched decoder-only block over finite compatible floating tensors with representable intermediate arithmetic; inherited child contracts remain in force
+- Position-wise FFN shares parameters across tokens but does not directly mix rows; the complete block can mix visible earlier positions through causal attention
+- A proposed character-level tokenizer and additive learned positional embeddings are introductory teaching choices, not requirements for all Transformers or an approved production tokenizer
+
+#### Failed approaches
+
+- Tried: explaining token independence by saying H had already been computed -> Failed because: independence follows from row-local FFN operations, whereas attention can still couple rows of a previously computed tensor -> Avoid when: inferring dependency structure from execution order rather than the actual function
+- Tried: interpreting ReLU as eliminating negative weights and all learning from a token -> Failed because: it gates individual preactivations, while other features and token examples can still contribute gradients -> Avoid when: confusing parameters, activations and upstream loss gradients
+
+#### Nuances agreed with the user
+
+- The learner explained that the second residual retains H, the output of the first residual, so a zero FFN update yields H rather than X
+- Two affine layers without an intervening nonlinearity collapse into one affine transformation; nonlinearity permits input-dependent transformations but does not guarantee human-interpretable or increasingly abstract features
+- GELU(0) is zero while its local derivative is 0.5; the loss gradient is half the upstream gradient there, not an unconditional nonzero gradient
+- Token IDs are vocabulary indices rather than semantic magnitudes. Repeated IDs select the same token-embedding row; additive positional vectors can distinguish occurrences before decoder processing
+- Causal masking controls visibility and is not equivalent to positional embeddings; the current block can be reviewed independently of the later positional-input design

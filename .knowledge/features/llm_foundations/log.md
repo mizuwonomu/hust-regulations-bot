@@ -45,3 +45,12 @@ The learner implemented standalone LayerNorm and then the pre-norm attention res
 The learner explicitly confirmed that tests passed for the checkpoint and requested no rerun. This is learner-reported verification; the mentor performed source review, not a fresh test execution or full coverage audit. No new test count, device result or training outcome is asserted. At extraction, HEAD cde2112 on exp/foundation-model-mechanics had a clean working tree before knowledge edits, and the LayerNorm comment now correctly described learned affine coefficients
 
 Implementation status is recorded as complete for standalone LayerNorm and the attention residual sublayer. Learning proceeds to position-wise MLP/FFN; this result does not represent a complete decoder block
+
+
+### features/llm_foundations/log.md  (feature narrative, durable)
+
+The learner implemented the affine-GELU-affine FFN and reported all its tests passing. Mentor source review found the intended mathematics and persistent learned parameters; documentation support clarified parameter sharing and signed outputs. The later decoder block reused the existing attention residual, a distinct FFN LayerNorm, and the FFN. Source review confirmed correct two-residual composition, epsilon forwarding and unchanged attention probabilities. The learner subsequently applied the proposed decoder docstrings; current source was reread at extraction
+
+At HEAD ed93d7c on exp/foundation-model-mechanics, the working tree was clean before this knowledge update. The decoder core is implemented and source-reviewed. No tests were executed during these reviews: FFN success is learner-reported, and decoder-specific test success was not explicitly supplied in this dialogue. This records an implementation baseline rather than a trained language model
+
+The current learning discussion returns to the origin of decoder input X. An illustrative character-to-ID mapping and embedding lookup were explained, followed by adding a position vector to each token vector. The next session should establish the learner's understanding of vocabulary/encode/decode and learned embedding rows before assigning input-pipeline implementation; it should not resume FFN as the next unfinished core
