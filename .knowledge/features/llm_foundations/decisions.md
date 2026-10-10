@@ -152,3 +152,37 @@
 - GELU(0) is zero while its local derivative is 0.5; the loss gradient is half the upstream gradient there, not an unconditional nonzero gradient
 - Token IDs are vocabulary indices rather than semantic magnitudes. Repeated IDs select the same token-embedding row; additive positional vectors can distinguish occurrences before decoder processing
 - Causal masking controls visibility and is not equivalent to positional embeddings; the current block can be reviewed independently of the later positional-input design
+
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose an ordered 238-code-point JSON vocabulary (commit `86d0046`, branch `exp/foundation-model-mechanics`, 2026-10-10) because an explicit small mapping makes token identity and row selection inspectable before learning byte or subword tokenization
+- Chose a standalone character tokenizer with in-memory inverse mappings (commit `b9c32f1`, same branch, 2026-10-10) because text handling should stay separate from tensor computation and vocabulary order must remain stable across calls
+- Chose independent tokenizer tests using literal mappings, alternate vocabulary orders and Unicode fixtures (commit `700dbf3`, same branch, 2026-10-10) because round trips alone can conceal a consistently wrong ID assignment or unintended normalization
+- Chose persistent token parameters plus learned absolute positional parameters in a separate input module (commit `c34a0a4`, same branch, 2026-10-10) because token identity and sequence position should be observable as separate contributions before decoder processing
+- Chose fixed independent output and gradient expectations for the input module (commit `1dd6766`, same branch, 2026-10-10) because shape-only tests do not establish correct row selection, positional addition or repeated-token gradient accumulation
+
+#### Assumptions it rests on
+
+- Vocabulary size V and the token-to-ID mapping must match E: the tokenizer's vocabulary determines the number of embedding rows, and every assigned token ID must select the row with that same token meaning
+- The same integer ID in two tokenizers may denote different tokens, even if their vocabulary sizes match. The module's computation can be reused, but already trained weights cannot automatically be reused. A different mapping requires an explicit compatibility decision, such as a justified row remapping, or newly trained weights
+- Character tokens here are Python Unicode code points, not UTF-8 bytes, grapheme clusters or BPE units. Encode/decode preserve code-point spelling without Unicode normalization
+- The input checkpoint accepts a single unbatched ID sequence with valid IDs and bounded length; text conversion happens outside it. Compatible floating parameter dtype/device and representable arithmetic remain prerequisites
+- Normal initialization with mean zero and std 0.02 is a small-scale teaching baseline. It is not evidence of optimal initialization, trained embeddings or stable language-model training
+
+#### Failed approaches
+
+- Tried: let raw token lookup handle ID validation -> Failed because: negative IDs can select E from the end rather than being rejected -> Avoid when: categorical IDs must stay within the tokenizer's vocabulary; this crosses the tokenizer-to-embedding contract
+- Tried: slice position rows and rely on the final addition to reject excessive length -> Failed because: with T_max=1, broadcasting can apply P[0] to every token in an overlong sequence -> Avoid when: tensor broadcasting could hide a violated sequence-length contract
+- Tried: assign P[2] to the second token of a two-token sequence -> Failed because: positions are zero-based, so the second token uses P[1] and the slice endpoint T is excluded -> Avoid when: translating one-based language into tensor indices; this was a corrected learner explanation, not a remaining core defect
+
+#### Nuances agreed with the user
+
+- The input module specifically implements token embedding plus learned absolute positional embedding. Reusing its interface does not make it a general implementation of all positional schemes
+- Repeated tokens share an E row while their positions select different P rows. Parameters survive forward calls; backward computes gradients, and a separate optimizer would update their values
+- Actual core API names and registered attributes take precedence over proposed contract spellings, while expected mathematical behavior remains independent of the implementation
+- The learner's first core attempt remains the teaching baseline. A single explicitly requested Luna-high agent patched rank, length and ID-range guards before lookup; this authorization did not expand to constructor/dtype/device policies or automatic production integration
+- The next learning roadmap has three checkpoints, chosen to connect the toy character pipeline to model-specific prompt length: first distinguish character/code-point tokenization, UTF-8 byte tokenization and BPE's learned pair merges; then inspect a code/log sample with the chosen model's actual tokenizer, viewing token IDs and counts while distinguishing raw text from chat-template and special-token additions; finally explain how token count affects usable context-window capacity, KV-cache memory and computation
+- These roadmap checkpoints are proposed next learning work, not completed implementations or measured real-agent results. KV-cache mechanics and token-count effects should be studied before attributing a particular agent's behavior, cost or latency to them
