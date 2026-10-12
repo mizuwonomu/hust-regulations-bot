@@ -1,0 +1,1 @@
+CHARACTER_VOCAB_PATH = "llm_foundations/vocab/character_vocab.json"
