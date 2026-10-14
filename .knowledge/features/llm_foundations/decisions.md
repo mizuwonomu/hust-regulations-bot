@@ -186,3 +186,35 @@
 - The learner's first core attempt remains the teaching baseline. A single explicitly requested Luna-high agent patched rank, length and ID-range guards before lookup; this authorization did not expand to constructor/dtype/device policies or automatic production integration
 - The next learning roadmap has three checkpoints, chosen to connect the toy character pipeline to model-specific prompt length: first distinguish character/code-point tokenization, UTF-8 byte tokenization and BPE's learned pair merges; then inspect a code/log sample with the chosen model's actual tokenizer, viewing token IDs and counts while distinguishing raw text from chat-template and special-token additions; finally explain how token count affects usable context-window capacity, KV-cache memory and computation
 - These roadmap checkpoints are proposed next learning work, not completed implementations or measured real-agent results. KV-cache mechanics and token-count effects should be studied before attributing a particular agent's behavior, cost or latency to them
+
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose a standalone bias-free LM head with independent Xavier-uniform weights (checkpoint HEAD `4f79e22`, branch `exp/foundation-model-mechanics`, 2026-10-14) because the learner should first understand a shared linear projection from hidden features to vocabulary scores without coupling it to input embeddings or token selection
+- Chose one-step greedy and categorical sampling, with positive temperature and at most one of top-k/top-p, because selection semantics can be understood and checked on small logits before involving a model loop
+- Chose small decoder-only forward assembly as the next checkpoint because the individual input, decoder, head and selection components now need a clear composition boundary; autoregressive-loop theory and inference come afterward
+- Chose a bounded educational baseline because the learner prioritizes mathematical understanding and component composition over exhaustive production hardening; do not turn optional edge coverage into an automatic prerequisite for advancement
+
+#### Assumptions it rests on
+
+- A head consumes supplied unbatched hidden states and preserves their position count; a selector consumes only one vocabulary-logit vector
+- Token IDs, input embedding rows and output-logit columns must refer to the same vocabulary mapping when assembled
+- Xavier uniform is a teaching initialization baseline, not evidence of optimal logits scale or training convergence
+- Sharing E with the head would require the same parameter through a transpose, not a copy of equal initial values; weight tying remains a later integration choice
+
+#### Failed approaches
+
+- Tried: read row index 3 from logits for a three-token prompt to predict its continuation -> Failed because: only rows 0 through 2 exist and the final existing row scores the next token -> Avoid when: confusing the prediction source position with the future token position
+- Tried: infer that retaining two candidates necessarily changes the full logit tensor to length two -> Failed because: full-length masking and compact candidate arrays are both possible -> Avoid when: confusing candidate count with representation shape; compact arrays must map selections back to original IDs
+
+#### Nuances agreed with the user
+
+- Input `abc` corresponds to next-token targets `bcd`; the learner correctly calculated the head fixture logits `[1,2,1]` and greedy ID 1
+- Sampling alone draws from a distribution; temperature changes concentration, while top-k/top-p restrict support. High model probability is not a calibrated correctness guarantee
+- Top-p retains the smallest descending prefix reaching or exceeding its threshold, including the crossing token; the learner correctly explained why a 0.9-leading distribution with p=0.8 keeps one candidate
+- The submitted selector uses compact candidates and explicitly restores original vocabulary IDs; this is compatible with the earlier full-vector masking explanation
+- A forward model maps existing IDs to logits once. Appending a selected token and repeating belongs to the later autoregressive loop; final LayerNorm should be explained before specifying assembly
+- Training may proceed in the learner's other project. LoRA/QLoRA are later topics, not prerequisites for the current inference learning path
+- This extraction records the committed learning checkpoint without rerunning tests or treating a commit as proof of a passing suite
