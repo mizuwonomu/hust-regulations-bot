@@ -1,3 +1,4 @@
+"""Lưu KV Cache của 1 head attention và tính toán với Query mới."""
 import torch
 from torch import nn
 
@@ -12,6 +13,13 @@ class CachedCausalSelfAttention(nn.Module):
         d_k: int,
         d_v: int
     ) -> None:
+        """Khai báo các biến đầu vào của 1 head attention.
+        
+        Args:
+            d_model: Kích thước đặc trưng của đầu vào.
+            d_k: Kích thước đặc trưng của ma trận Key.
+            d_v: kích thước đặc trưng của ma trận Value.
+        """
         super().__init__()
         self.attention_head = CausalSelfAttention(d_model, d_k, d_v)
 
@@ -19,7 +27,11 @@ class CachedCausalSelfAttention(nn.Module):
         self,
         x: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
-        """Tính causal attention cho prefix và trả K/V đã chiếu để cache."""
+        """Tính causal attention cho prefix và trả K/V đã chiếu để cache.
+        
+        Args:
+            x: Token của input prompt để tính trước attention output.
+        """
         Q, K, V = x@self.attention_head.w_q, x@self.attention_head.w_k, x@self.attention_head.w_v
 
         output, attention_weights = causal_attention(Q, K, V)
@@ -33,6 +45,12 @@ class CachedCausalSelfAttention(nn.Module):
         x_new: torch.Tensor,
         cache: tuple[torch.Tensor, torch.Tensor]
     ) -> tuple[torch.Tensor, torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
+        """Ứng với token đã sinh, tính attention output của 1 head với KV cache đã lưu.
+        
+        Args:
+            x_new: Token mới sinh ra và embedding, rồi tính bộ Q,K,V của chính nó.
+            cache: Các bộ Key, Value đã lưu trong cache.
+        """
         Q_new, K_new, V_new = x_new@self.attention_head.w_q, x_new@self.attention_head.w_k, x_new@self.attention_head.w_v # Chiếu hidden state của vị trí mới thành Q/K/V
         K_old, V_old = cache # Lấy KV cache đã tính từ trước
 

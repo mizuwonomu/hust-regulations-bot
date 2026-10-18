@@ -15,6 +15,17 @@ def generate(
     max_new_tokens: int,
     selector: abc.Callable[[torch.Tensor], torch.Tensor] = greedy_token,
 ) -> torch.Tensor:
+    """Vòng lặp autoregressive, ứng với budget số token được sinh ra tối đa 
+    và shape của token IDs phải nhỏ hơn shape độ dài Position,
+    Sau khi tính ra logits, ứng với decoding strategies tương ứng, chọn ra token tiếp theo,
+    rồi nối token mới vào chuỗi đầu vào đã có.
+    
+    Args:
+        model: Mô hình tính toán cho autoregressive.
+        token_ids: Chuỗi IDs đầu vào lookup của các token.
+        max_new_tokens: Số lượng token sinh ra tối đa.
+        selector: Decoding strategies lựa chọn, default = Greedy, hoặc bằng Sampling method.
+        """
     module_modes = [(module, module.training) for module in model.modules()]
 
     try:
