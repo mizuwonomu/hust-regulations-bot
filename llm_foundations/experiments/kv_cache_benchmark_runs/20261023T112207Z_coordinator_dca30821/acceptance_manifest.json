@@ -1,0 +1,53 @@
+{
+  "status": "accepted",
+  "tests": "8 passed in 7.91s on CUDA",
+  "executed_notebook": "/home/coronny/rag-project/llm_foundations/experiments/kv_cache_benchmark_runs/20261023T112207Z_coordinator_dca30821/kv_cache_benchmark_executed.ipynb",
+  "results": "/home/coronny/rag-project/llm_foundations/experiments/kv_cache_benchmark_runs/20261023T112225Z_9ed22424/results.json",
+  "graph_count": 15,
+  "artifact_audit": "passed",
+  "core_files_unchanged": 26,
+  "core_sha256": {
+    "llm_foundations/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "llm_foundations/cached_self_attention.py": "1f83bf4250b6c74560e54b08b1e1fbeb0fb310db4871409727619ef22784d854",
+    "llm_foundations/causal_mask.py": "12738ce43401c226179b6756ed7e016b58788185a533a3a3780dc8ee93ad94a8",
+    "llm_foundations/config.py": "0f2c2780796ba4f2870e14773a795420cc554b6af4e188cd869432efd6f30cf1",
+    "llm_foundations/cross_entropy.py": "6b50ef46c8ff98788f6ff48d7580133c6d434e7eeb22f6ac2100a3b31d627c59",
+    "llm_foundations/decoder_block.py": "0abc436d169333bfad59b25c8bd68053cb6037e5f661f7ce65d0c27b74874ce9",
+    "llm_foundations/decoder_only_lm.py": "39cd078f9b50a1aa71da3f0e001652e76777ebdf16f3b66287b64f22dc467ff0",
+    "llm_foundations/decoding.py": "cd7e3c9bba247cf21095f15b115a3438130a9937a17a1cfccf601524d391a1db",
+    "llm_foundations/embedding.py": "1f2e5cc2fce384be23d6cf875ec20a044ff5c071d3bf8143e3cd8f60e94d64eb",
+    "llm_foundations/embeddings/input_embedding.py": "e7a9627ea733c733a1babed4071c35ecc8c0a10f8c253fde32515b43f108cb95",
+    "llm_foundations/ffn.py": "ce55230e4439369ca776a256f553f6a30d74cf9369c4731118d67dca256c8344",
+    "llm_foundations/generation.py": "6e6ac23a727c9f0648b95b95774216cb3b5bf61e80da79958b5f58ddd9578022",
+    "llm_foundations/kv_cache/decoder_block.py": "cd0508c03a6caf19734b8e04ae7a77af08eb5d19608cae2177b2f6296e37702d",
+    "llm_foundations/kv_cache/decoder_only_lm.py": "64533b4900c0dcc5168399b83ed088e6d6ef332d8a3d88c7312944ea6a476e6f",
+    "llm_foundations/kv_cache/generation.py": "87ff8422701afd00e81093fd644ec6a72f2c7762739dffab69414f1a368f0dc5",
+    "llm_foundations/kv_cache/multi_head_attention.py": "f994ceb6c73a0db698d196fb3be884674cf41420004914f5d6a4ff546612a5eb",
+    "llm_foundations/layer_norm.py": "6fe6fdccd80c738ed963b159a10eaf32f5535da41f32aaa46ce4ed1b8e8581ef",
+    "llm_foundations/lm_head.py": "13eccfc832fd3073674892b8d38f0a5b982a163bdf4182c6474b71827027464d",
+    "llm_foundations/multi_head_attention.py": "a8cb786d7a9fe1f856dd3dd7f8233201db2d23a0f5c8ffe18e168053d39f5463",
+    "llm_foundations/pre_norm_attention_residual.py": "f8233c2c25f55857c53fb2427870d6166a5732207125b77afc854b8a27d576ef",
+    "llm_foundations/scaled_attention.py": "65e89cd7aae1082bc893f5cce8a41dc6dab10bc547fa39b61e19c89d78859087",
+    "llm_foundations/self_attention.py": "eaec4a76594b895cdc7c592fa21c27648177dc06e17c81f6c5bd15fea46e19c4",
+    "llm_foundations/softmax.py": "16b4108bb8d633a4443b371fccccf83944f7e2ec7364b5d09998478a03614c7b",
+    "llm_foundations/tokenizer/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "llm_foundations/tokenizer/character_tokenizer.py": "f36c3aa5f5b8d4c2237493c1e575cff3ed5dee7044c1ae88dc3a8b5c1182a529",
+    "llm_foundations/vocab/__init__.py": "c410514cf3be4631a15dd621dcbca1636444f9ec4f04bcad1230c96335fd034b"
+  },
+  "delivered_sha256": {
+    "llm_foundations/experiments/kv_cache_benchmark.py": "7f21a4f818b432245363ef0fdf613dcd1f1a1ccd4058318603845b480b121a85",
+    "llm_foundations/experiments/test_kv_cache_benchmark.py": "577c2c082695ed658a4b4dc6b5766d6e32b7b185e74bf3889412ab1b455770e0",
+    "llm_foundations/experiments/kv_cache_benchmark.ipynb": "c96c66868ba4bbc487be4f8913de0c98119fb2bb4ecee1db4248eb17c9687478",
+    "llm_foundations/experiments/kv_cache_benchmark_spec.md": "cd4c334fede90e941dd03154a72be81eaf81a5ad7421aea6e72235a31c187f02",
+    "llm_foundations/experiments/kv_cache_benchmark_plan.md": "5c2bf1884b5e8f30c2a3f5096147068c850b81315baddd81108279425071324c",
+    "llm_foundations/experiments/kv_cache_benchmark_review.md": "da162312ede8920d94f1e94460a39095320d7c5cdafea9fbcd1bead08ca92c4b"
+  },
+  "result_sha256": "7e90440301579216fb7edd995c63af0701be0d4abd32f8ab5693497472b994c2",
+  "limitations": [
+    "small untrained model",
+    "seven repeats per case; descriptive variability, not a confidence interval",
+    "8.125 MiB pre-model allocator allocation recorded, cause not established"
+  ],
+  "orca_run": "run_2c606bacc819",
+  "orca_completion": "all dispatches settled; no reclaimable resources; external Pi terminal retained by runtime"
+}
