@@ -218,3 +218,46 @@
 - A forward model maps existing IDs to logits once. Appending a selected token and repeating belongs to the later autoregressive loop; final LayerNorm should be explained before specifying assembly
 - Training may proceed in the learner's other project. LoRA/QLoRA are later topics, not prerequisites for the current inference learning path
 - This extraction records the committed learning checkpoint without rerunning tests or treating a commit as proof of a passing suite
+
+### 2026-10-23: Benchmark interpretation and profiling boundary
+
+- Keep actual greedy generation timing separate from controlled decode replay with fixed continuation IDs; controlled replay excludes selector and prompt/cache preparation
+- Keep greedy fixed for the first follow-up; plan torch.profiler CPU/CUDA observation with semantic regions separately from normal latency timing, not sampling or optimization changes
+- Plot markers represent repeated-run medians and p25-p75 describes dispersion, not confidence intervals; connecting sparse points does not establish a continuous trend
+- KV reuse reduces historical recomputation during decode; faster prefill is not an inherent cache benefit. Increasing payload bytes alone does not establish the cause of a slowdown
+- Selector validation uses CUDA-derived scalar reads; inspect synchronization as a hypothesis, not an established bottleneck. Cache list passing does not copy payload; torch.cat copies into a new device tensor
+- Interpret nested total/self times without double counting, and do not add overlapping CPU/GPU durations to infer end-to-end latency. Direct prefill/decode methods require explicit consideration beyond ordinary forward hooks
+- User wants an agent to implement instrumentation eventually, while retaining ownership of understanding metrics and measurement validity. Current follow-up authorization is handoff and planning only; no execution or core edits
+
+### 2026-10-25: Keep profiling instrumentation inside experiments
+
+- The user rejected source edits to learner-owned core for profiling and agreed to move instrumentation into `llm_foundations/experiments/`. Earlier approval of semantic labels must not be treated as an enduring exception to the core boundary
+- Target design: experiment-owned capture code temporarily wraps real model methods, including direct `prefill`/`decode`, and registers module hooks for semantic call boundaries. Cleanup restores methods, hook registrations and inference state on both normal and exceptional exits; core imports and source must not depend on profiling helpers
+- Continue calling the actual learner implementation. Do not copy model math into an instrumented surrogate or globally monkeypatch torch tensor operations
+- Ordinary operator traces remain available inside method/module scopes. Forward hooks alone do not cover direct custom methods, and expression-level names such as residual additions or individual projections cannot be promised without a reliable external boundary. Prefer truthful coarser scopes and operator evidence over guessed fine-grained labels
+- Remove only the prior profiling-specific core edits after checking the current diff; preserve unrelated user work, public APIs, parameters, math and cache behavior. The existing top-level `profiling_regions.py` must be moved/removed with all consumers coordinated
+- Keep the teaching notebook unexecuted, with empty outputs and explicit default-off run switches. The learner owns actual profiler/benchmark runs and metric discussion. Technical fixtures are separate from performance measurements
+- The existing contract and test plan under `docs/superpower/` describe the superseded source-annotation approach and must be revised before implementing the migration. This handoff request authorizes recording the migration state, not executing it now
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Preserved the benchmark as three ordered commits (HEAD `d54deb2`, branch `exp/foundation-model-mechanics`, 2026-10-27): core/notebook, tests, then historical results, because the user requested independently reviewable implementation, verification, and evidence boundaries
+- Archived existing manifest/notebook bytes unchanged because rewriting provenance would falsely imply the old run measured the current harness; the checkpoint is source preservation rather than a newly executed performance comparison
+- Kept profiling files and knowledge changes outside those commits because the requested scope was the benchmark alone; later profiling reports must be reviewed on their own evidence
+
+#### Assumptions it rests on
+
+- A focused passing test suite verifies exercised benchmark mechanics, not the historical timing values or the performance of every current source version
+- Artifact links and stored hashes identify the measured snapshot; source divergence requires explicit labeling or a new run, not silent attribution
+
+#### Failed approaches
+
+- Tried: resolve the archived manifest's raw `results.json` reference -> Failed because: the referenced sibling run is absent in the inspected checkout -> Avoid when: attempting to reconstruct sample-level statistics from summary notebook output alone
+
+#### Nuances agreed with the user
+
+- The learner owns core mathematical understanding, but benchmark instrumentation can be agent-implemented; the learning target is metric meaning, fair controls, and interpretation rather than memorizing timing APIs
+- Notebook execution outputs are historical evidence; technical pytest execution and a fresh benchmark run are distinct claims
+- This extraction records documents only and leaves them unstaged for review; it does not authorize committing knowledge or including profiling in the completed benchmark scope
