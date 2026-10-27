@@ -1,0 +1,618 @@
+{
+  "schema_version": 1,
+  "benchmark_config": {
+    "model": {
+      "vocab_size": 128,
+      "max_seq_len": 256,
+      "d_model": 64,
+      "num_layers": 2,
+      "num_heads": 2,
+      "d_k": 16,
+      "d_v": 24,
+      "d_ff": 128,
+      "eps": 1e-05
+    },
+    "seed": 20261023,
+    "dtype": "float32",
+    "device": "auto",
+    "warmup": 0,
+    "repeats": 1,
+    "prompt_lengths": [
+      8
+    ],
+    "generated_tokens": 4,
+    "generation_lengths": [
+      4
+    ],
+    "generation_prompt_length": 8,
+    "atol": 1e-05,
+    "rtol": 0.0001
+  },
+  "profile_config": {
+    "arm": "uncached",
+    "prompt_length": 96,
+    "max_new_tokens": 4,
+    "level": "blocks",
+    "warmup": 2,
+    "record_shapes": false,
+    "profile_memory": false,
+    "with_stack": false
+  },
+  "ignored_benchmark_fields": [
+    "warmup",
+    "repeats",
+    "prompt_lengths",
+    "generated_tokens",
+    "generation_lengths",
+    "generation_prompt_length"
+  ],
+  "case": {
+    "arm": "uncached",
+    "prompt_length": 96,
+    "requested_tokens": 4,
+    "capacity": 256,
+    "effective_tokens": 4,
+    "decode_steps": null,
+    "prefix_forward_calls": 3,
+    "final_cache_length": null
+  },
+  "effective_tokens": 4,
+  "expected_work_counts": {
+    "prefill": 1,
+    "decode": 0,
+    "prefix_forward": 3,
+    "selector": 4,
+    "append_ids": 4,
+    "cached_k_cat": 0,
+    "cached_v_cat": 0
+  },
+  "selected_arm": "uncached",
+  "device": "cuda:0",
+  "dtype": "torch.float32",
+  "prompt": {
+    "base_seed": 20261023,
+    "seed": 20264124,
+    "seed_derivation": "config.seed + 3101",
+    "ids": [
+      115,
+      51,
+      108,
+      5,
+      59,
+      17,
+      108,
+      90,
+      73,
+      26,
+      102,
+      109,
+      54,
+      20,
+      93,
+      6,
+      74,
+      53,
+      92,
+      49,
+      24,
+      34,
+      97,
+      65,
+      64,
+      40,
+      114,
+      102,
+      49,
+      23,
+      97,
+      49,
+      122,
+      124,
+      89,
+      30,
+      93,
+      79,
+      85,
+      121,
+      4,
+      33,
+      41,
+      102,
+      61,
+      4,
+      20,
+      86,
+      40,
+      14,
+      5,
+      61,
+      84,
+      6,
+      110,
+      5,
+      9,
+      70,
+      119,
+      12,
+      44,
+      101,
+      106,
+      47,
+      23,
+      60,
+      58,
+      123,
+      110,
+      105,
+      11,
+      43,
+      74,
+      75,
+      11,
+      38,
+      27,
+      97,
+      53,
+      57,
+      71,
+      85,
+      7,
+      17,
+      76,
+      76,
+      1,
+      71,
+      106,
+      17,
+      38,
+      94,
+      56,
+      123,
+      14,
+      50
+    ],
+    "sha256": "6baa1daba64dccc052414267828a7e53c25589dcf4d952c6970830ddb8b9e03d"
+  },
+  "weights": {
+    "seed": 20261023,
+    "mapping": {
+      "bijection": true,
+      "count": 35,
+      "parameters": [
+        {
+          "source": "input_embedding.token_embed",
+          "target": "input_embedding.token_embed"
+        },
+        {
+          "source": "input_embedding.pos_embed",
+          "target": "input_embedding.pos_embed"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.w_o",
+          "target": "blocks.0.cached_mha.w_o"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.0.w_q",
+          "target": "blocks.0.cached_mha.cached_heads.0.attention_head.w_q"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.0.w_k",
+          "target": "blocks.0.cached_mha.cached_heads.0.attention_head.w_k"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.0.w_v",
+          "target": "blocks.0.cached_mha.cached_heads.0.attention_head.w_v"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.1.w_q",
+          "target": "blocks.0.cached_mha.cached_heads.1.attention_head.w_q"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.1.w_k",
+          "target": "blocks.0.cached_mha.cached_heads.1.attention_head.w_k"
+        },
+        {
+          "source": "blocks.0.attention_residual.multi_head_attention.heads.1.w_v",
+          "target": "blocks.0.cached_mha.cached_heads.1.attention_head.w_v"
+        },
+        {
+          "source": "blocks.0.attention_residual.normalized_input.gamma",
+          "target": "blocks.0.normalize_input.gamma"
+        },
+        {
+          "source": "blocks.0.attention_residual.normalized_input.beta",
+          "target": "blocks.0.normalize_input.beta"
+        },
+        {
+          "source": "blocks.0.ffn_norm.gamma",
+          "target": "blocks.0.ffn_norm.gamma"
+        },
+        {
+          "source": "blocks.0.ffn_norm.beta",
+          "target": "blocks.0.ffn_norm.beta"
+        },
+        {
+          "source": "blocks.0.ffn.w_1",
+          "target": "blocks.0.ffn.w_1"
+        },
+        {
+          "source": "blocks.0.ffn.b_1",
+          "target": "blocks.0.ffn.b_1"
+        },
+        {
+          "source": "blocks.0.ffn.w_2",
+          "target": "blocks.0.ffn.w_2"
+        },
+        {
+          "source": "blocks.0.ffn.b_2",
+          "target": "blocks.0.ffn.b_2"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.w_o",
+          "target": "blocks.1.cached_mha.w_o"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.0.w_q",
+          "target": "blocks.1.cached_mha.cached_heads.0.attention_head.w_q"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.0.w_k",
+          "target": "blocks.1.cached_mha.cached_heads.0.attention_head.w_k"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.0.w_v",
+          "target": "blocks.1.cached_mha.cached_heads.0.attention_head.w_v"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.1.w_q",
+          "target": "blocks.1.cached_mha.cached_heads.1.attention_head.w_q"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.1.w_k",
+          "target": "blocks.1.cached_mha.cached_heads.1.attention_head.w_k"
+        },
+        {
+          "source": "blocks.1.attention_residual.multi_head_attention.heads.1.w_v",
+          "target": "blocks.1.cached_mha.cached_heads.1.attention_head.w_v"
+        },
+        {
+          "source": "blocks.1.attention_residual.normalized_input.gamma",
+          "target": "blocks.1.normalize_input.gamma"
+        },
+        {
+          "source": "blocks.1.attention_residual.normalized_input.beta",
+          "target": "blocks.1.normalize_input.beta"
+        },
+        {
+          "source": "blocks.1.ffn_norm.gamma",
+          "target": "blocks.1.ffn_norm.gamma"
+        },
+        {
+          "source": "blocks.1.ffn_norm.beta",
+          "target": "blocks.1.ffn_norm.beta"
+        },
+        {
+          "source": "blocks.1.ffn.w_1",
+          "target": "blocks.1.ffn.w_1"
+        },
+        {
+          "source": "blocks.1.ffn.b_1",
+          "target": "blocks.1.ffn.b_1"
+        },
+        {
+          "source": "blocks.1.ffn.w_2",
+          "target": "blocks.1.ffn.w_2"
+        },
+        {
+          "source": "blocks.1.ffn.b_2",
+          "target": "blocks.1.ffn.b_2"
+        },
+        {
+          "source": "final_norm.gamma",
+          "target": "final_norm.gamma"
+        },
+        {
+          "source": "final_norm.beta",
+          "target": "final_norm.beta"
+        },
+        {
+          "source": "lm_head.w_lmhead",
+          "target": "lm_head.w_lmhead"
+        }
+      ],
+      "layer_norm_eps": [
+        1e-05,
+        1e-05,
+        1e-05,
+        1e-05,
+        1e-05
+      ]
+    }
+  },
+  "checks": {
+    "equivalence_continuation": {
+      "seed": 20271314,
+      "ids": [
+        83,
+        45
+      ]
+    },
+    "logit_equivalence": {
+      "checks": [
+        {
+          "name": "prefill",
+          "max_abs_logit_error": 0.0,
+          "finite": true,
+          "allclose": true
+        },
+        {
+          "name": "decode_0",
+          "max_abs_logit_error": 1.0728836059570312e-06,
+          "finite": true,
+          "allclose": true
+        },
+        {
+          "name": "decode_1",
+          "max_abs_logit_error": 8.344650268554688e-07,
+          "finite": true,
+          "allclose": true
+        }
+      ],
+      "max_abs_logit_error": 1.0728836059570312e-06,
+      "finite": true,
+      "allclose": true,
+      "atol": 1e-05,
+      "rtol": 0.0001
+    },
+    "greedy_output_parity": true,
+    "unprofiled_selected_ids": [
+      115,
+      51,
+      108,
+      5,
+      59,
+      17,
+      108,
+      90,
+      73,
+      26,
+      102,
+      109,
+      54,
+      20,
+      93,
+      6,
+      74,
+      53,
+      92,
+      49,
+      24,
+      34,
+      97,
+      65,
+      64,
+      40,
+      114,
+      102,
+      49,
+      23,
+      97,
+      49,
+      122,
+      124,
+      89,
+      30,
+      93,
+      79,
+      85,
+      121,
+      4,
+      33,
+      41,
+      102,
+      61,
+      4,
+      20,
+      86,
+      40,
+      14,
+      5,
+      61,
+      84,
+      6,
+      110,
+      5,
+      9,
+      70,
+      119,
+      12,
+      44,
+      101,
+      106,
+      47,
+      23,
+      60,
+      58,
+      123,
+      110,
+      105,
+      11,
+      43,
+      74,
+      75,
+      11,
+      38,
+      27,
+      97,
+      53,
+      57,
+      71,
+      85,
+      7,
+      17,
+      76,
+      76,
+      1,
+      71,
+      106,
+      17,
+      38,
+      94,
+      56,
+      123,
+      14,
+      50,
+      75,
+      59,
+      23,
+      46
+    ],
+    "profiled_ids_match_unprofiled": true
+  },
+  "capture": {
+    "complete": true,
+    "status": "complete",
+    "cuda_kernel_event_count": 664,
+    "evidence_source": "chrome_trace.cat",
+    "reason": null
+  },
+  "environment": {
+    "python": "3.13.5 (main, Jul 23 2025, 00:37:22) [Clang 20.1.4 ]",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu130",
+    "cuda_version": "13.0",
+    "device": "cuda:0",
+    "gpu_name": "NVIDIA GeForce RTX 3060",
+    "thread_count": 8,
+    "dtype": "torch.float32",
+    "tf32_matmul": false,
+    "tf32_cudnn": true,
+    "float32_matmul_precision": "highest"
+  },
+  "profiler": {
+    "requested": {
+      "activities": [
+        "CPU",
+        "CUDA"
+      ],
+      "record_shapes": false,
+      "profile_memory": false,
+      "with_stack": false,
+      "schedule": null
+    },
+    "effective": {
+      "activities": [
+        "CPU",
+        "CUDA"
+      ],
+      "record_shapes": false,
+      "profile_memory": false,
+      "with_stack": false,
+      "schedule": null
+    }
+  },
+  "measurements": {
+    "cpu_time": "Profiler event self and inclusive total durations are microseconds; parent totals already include nested work",
+    "device_time": "CUDA/device event durations are microseconds and may overlap CPU execution; do not add them to CPU time as wall time",
+    "cuda_kernel_evidence": "Chrome trace category 'kernel' is authoritative when trace categories are present; otherwise use explicit event activity/category metadata or CUDA-device FunctionEvent names after excluding memcpy, memset, aten operations and user annotations",
+    "operators": "Operator rows group event name and requested input shapes; kernel count is not a bottleneck measurement",
+    "memory": "Profiler memory values describe allocation/free accounting, not HBM traffic or bandwidth",
+    "latency": "No wall-time latency is derived from this capture; use the separate repeated benchmark for ordinary timing",
+    "limitations": "One trace is descriptive and cannot establish a bottleneck or causal explanation"
+  },
+  "event_fields": {
+    "cpu_self": {
+      "source": "self_cpu_time_total",
+      "unit": "us",
+      "available": true
+    },
+    "cpu_total": {
+      "source": "cpu_time_total",
+      "unit": "us",
+      "available": true
+    },
+    "device_self": {
+      "source": "self_device_time_total",
+      "unit": "us",
+      "available": true
+    },
+    "device_total": {
+      "source": "device_time_total",
+      "unit": "us",
+      "available": true
+    },
+    "memory_self": {
+      "source": "self_cpu_memory_usage",
+      "unit": "bytes",
+      "available": true
+    },
+    "memory_total": {
+      "source": "cpu_memory_usage",
+      "unit": "bytes",
+      "available": true
+    },
+    "device_memory_self": {
+      "source": "self_device_memory_usage",
+      "unit": "bytes",
+      "available": true
+    },
+    "device_memory_total": {
+      "source": "device_memory_usage",
+      "unit": "bytes",
+      "available": true
+    }
+  },
+  "artifacts": {
+    "trace": "trace.json",
+    "regions": "regions.csv",
+    "operators": "operators.csv",
+    "manifest": "manifest.json"
+  },
+  "artifact_availability": {
+    "trace": {
+      "available": true,
+      "reason": null
+    },
+    "regions": {
+      "available": true,
+      "reason": null
+    },
+    "operators": {
+      "available": true,
+      "reason": null
+    },
+    "manifest": {
+      "available": true,
+      "reason": null
+    }
+  },
+  "source_sha256": {
+    "llm_foundations/experiments/kv_cache_profiling.py": "df6d0c6819279eb3ca24bf7510165588f8262e318a84163f2e8a796bca53b82f",
+    "llm_foundations/experiments/test_kv_cache_profiling.py": "83964ebd4e647a1a70ff7fa431168df0082b6d6328fa70efde60be72660e49ee",
+    "llm_foundations/experiments/kv_cache_profiling.ipynb": "6b5ca739d8dd302bf813827c0c2e7d327efb109106f3cc6a8a5aad1c2ab6b75a",
+    "llm_foundations/experiments/kv_cache_profiling_implementation_report.md": "bed92c8f2f07fa5eed340c5afa9635ab367a6020ebd57e475cd00b1baf66a4a7",
+    "llm_foundations/experiments/kv_cache_benchmark.py": "b2a8b8eca8def93409bed6b009b511916bb1b5150a764639137cd8e73b7492fd",
+    "llm_foundations/experiments/test_kv_cache_benchmark.py": "577c2c082695ed658a4b4dc6b5766d6e32b7b185e74bf3889412ab1b455770e0",
+    "llm_foundations/experiments/kv_cache_benchmark.ipynb": "1dce22735de2b46d33a19921d7c523113b981f1260db69852240b8b9a8e190c7",
+    "llm_foundations/generation.py": "6e6ac23a727c9f0648b95b95774216cb3b5bf61e80da79958b5f58ddd9578022",
+    "llm_foundations/kv_cache/generation.py": "87ff8422701afd00e81093fd644ec6a72f2c7762739dffab69414f1a368f0dc5",
+    "llm_foundations/decoder_only_lm.py": "39cd078f9b50a1aa71da3f0e001652e76777ebdf16f3b66287b64f22dc467ff0",
+    "llm_foundations/kv_cache/decoder_only_lm.py": "64533b4900c0dcc5168399b83ed088e6d6ef332d8a3d88c7312944ea6a476e6f",
+    "llm_foundations/decoder_block.py": "0abc436d169333bfad59b25c8bd68053cb6037e5f661f7ce65d0c27b74874ce9",
+    "llm_foundations/kv_cache/decoder_block.py": "cd0508c03a6caf19734b8e04ae7a77af08eb5d19608cae2177b2f6296e37702d",
+    "llm_foundations/pre_norm_attention_residual.py": "f8233c2c25f55857c53fb2427870d6166a5732207125b77afc854b8a27d576ef",
+    "llm_foundations/multi_head_attention.py": "a8cb786d7a9fe1f856dd3dd7f8233201db2d23a0f5c8ffe18e168053d39f5463",
+    "llm_foundations/kv_cache/multi_head_attention.py": "f994ceb6c73a0db698d196fb3be884674cf41420004914f5d6a4ff546612a5eb",
+    "llm_foundations/self_attention.py": "eaec4a76594b895cdc7c592fa21c27648177dc06e17c81f6c5bd15fea46e19c4",
+    "llm_foundations/cached_self_attention.py": "1f83bf4250b6c74560e54b08b1e1fbeb0fb310db4871409727619ef22784d854",
+    "llm_foundations/scaled_attention.py": "65e89cd7aae1082bc893f5cce8a41dc6dab10bc547fa39b61e19c89d78859087",
+    "llm_foundations/ffn.py": "ce55230e4439369ca776a256f553f6a30d74cf9369c4731118d67dca256c8344",
+    "llm_foundations/decoding.py": "cd7e3c9bba247cf21095f15b115a3438130a9937a17a1cfccf601524d391a1db",
+    "llm_foundations/embeddings/input_embedding.py": "e7a9627ea733c733a1babed4071c35ecc8c0a10f8c253fde32515b43f108cb95",
+    "llm_foundations/layer_norm.py": "6fe6fdccd80c738ed963b159a10eaf32f5535da41f32aaa46ce4ed1b8e8581ef",
+    "llm_foundations/lm_head.py": "13eccfc832fd3073674892b8d38f0a5b982a163bdf4182c6474b71827027464d",
+    "llm_foundations/causal_mask.py": "12738ce43401c226179b6756ed7e016b58788185a533a3a3780dc8ee93ad94a8",
+    "llm_foundations/embedding.py": "1f2e5cc2fce384be23d6cf875ec20a044ff5c071d3bf8143e3cd8f60e94d64eb",
+    "llm_foundations/softmax.py": "16b4108bb8d633a4443b371fccccf83944f7e2ec7364b5d09998478a03614c7b"
+  }
+}

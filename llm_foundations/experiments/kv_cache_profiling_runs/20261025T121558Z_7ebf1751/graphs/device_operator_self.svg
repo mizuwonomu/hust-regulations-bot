@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="624" viewBox="0 0 1000 624">
+<rect width="100%" height="100%" fill="white"/>
+<text x="300" y="32" font-size="20" font-family="sans-serif">Device operator self time (not wall latency)</text>
+<text x="300" y="606" font-size="13" font-family="sans-serif">Device profiler time (us)</text>
+<text x="290" y="91.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::mm<title>aten::mm</title></text>
+<rect x="300" y="82.0" width="610.00" height="9" fill="#2b6cb0"/>
+<text x="915.00" y="90.0" font-size="10" font-family="sans-serif">724</text>
+<text x="290" y="121.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::div<title>aten::div</title></text>
+<rect x="300" y="112.0" width="322.64" height="9" fill="#2b6cb0"/>
+<text x="627.64" y="120.0" font-size="10" font-family="sans-serif">383</text>
+<text x="290" y="151.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::sum<title>aten::sum</title></text>
+<rect x="300" y="142.0" width="310.04" height="9" fill="#2b6cb0"/>
+<text x="615.04" y="150.0" font-size="10" font-family="sans-serif">368</text>
+<text x="290" y="181.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::reduce_kernel&lt;512, 1, at:<title>void at::native::reduce_kernel&lt;512, 1, at::native::ReduceOp&lt;float, at::native::func_wrapper_t&lt;float, at::native::sum_functor&lt;float, float, float&gt;::operator()(at::TensorIterator&amp;)::{lambda(float, float)#1}&gt;, unsigned int, float, 4, 4&gt; &gt;(at::native::ReduceOp&lt;float, at::native::func_wrapper_t&lt;float, at::native::sum_functor&lt;float, float, float&gt;::operator()(at::TensorIterator&amp;)::{lambda(float, float)#1}&gt;, unsigned int, float, 4, 4&gt;)</title></text>
+<rect x="300" y="172.0" width="310.04" height="9" fill="#2b6cb0"/>
+<text x="615.04" y="180.0" font-size="10" font-family="sans-serif">368</text>
+<text x="290" y="211.0" text-anchor="end" font-size="12" font-family="sans-serif">void gemvNSP_kernel&lt;float, float, float, f<title>void gemvNSP_kernel&lt;float, float, float, float, 1, 32, 4, 1024, false, cublasGemvParamsEx&lt;int, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float&gt;, float&gt; &gt;(cublasGemvParamsEx&lt;int, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float&gt;, float&gt;)</title></text>
+<rect x="300" y="202.0" width="309.20" height="9" fill="#2b6cb0"/>
+<text x="614.20" y="210.0" font-size="10" font-family="sans-serif">367</text>
+<text x="290" y="241.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::add<title>aten::add</title></text>
+<rect x="300" y="232.0" width="270.55" height="9" fill="#2b6cb0"/>
+<text x="575.55" y="240.0" font-size="10" font-family="sans-serif">321</text>
+<text x="290" y="271.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::elementwise_kernel&lt;128, 2<title>void at::native::elementwise_kernel&lt;128, 2, at::native::gpu_kernel_impl_nocast&lt;at::native::CUDAFunctor_add&lt;float&gt; &gt;(at::TensorIteratorBase&amp;, at::native::CUDAFunctor_add&lt;float&gt; const&amp;)::{lambda(int)#1}&gt;(int, at::native::gpu_kernel_impl_nocast&lt;at::native::CUDAFunctor_add&lt;float&gt; &gt;(at::TensorIteratorBase&amp;, at::native::CUDAFunctor_add&lt;float&gt; const&amp;)::{lambda(int)#1})</title></text>
+<rect x="300" y="262.0" width="220.14" height="9" fill="#2b6cb0"/>
+<text x="525.14" y="270.0" font-size="10" font-family="sans-serif">261</text>
+<text x="290" y="301.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::cat<title>aten::cat</title></text>
+<rect x="300" y="292.0" width="207.53" height="9" fill="#2b6cb0"/>
+<text x="512.53" y="300.0" font-size="10" font-family="sans-serif">246</text>
+<text x="290" y="331.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::vectorized_elementwise_ke<title>void at::native::vectorized_elementwise_kernel&lt;4, at::native::BUnaryFunctor&lt;float, float, float, at::native::binary_internal::MulFunctor&lt;float&gt; &gt;, std::array&lt;char*, 2ul&gt; &gt;(int, at::native::BUnaryFunctor&lt;float, float, float, at::native::binary_internal::MulFunctor&lt;float&gt; &gt;, std::array&lt;char*, 2ul&gt;)</title></text>
+<rect x="300" y="322.0" width="189.89" height="9" fill="#2b6cb0"/>
+<text x="494.89" y="330.0" font-size="10" font-family="sans-serif">225</text>
+<text x="290" y="361.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::sub<title>aten::sub</title></text>
+<rect x="300" y="352.0" width="179.81" height="9" fill="#2b6cb0"/>
+<text x="484.81" y="360.0" font-size="10" font-family="sans-serif">213</text>
+<text x="290" y="391.0" text-anchor="end" font-size="12" font-family="sans-serif">void gemmSN_NN_kernel&lt;float, 256, 4, 2, 8,<title>void gemmSN_NN_kernel&lt;float, 256, 4, 2, 8, 4, 4, false, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float&gt; &gt;(cublasGemmSmallNParams&lt;cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float const&gt;, cublasGemvTensorStridedBatched&lt;float&gt;, float&gt;)</title></text>
+<rect x="300" y="382.0" width="168.04" height="9" fill="#2b6cb0"/>
+<text x="473.04" y="390.0" font-size="10" font-family="sans-serif">199</text>
+<text x="290" y="421.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::vectorized_elementwise_ke<title>void at::native::vectorized_elementwise_kernel&lt;4, at::native::CUDAFunctor_add&lt;float&gt;, std::array&lt;char*, 3ul&gt; &gt;(int, at::native::CUDAFunctor_add&lt;float&gt;, std::array&lt;char*, 3ul&gt;)</title></text>
+<rect x="300" y="412.0" width="157.97" height="9" fill="#2b6cb0"/>
+<text x="462.97" y="420.0" font-size="10" font-family="sans-serif">187</text>
+<text x="290" y="451.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::elementwise_kernel&lt;128, 2<title>void at::native::elementwise_kernel&lt;128, 2, at::native::gpu_kernel_impl_nocast&lt;at::native::BinaryFunctor&lt;float, float, float, at::native::binary_internal::DivFunctor&lt;float&gt; &gt; &gt;(at::TensorIteratorBase&amp;, at::native::BinaryFunctor&lt;float, float, float, at::native::binary_internal::DivFunctor&lt;float&gt; &gt; const&amp;)::{lambda(int)#1}&gt;(int, at::native::gpu_kernel_impl_nocast&lt;at::native::BinaryFunctor&lt;float, float, float, at::native::binary_internal::DivFunctor&lt;float&gt; &gt; &gt;(at::TensorIteratorBase&amp;, at::native::BinaryFunctor&lt;float, float, float, at::native::binary_internal::DivFunctor&lt;float&gt; &gt; const&amp;)::{lambda(int)#1})</title></text>
+<rect x="300" y="442.0" width="132.76" height="9" fill="#2b6cb0"/>
+<text x="437.76" y="450.0" font-size="10" font-family="sans-serif">157</text>
+<text x="290" y="481.0" text-anchor="end" font-size="12" font-family="sans-serif">void at::native::(anonymous namespace)::Ca<title>void at::native::(anonymous namespace)::CatArrayBatchedCopy_vectorized&lt;at::native::(anonymous namespace)::OpaqueType&lt;4u&gt;, unsigned int, 1, 128, 1, 16, 4&gt;(char*, at::native::(anonymous namespace)::CatArrInputTensorMetadata&lt;at::native::(anonymous namespace)::OpaqueType&lt;4u&gt;, unsigned int, 128, 1&gt;, at::native::(anonymous namespace)::TensorSizeStride&lt;unsigned int, 4u&gt;, int, unsigned int)</title></text>
+<rect x="300" y="472.0" width="112.59" height="9" fill="#2b6cb0"/>
+<text x="417.59" y="480.0" font-size="10" font-family="sans-serif">134</text>
+<text x="290" y="511.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::mul<title>aten::mul</title></text>
+<rect x="300" y="502.0" width="107.55" height="9" fill="#2b6cb0"/>
+<text x="412.55" y="510.0" font-size="10" font-family="sans-serif">128</text>
+<text x="290" y="541.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::amax<title>aten::amax</title></text>
+<rect x="300" y="532.0" width="99.99" height="9" fill="#2b6cb0"/>
+<text x="404.99" y="540.0" font-size="10" font-family="sans-serif">119</text>
+<rect x="300" y="577" width="12" height="12" fill="#2b6cb0"/>
+<text x="317" y="587" font-size="12" font-family="sans-serif">Device self</text>
+</svg>

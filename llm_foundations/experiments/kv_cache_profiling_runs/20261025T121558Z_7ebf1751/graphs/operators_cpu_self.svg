@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="624" viewBox="0 0 1000 624">
+<rect width="100%" height="100%" fill="white"/>
+<text x="300" y="32" font-size="20" font-family="sans-serif">Top operators by CPU self time</text>
+<text x="300" y="606" font-size="13" font-family="sans-serif">Profiler time (us)</text>
+<text x="290" y="91.0" text-anchor="end" font-size="12" font-family="sans-serif">cudaLaunchKernel<title>cudaLaunchKernel</title></text>
+<rect x="300" y="82.0" width="610.00" height="9" fill="#2b6cb0"/>
+<text x="915.00" y="90.0" font-size="10" font-family="sans-serif">2.01e+04</text>
+<text x="290" y="121.0" text-anchor="end" font-size="12" font-family="sans-serif">Activity Buffer Request<title>Activity Buffer Request</title></text>
+<rect x="300" y="112.0" width="434.41" height="9" fill="#2b6cb0"/>
+<text x="739.41" y="120.0" font-size="10" font-family="sans-serif">1.43e+04</text>
+<text x="290" y="151.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::mm<title>aten::mm</title></text>
+<rect x="300" y="142.0" width="128.48" height="9" fill="#2b6cb0"/>
+<text x="433.48" y="150.0" font-size="10" font-family="sans-serif">4.23e+03</text>
+<text x="290" y="181.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::masked_fill<title>aten::masked_fill</title></text>
+<rect x="300" y="172.0" width="66.46" height="9" fill="#2b6cb0"/>
+<text x="371.46" y="180.0" font-size="10" font-family="sans-serif">2.19e+03</text>
+<text x="290" y="211.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::div<title>aten::div</title></text>
+<rect x="300" y="202.0" width="48.57" height="9" fill="#2b6cb0"/>
+<text x="353.57" y="210.0" font-size="10" font-family="sans-serif">1.6e+03</text>
+<text x="290" y="241.0" text-anchor="end" font-size="12" font-family="sans-serif">cudaMemcpyAsync<title>cudaMemcpyAsync</title></text>
+<rect x="300" y="232.0" width="41.65" height="9" fill="#2b6cb0"/>
+<text x="346.65" y="240.0" font-size="10" font-family="sans-serif">1.37e+03</text>
+<text x="290" y="271.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::add<title>aten::add</title></text>
+<rect x="300" y="262.0" width="35.52" height="9" fill="#2b6cb0"/>
+<text x="340.52" y="270.0" font-size="10" font-family="sans-serif">1.17e+03</text>
+<text x="290" y="301.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::lt<title>aten::lt</title></text>
+<rect x="300" y="292.0" width="34.03" height="9" fill="#2b6cb0"/>
+<text x="339.03" y="300.0" font-size="10" font-family="sans-serif">1.12e+03</text>
+<text x="290" y="331.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::clone<title>aten::clone</title></text>
+<rect x="300" y="322.0" width="31.71" height="9" fill="#2b6cb0"/>
+<text x="336.71" y="330.0" font-size="10" font-family="sans-serif">1.04e+03</text>
+<text x="290" y="361.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::sum<title>aten::sum</title></text>
+<rect x="300" y="352.0" width="29.93" height="9" fill="#2b6cb0"/>
+<text x="334.93" y="360.0" font-size="10" font-family="sans-serif">985</text>
+<text x="290" y="391.0" text-anchor="end" font-size="12" font-family="sans-serif">cudaStreamSynchronize<title>cudaStreamSynchronize</title></text>
+<rect x="300" y="382.0" width="29.68" height="9" fill="#2b6cb0"/>
+<text x="334.68" y="390.0" font-size="10" font-family="sans-serif">977</text>
+<text x="290" y="421.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::arange<title>aten::arange</title></text>
+<rect x="300" y="412.0" width="27.81" height="9" fill="#2b6cb0"/>
+<text x="332.81" y="420.0" font-size="10" font-family="sans-serif">916</text>
+<text x="290" y="451.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::cat<title>aten::cat</title></text>
+<rect x="300" y="442.0" width="25.02" height="9" fill="#2b6cb0"/>
+<text x="330.02" y="450.0" font-size="10" font-family="sans-serif">824</text>
+<text x="290" y="481.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::sub<title>aten::sub</title></text>
+<rect x="300" y="472.0" width="22.68" height="9" fill="#2b6cb0"/>
+<text x="327.68" y="480.0" font-size="10" font-family="sans-serif">747</text>
+<text x="290" y="511.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::pow<title>aten::pow</title></text>
+<rect x="300" y="502.0" width="13.39" height="9" fill="#2b6cb0"/>
+<text x="318.39" y="510.0" font-size="10" font-family="sans-serif">441</text>
+<text x="290" y="541.0" text-anchor="end" font-size="12" font-family="sans-serif">aten::any<title>aten::any</title></text>
+<rect x="300" y="532.0" width="12.19" height="9" fill="#2b6cb0"/>
+<text x="317.19" y="540.0" font-size="10" font-family="sans-serif">401</text>
+<rect x="300" y="577" width="12" height="12" fill="#2b6cb0"/>
+<text x="317" y="587" font-size="12" font-family="sans-serif">CPU self</text>
+</svg>
