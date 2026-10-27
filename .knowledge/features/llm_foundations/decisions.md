@@ -261,3 +261,61 @@
 - The learner owns core mathematical understanding, but benchmark instrumentation can be agent-implemented; the learning target is metric meaning, fair controls, and interpretation rather than memorizing timing APIs
 - Notebook execution outputs are historical evidence; technical pytest execution and a fresh benchmark run are distinct claims
 - This extraction records documents only and leaves them unstaged for review; it does not authorize committing knowledge or including profiling in the completed benchmark scope
+
+### decisions.md  (why — the expensive part)
+
+#### Chosen approach + why
+
+- Chose experiment-owned instrumentation with temporary instance-method wrappers (adapter `453ded1`, checkpoint `e7ae31d`, branch `exp/foundation-model-mechanics`, 2026-10-27) because the learner owns model mathematics and should not need profiling imports or source annotations to run the core. This implements the earlier relocation decision; its migration-pending entries remain historical
+- Chose actual callable boundaries, including direct cached `prefill`/`decode`, because ordinary forward hooks alone miss custom methods. Wrappers invoke the original bound methods and restore the exact prior instance-attribute layout; no model math is duplicated and existing hooks remain untouched
+- Chose offline rendering from one explicit run directory because adding tables and embedded SVGs should not trigger another model execution or select an unrelated run implicitly
+- Chose explicit missing-value representation and deterministic notebook cell IDs because a readable report must distinguish unavailable fields from real zero and remain structurally valid on repeated rendering
+
+#### Assumptions it rests on
+
+- The adapter targets the current learner module names and call structure. Revisit scope mapping when those APIs change; do not invent expression-level labels to compensate for missing callable boundaries
+- Captures use an instance without concurrent execution. Nested instrumentation on the same instance is rejected; context-local activation does not make shared-instance mutation safe for concurrent callers
+- The offline renderer requires the selected run's manifest and both CSV tables, with trace data used when available. PyTorch field variants are normalized, and unavailable fields require explicit reasons rather than fabricated defaults
+
+#### Failed approaches
+
+- Tried: add semantic profiler annotations directly to learner-core expressions -> Failed because: it crossed the user-agreed experiment/core ownership boundary -> Avoid when: seeking finer labels at the cost of making the core depend on instrumentation
+- Tried: treat a missing metric as zero when constructing graph series -> Failed because: an unavailable value became a measured-looking zero -> Avoid when: using numeric defaults to simplify report plotting
+- Tried: emit nbformat 4.5 report cells without stable IDs -> Failed because: generated cells did not satisfy that notebook format's structural contract -> Avoid when: hand-building notebook JSON without checking required fields
+- Tried: replace the old annotation tests with a smaller green suite -> Failed because: capture/export/device failure coverage was lost even though success-path checks passed -> Avoid when: migrating instrumentation and treating fewer passing tests as equivalent behavioral coverage
+
+#### Nuances agreed with the user
+
+- The learner requested five separate commits in harness, regions, tests, report renderer, then notebook/artifact order so source components precede their recorded artifacts in history. The learner explicitly excluded profiling CSVs from the archive while retaining local copies; keep that exclusion in future staging
+- Saved learner notebook execution state was preserved during the commit request. The original empty-template test policy was not silently relaxed, and the notebook was not cleared merely to obtain a green suite
+- This extraction covers code ownership, implementation intent and technical verification only. Benchmark/profiling measurements and their interpretation belong to the learner and are not to be added or summarized by the agent under this request
+
+
+### 2026-10-27: Interpret benchmark and profiler evidence without causal overclaiming
+
+#### Chosen approach + why
+
+- Recorded interpretation separately from implementation history (HEAD `e7ae31d`, branch `exp/foundation-model-mechanics`, 2026-10-27) because the user explicitly authorized appending explanations and assumptions after the earlier implementation-only extraction. That earlier scope restriction remains historical, not a prohibition on this new interpretation entry
+- Treated the benchmark as a workload-specific learning reference and profiling as diagnostic evidence, because a single instrumented cached capture cannot establish the cause of cached-versus-uncached latency differences. Closing a learning checkpoint does not require declaring the performance hypothesis proven
+- Distinguished semantic regions, operators/runtime calls and GPU kernels because these are overlapping views of the same work, not independent additive cost buckets. Semantic labels describe architectural purpose; operator events describe framework/runtime work; kernel events describe device execution
+
+#### Assumptions it rests on
+
+- Latency requires an explicit start/completion boundary. CPU submission and GPU execution can overlap; adding CPU and device durations, or subtracting kernel duration from generation duration and calling the remainder CPU compute, is invalid
+- CPU inclusive total includes recorded child events; CPU self excludes them. Self/total is event-tree accounting, not a clean division into Python orchestration versus useful computation. CPU durations may include waiting and instrumentation effects
+- For the inspected report, ancestry-empty embedding/attention rows aggregate GPU annotation events, not prefill-only work. The four embedding events cover one prefill and three decodes; eight attention events cover those four model calls across two layers. Missing CPU ancestry in a GPU row is a presentation/provenance limitation, not a root-level model operation
+- The report's Device self field on those GPU annotation rows must be read as annotation duration, not summed kernel execution. A range may span gaps between kernels. Recovering exact phase/layer attribution requires trace correlation rather than guessing from a blank ancestry field
+- Kernel execution duration already reflects arithmetic and memory access within that kernel. Separate GPU memcpy events represent separate activity; allocation accounting does not measure memory bandwidth or bytes moved within kernels
+- Temporal containment of kernels in same-stream annotation intervals is a descriptive attribution method, not proof of causal ownership or a reusable latency formula. Revisit attribution if streams overlap, scopes nest, or event-export semantics change
+
+#### Failed approaches
+
+- Tried: read ancestry-empty semantic rows as prefill -> Failed because: the inspected GPU annotation groups include both prefill and decode occurrences -> Avoid when: inferring execution phase from an empty ancestry field
+- Tried: interpret annotation Device self as continuous GPU computation -> Failed because: the range spans gaps between kernels and differs substantially from contained kernel durations -> Avoid when: ranking compute bottlenecks directly from the semantic device column
+
+#### Nuances agreed with the user
+
+- The user demonstrated that annotation span should not automatically be called attention computation latency, and that CPU queue/API work and GPU execution interact. Kernel memory access belongs inside kernel duration; it is not an extra duration to add afterward
+- The working hypothesis is that small kernels and host orchestration can obscure savings from reduced prefix recomputation. It remains suggestive, not confirmed; selector synchronization and cache concatenation are also unconfirmed explanations
+- Identical workload and comparable source/environment provenance are prerequisites for causal comparisons. This capture has no matched uncached arm and differs from the historical benchmark cases; profiler overhead further prevents direct timing substitution
+- The next proposed learning topic is minimal causal-LM training before quantization: shifted targets, teacher forcing, cross-entropy, backward/optimizer and tiny-data overfitting. This provides meaningful learned behavior for later quantization error comparisons; it does not require distributed training. Training prerequisite questions remain unanswered, and this entry does not authorize implementation

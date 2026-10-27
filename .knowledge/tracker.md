@@ -1,10 +1,10 @@
 # Tracker — HUST Regulations Bot
 
-## Current focus  (2026-10-27) Benchmark checkpoint committed; review separately reported experiment-owned profiling migration and learner-run outputs -> features/llm_foundations/log.md
+## Current focus  (2026-10-27) Profiling code checkpoint committed; reconcile the notebook-template test with the committed learner-executed notebook -> features/llm_foundations/log.md
 
 ## Features
 
-- llm_foundations: IN PROGRESS; benchmark core/tests and historical artifacts checkpoint DONE (2026-10-27); profiling review remains separate -> features/llm_foundations/log.md
+- llm_foundations: IN PROGRESS; benchmark and profiling code checkpoints DONE (2026-10-27); profiling notebook-state test policy remains open -> features/llm_foundations/log.md
 - backend_migration: DONE end-to-end. De-wrapper memory split DONE (2026-08-29, branch refactor/memory-split) — `RunnableWithMessageHistory` removed, explicit `read_history`/`persist_turn`, conn-pin + `MemoryStatus`/`TrackedPostgresHistory` deleted, `connection.py` deleted. Prior: step 3 SSE streaming (2026-08-28, 803573b→f0da5a3), chat cutover (2026-08-26), G3 `def` endpoint, G4 concurrency + silent-200 fix, G5 read cutover. Open tails in debt below  -> features/backend_migration/log.md
 - cross_reference: IN PROGRESS; fixed A/B/C diagnostics DONE (2026-09-21, `f889d98`) and STOP-policy implementation plus dev baseline DONE (2026-09-27, `b812a80`); causal diagnostics, heldout and end-to-end benefit remain open -> features/cross_reference/log.md
 - rerank_ratio: DONE (2026-08-07, commit 9f48018) — shipped; e2e verified 2026-08-13 during cross_reference  -> features/rerank_ratio/log.md
@@ -17,7 +17,9 @@
 - **Benchmark artifact provenance is incomplete.** Archived manifest references a missing raw-results JSON, and current script/notebook hashes differ from its historical snapshot; do not treat archived measurements as fresh evidence for the committed harness -> features/llm_foundations/decisions.md
 - **Benchmark interpretation remains bounded.** Seven historical repetitions describe a small untrained workload; unexplained 8.125 MiB pre-model allocation and slowdown/dispersion causes remain unresolved -> features/llm_foundations/log.md
 - **Focused benchmark checks emitted a plotting warning.** No labeled artists were available for one legend; the suite passed, but this extraction did not repair plotting -> features/llm_foundations/log.md
-- **Profiling migration status needs reconciliation.** Current implementation report says isolation is implemented; the earlier migration-pending note is historical, and this extraction did not audit or test profiling -> features/llm_foundations/log.md
+- **Profiling notebook-state policy needs reconciliation.** Pre-commit technical verification returned 18 passed and 1 failed: the cleanliness test requires empty outputs/null execution counts, while the committed learner notebook contains saved execution state. Neither the test nor notebook was changed to conceal this mismatch -> features/llm_foundations/log.md
+- **Profiling scopes are limited to actual callable boundaries.** Inline residual, concatenation, projection and selector-internal expressions lack separate semantic scopes; concurrent execution on the same instrumented instance is unsupported -> features/llm_foundations/decisions.md
+- **Archived profiling reports depend on local CSV inputs for regeneration.** The user excluded profiling CSVs from Git while retaining them locally; a checkout of archived manifests/traces alone does not supply every input required by the offline report renderer -> features/llm_foundations/decisions.md
 - **LM head/decoding test results are not captured in this review.** Core and tests are committed; no fresh run or final test count/device was supplied to the mentor during extraction -> features/llm_foundations/log.md
 - **Input-embedding coverage remains limited.** The committed suite exercises a small set of fixed valid sequences, not many input configurations or broad randomized coverage. It has no persistent regression tests for invalid rank, negative/too-large IDs, T > T_max or the T_max=1 broadcasting defect, although these guards are patched in core; the delegated temporary probe is separate evidence -> features/llm_foundations/log.md
 - **Other input-embedding policies and coverage remain open.** Empty-sequence values/backward, constructor validation, unsupported input types and ID dtypes, int32 support, dtype/device mismatch behavior, and initialization-scale checks lack committed tests. Several corresponding policies still require decisions -> features/llm_foundations/decisions.md
